@@ -1,0 +1,155 @@
+[%-	meta.wrapper = 'site-wrapper.tt';
+	meta.title   = user.display_name || user.username || 'No such user';
+%]
+
+[%- IF user %]
+<h2>
+	User profile for [% ( user.display_name || user.username ) | html %]
+</h2>
+
+[%- IF user.username == c.user.username or c.user.has_role( 'User Admin' ) %]
+<h3>
+	Public Information
+</h3>
+[%- END %]
+[% IF user.display_name %]
+<p>
+	Name: [% user.display_name | html %]
+</p>
+[%- ELSE %]
+<p>
+	Username: [% user.username | html %]
+</p>
+[%- END %]
+[% IF user.profile_pic %]
+<p>
+	<img id="user_profile_pic" class="outlined" src="[% c.uri_for( '/static', upload_dir, 'user-profile-pics', user.username, user.profile_pic ) %]" alt="Picture of [% user.display_name || user.username | html %]">
+</p>
+[%- END %]
+[% IF user.website %]
+<p>
+	Website: <a href="[% user.website | url %]">[% user.website | html %]</a>
+</p>
+[%- END %]
+[% IF user.display_email %]
+<p>
+	Email: <a href="mailto:[% user.display_email | html %]">[% user.display_email | html %]</a>
+</p>
+[%- END %]
+[% IF user.location OR user.postcode %]
+<p>
+<!-- WBRASWELL 20141002 2014.275: switch from UK to US maps, enable location map if location provided -->
+	Location:
+	[%- IF user.location %]
+	[% user.location | html %] 
+	(<a href="http://maps.google.com/?q=[% user.location | url %]">Google Map</a>)
+	[%- ELSIF user.postcode %]
+	(<a href="http://maps.google.com/?q=[% user.postcode | url %]">Google Map</a>)
+	[%- END %]
+</p>
+[%- END %]
+[% IF user.bio %]
+<p>
+	Bio:
+</p>
+[% user.bio | html_para %]
+[%- END %]
+
+[%- IF user.blog_post_count %]
+<h4>
+	Recent blog posts
+</h4>
+<p>
+	[%- FOREACH post IN user.recent_blog_posts( 10 ) %]
+	<a href="[% c.uri_for( '/blog', post.posted.year, post.posted.month, post.url_title ) %]">[% post.title | html %]</a><br>
+	[%- END %]
+</p>
+<p>
+	Total blog posts: <a href="[% c.uri_for( '/blog', 'author', user.username ) %]">[% user.blog_post_count %]</a>
+</p>
+[%- END %]
+
+[%- IF user.forum_post_count %]
+<h4>
+	Recent forum posts
+</h4>
+<p>
+	[%- FOREACH post IN user.recent_forum_posts( 10 ) %]
+	<a href="[% c.uri_for( '/forums', post.forum.section.url_name, post.forum.url_name, post.id, post.url_title ) %]">[% post.title | html %]</a><br>
+	[%- END %]
+</p>
+<p>
+	Total blog posts: <a href="[% c.uri_for( '/blog', 'author', user.username ) %]">[% user.blog_post_count %]</a>
+</p>
+[%- END %]
+
+[%- IF user.comment_count %]
+<h4>
+	Recent comments
+</h4>
+<p>
+	[%- FOREACH comment IN user.recent_comments( 10 ) %]
+	[%- IF comment.discussion.resource_type == 'BlogPost' %]
+	[%- post = c.controller( 'Blog' ).get_post( c, comment.discussion.resource_id ) %]
+	<a href="[% c.uri_for( '/blog', post.posted.year, post.posted.month, post.url_title  ) _ '#comment-' _ comment.id %]">[% comment.title || '(untitled)' %]</a> 
+	on <a href="[% c.uri_for( '/blog', post.posted.year, post.posted.month, post.url_title ) %]">[% post.title | html %]</a><br>
+	[%- END %]
+	[%- END %]
+</p>
+<p>
+	Total comments: [% user.comment_count %]
+</p>
+[%- END %]
+
+
+[%- IF user.discussion %]
+<h3>
+	<a name="wall"></a>Wall
+</h3>
+[%- discussion = user.discussion %]
+[%- reverse_discussion = 1 %]
+[%- PROCESS 'discussion/thread.tt' %]
+[%- END %]
+
+
+[%- IF user.username == c.user.username or c.user.has_role( 'User Admin' ) %]
+<h3>
+	Private Information
+</h3>
+<p>
+	First name: [% user.firstname | html %]
+</p>
+<p>
+	Surname: [% user.surname | html %]
+</p>
+<p>
+	Email: <a href="mailto:[% user.email | html %]">[% user.email | html %]</a>
+</p>
+
+<p>
+	<span class="label">Roles</span>
+</p>
+<ul>
+[%- FOREACH role IN user.roles %]
+	<li>[% role.role | html %]</li>
+[%- END %]
+</ul>
+[%- END %]
+
+
+[%- IF c.user.has_role( 'User Admin' ) %]
+<h3>
+	Admin Notes
+</h3>
+<p>
+	[% user.admin_notes || 'None.' | html %]
+</p>
+[%- END %]
+
+
+[%- ELSE %]
+<p>
+	The user you are looking for does not exist.  Please check and try again.
+</p>
+[%- END %]
+

@@ -1,0 +1,23 @@
+[%-	meta.title   = 'Form Handlers';
+-%]
+<table class="list">
+	<tr>
+		<th class="main">
+			Form Handler
+		</th>
+		<th>
+			Actions
+		</th>
+	</tr>
+	[%- FOREACH form IN forms %]
+	<tr onmouseover="style.backgroundColor='#eeffdd';" onmouseout="style.backgroundColor='transparent'">
+		<td>
+			[% form.name | html %]
+		</td>
+		<td>
+			<a href="[% c.uri_for( 'edit', form.url_name ) %]">Edit</a>
+		</td>
+	</tr>
+	[%- END %]
+</table>
+

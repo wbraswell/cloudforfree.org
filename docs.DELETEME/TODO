@@ -1,0 +1,186 @@
+ShinyCMS TODO
+=============
+
+An incomplete list of features and functionality that we'd like to add to 
+ShinyCMS in the future (short or long term).
+
+[ Key: * is (more or less) working, + isn't finished, - isn't started ]
+
+
+* Top-level / site-wide features
+	- Rewrite tasks to read config and access db model directly rather than 
+		loading the whole Catalyst app into memory
+	+ Redo existing pagination to use Data::Page instead
+		+ (Shop already has this, Blog/News/etc need it)
+	+ Improve error-handling (coverage and UX)
+		- Catch 500 error when admin adds user with duplicate username
+		- Catch 500 error when admin adds page with duplicate url_name
+	- Refactor larger controllers into sub-controllers (e.g. Shop::Item)
+	- Refactor CmsPage, ShopItem (etc?) to inherit from a BaseObject ?? 
+		(which has BaseObjectElements)
+	- Clearer, more consistent and more robust handling of show/hide for content
+		(Currently, blog posts have future-dating, pages have menu_setting, etc)
+	+ Nicer test data for blog posts, news items, pages, etc
+		+ Use excerpts from Little Brother (CC-licensed)
+			- Check to see if anyone has created in-universe websites we can use
+	- Background task to delete stale registration/reconnect codes (etc?)
+	- Add config options to enable/disable each top-level feature
+		- Use that to turn on/off menu items
+	- Better handling of user-uploaded images (profile pics, event logos, etc)
+	* HTML filtering for user-submitted content
+		- Per-site configuration of allowed tag+attribute list
+	- Move back-end menus into controller template folders?
+		- Automatically find and render admin menus for each controller
+			- Need some way to configure order
+	* Search
+		+ Add search method to each controller, combine results
+			+ Build links in controllers, not in template
+			- Automatically find and call search method for each controller
+		- Move search methods into model rather than controller?
+	* Tags
+		+ For all resources - news item, gallery image, shop product, etc
+	- Ensure graceful degradation anywhere JavaScript is used
+		- jQuery date-pickers
+		- WYSIWYG editor
+	- Look at ways to make Model fatter and Controllers thinner
+	- Support for multiple sites from one instance
+
+* CMS Pages
+	- Better handling of sections - current compulsory 2-level URLs are non-ideal
+	- Access-controlled sections/pages (intranet / members-only areas)
+	- Better interface for setting section and page order
+		- Multiple-select widget with up/down buttons?  Drag n drop?
+	- Handle page template changes - add any extra elements needed
+	- Allow page admin to delete page elements
+	- Allow template admin to edit template element names
+	- Allow template/page admins to edit element order
+	- Per-section and/or per-page edit/admin ACLs
+	- Full reversion history for page edits
+	- Clone page
+	- Clone template
+	- Configurable redirects?  ( /pages/is/old => /pages/is/new )
+	- Screenshot of page layout on edit page, changing with template selection
+	- For page add/edit, it would be nice to read in the page-element names 
+		and types from the template instead of from the database
+	- Change HTML editor to NicEdit ?
+		- Inline editing ??
+
++ Newsletters
+	+ Create and edit mailing lists
+		- Export as CSV
+		- Add/remove addresses manually
+		- Import from plain text file
+		- Export as plain text
+	- Pass results to site-wide search
+	- Public-facing subscription process
+
++ File Manager
+	- Delete files
+	- Improved UI for direct use (currently designed to work within CKEditor)
+
+* User area
+	- 'Remember me' - stay logged in across sessions
+	- Monitor for repeated login or reconnect failures, might be an attack
+		- Block access to that IP address?
+			- Admin interface to view/add/remove IP bans
+	- Extend and refine role system into ACL system
+		- Roles should be fully editable, giving fine-grain control of their 
+		  capabilities (which relate to CMS features, e.g. 'edit page')
+	- OpenID integration
+	- Supply search results to site-wide search
+
+* Tags
+	- Tag cloud
+
+* News
+	- Pagination
+	- Future-dating (same as for blog posts)
+
+* Blogs
+	- 'Skip to [Month YYYY]' drop-down menu
+	- Twitter announcement of new posts
+	- Multiple single-author blogs
+	- Multiple-author blogs
+	- Trackbacks
+	- Pings
+	- rel me="" ?
+
+* Comments
+	* View comment thread
+		* Same thread can be attached to multiple resources - blog posts, 
+		  polls, images, etc
+		* Reversible thread order (useful for adding chat 'wall' to user profiles)
+		- Collapse deeper comments in longer threads
+			- Make definitions of 'deeper' and 'longer' configurable
+	* Add comment
+		* Email owner of item being commented on (blog post, comment, ...)
+		- Inline comment forms
+		- Log in while posting comment
+		- Preview before posting
+	- Edit comment?
+		- Short grace period for spelling fixes, then lock?
+			- Lock as soon as anyone replies
+	- Flag comment as spam
+		- Track spam IPs and block
+		- Link up with blogspam.net ?
+	- OpenID
+
++ Forums
+	- Jump to first unread comment in thread
+	* View posts by tag
+	- Pagination
+
+* Polls
+	- Embeddable pollbooths for use on CMS pages or in sidebars
+	- Supply search results to site-wide search
+
++ Events
+	+ Display events
+		- Calendar view
+	+ Display event
+		- Provide 'add to GCal' link
+		- Provide 'add to iCal' link
+		- Provide 'add to Outlook' link
+	* Add/edit events
+		- Add event to Facebook via API
+	- RSS feed
+	- Recurring events
+	- Per event mailing lists??
+
+* Shop
+	+ Catalogue
+		- Specify order products display in
+		- Product 'more info' pages
+		- Featured items / Special offers
+		- Related items
+			* Manual config, or 'people also bought'?
+		- Top selling items
+			- For whole shop
+			- Per category
+		- Storefront (default shop page - special offers, featured items, etc)
+	+ Basket
+		- Saved baskets
+			- Wishlist
+	+ Checkout
+		- Credit card payment processing
+			- Sage Pay (was Protx)
+			- Worldpay
+			- CCBill
+			- etc
+	+ Orders
+		- Customer
+			- View previous orders
+			- View outstanding orders
+				- Cancel order
+		+ Admin
+			- Search orders
+			* Cancel orders
+	- Stock control
+		- Live stock levels on site
+
+- Galleries
+	- Support image and/or video content
+	- Tagging
+	- Batch uploads
+	- Supply search results to site-wide search
+

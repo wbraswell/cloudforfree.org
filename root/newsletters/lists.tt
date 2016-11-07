@@ -1,0 +1,103 @@
+[%-	meta.wrapper = 'site-wrapper.tt';
+	meta.title   = 'Mailing lists';
+-%]
+
+[%- IF c.user.exists OR token %]
+<p>
+	Below is a list of all of our public mailing lists.  Please tick the box 
+	next to any you would like to subscribe to, and/or untick the box next to 
+	any which you wish to unsubscribe from, then click on 'Save changes'.
+</p>
+
+<form name="list_subs" action="[% c.uri_for( 'lists', 'update' ) %]" method="post">
+<table class="list">
+	<tr>
+		<th class="main">
+			Mailing List
+		</th>
+		<th>
+			Subscribe
+		</th>
+	</tr>
+	[%- FOREACH list IN public_lists.all %]
+	<tr onmouseover="style.backgroundColor='#004400';" onmouseout="style.backgroundColor='transparent'">
+		<td>
+			<label for="list_[% list.id %]">[% list.name | html %]</label>
+		</td>
+		<td>
+			[%- checked = 0 %]
+			[%- FOREACH user_list IN user_lists %]
+				[%- IF user_list.id == list.id %]
+					[%- checked = 1 %]
+				[%- END %]
+			[%- END %]
+			[%- IF checked %]
+			<input id="list_[% list.id %]" name="list_[% list.id %]" type="checkbox" checked="checked">
+			[%- ELSE %]
+			<input id="list_[% list.id %]" name="list_[% list.id %]" type="checkbox">
+			[%- END %]
+		</td>
+	</tr>
+	[%- END %]
+	[%- FOREACH list IN private_lists.all %]
+	<tr onmouseover="style.backgroundColor='#004400';" onmouseout="style.backgroundColor='transparent'">
+		<td>
+			<label for="list_[% list.id %]">[% list.name | html %]</label>
+		</td>
+		<td>
+			[%- checked = 0 %]
+			[%- FOREACH user_list IN user_lists %]
+				[%- IF user_list.id == list.id %]
+					[%- checked = 1 %]
+				[%- END %]
+			[%- END %]
+			[%- IF checked %]
+			<input id="list_[% list.id %]" name="list_[% list.id %]" type="checkbox" checked="checked">
+			[%- ELSE %]
+			<input id="list_[% list.id %]" name="list_[% list.id %]" type="checkbox">
+			[%- END %]
+		</td>
+	</tr>
+	[%- END %]
+	[%- FOREACH ar IN autoresponders.all %]
+	<tr onmouseover="style.backgroundColor='#004400';" onmouseout="style.backgroundColor='transparent'">
+		<td>
+			<label for="autoresponder_[% ar.id %]">[% ar.name | html %]</label>
+		</td>
+		<td>
+			<input id="autoresponder_[% ar.id %]"      name="autoresponder_[% ar.id %]"      type="hidden"   value="1">
+			<input id="keep_autoresponder_[% ar.id %]" name="keep_autoresponder_[% ar.id %]" type="checkbox" checked="checked">
+		</td>
+	</tr>
+	[%- END %]
+</table>
+[%- UNLESS c.user_exists %]
+<p>
+	[%- IF token %]
+	<input name="token" value="[% token %]" type="hidden">
+	[%- ELSE %]
+[%# TODO: this needs more thought - see notes in Newsletter.pm
+	<label for="email">Email address (required)</label>
+	<br><input id="email" name="email" type="text">
+	<br><label for="name">Name (optional)</label>
+	<br><input id="name" name="name" type="text">
+%]
+	[%- END %]
+</p>
+[%- END %]
+<p>
+	<input value="Save changes" type="submit">
+</p>
+</form>
+[%- ELSE %]
+<p>
+	[%- IF c.user_exists OR token %]
+	This site does not have any mailing lists available for you to subscribe to.
+	[%- ELSE %]
+	You need to <a href="[% c.uri_for( '/login' ) %]">log in</a> before you can 
+	edit your mailing list subscriptions, or follow the link in the bottom of 
+	one of our emails to you.
+	[%- END %]
+</p>
+[%- END %]
+

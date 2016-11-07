@@ -1,0 +1,22 @@
+[%-	meta.wrapper       = 'site-wrapper.tt';
+	meta.title         = 'Sitemap';
+	meta.menu_selected = 'Sitemap';
+%]
+
+<ul>
+	[%- FOREACH map_section IN sections %]
+	<li>
+		[% map_section.name | html %]
+		[%- IF map_section.pages %]
+		<ul>
+			[%- FOREACH map_page IN map_section.pages %]
+			<li>
+				<a href="[% c.uri_for( 'pages', map_section.url_name, map_page.url_name ) %]">[% map_page.name | html %]</a>
+			</li>
+			[%- END %]
+		</ul>
+		[%- END %]
+	</li>
+	[%- END %]
+</ul>
+

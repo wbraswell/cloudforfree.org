@@ -1,0 +1,112 @@
+[%-	IF c.user.has_role( 'CMS Page Editor'  ) 
+	OR c.user.has_role( 'User Admin'       ) 
+	OR c.user.has_role( 'News Admin'       ) 
+	OR c.user.has_role( 'Blog Author'      ) 
+	OR c.user.has_role( 'Blog Admin'       ) 
+	OR c.user.has_role( 'Forums Admin'     ) 
+	OR c.user.has_role( 'Events Admin'     ) 
+	OR c.user.has_role( 'Shop Admin'       ) 
+	OR c.user.has_role( 'Newsletter Admin' ) 
+-%]
+
+<p>&nbsp;</p>
+
+<div class="admin-footer">
+	<a href="http://shinycms.org/"><img src="/static/images/admin-footer-logo.png" class="shinyCMS" alt="This website is powered by ShinyCMS"></a>
+	
+	<div class="admin-links">
+		[%- IF preview == 'preview' %]
+		<a href="javascript:window.close()">Close Preview</a>
+		[%- ELSE %]
+		[%- IF controller == 'Pages' AND c.user.has_role( 'CMS Page Editor' ) %]
+		[%- IF page %]
+		<a href="[% c.uri_for( '/admin', 'pages', 'page', page.id, 'edit' ) %]">Edit page</a>
+		| 
+		[%- END %]
+		<a href="[% c.uri_for( '/admin', 'pages', 'add' ) %]">Add new page</a>
+		| 
+		<a href="[% c.uri_for( '/admin', 'pages', 'list' ) %]">List pages</a>
+		| 
+		[%- END %]
+		[%- IF controller == 'News' AND c.user.has_role( 'News Admin' ) %]
+		[%- IF news_item %]
+		<a href="[% c.uri_for( '/admin', 'news', 'edit', news_item.id ) %]">Edit news item</a>
+		| 
+		[%- END %]
+		<a href="[% c.uri_for( '/admin', 'news', 'add' ) %]">Add news item</a>
+		| 
+		<a href="[% c.uri_for( '/admin', 'news', 'list' ) %]">List news items</a>
+		| 
+		[%- END %]
+		[%- IF controller == 'Blog' AND c.user.has_role( 'Blog Author' ) %]
+		[%- IF blog_post %]
+		<a href="[% c.uri_for( '/admin', 'blog', 'post', blog_post.id, 'edit' ) %]">Edit blog post</a>
+		| 
+		[%- END %]
+		<a href="[% c.uri_for( '/admin', 'blog', 'post', 'add' ) %]">New blog post</a>
+		| 
+		<a href="[% c.uri_for( '/admin', 'blog', 'posts' ) %]">List blog posts</a>
+		| 
+		[%- END %]
+		[%- IF controller == 'Forums' AND c.user.has_role( 'Forums Admin' ) %]
+		[%- IF forum_post %]
+		<a href="[% c.uri_for( '/admin', 'forums', 'post', forum_post.id, 'edit' ) %]">Edit post</a>
+		| 
+		[%- END %]
+		<a href="[% c.uri_for( '/admin', 'forums', 'add' ) %]">Add new forum</a>
+		| 
+		<a href="[% c.uri_for( '/admin', 'forums', 'list' ) %]">List forums</a>
+		| 
+		<a href="[% c.uri_for( '/admin', 'forums', 'add-section' ) %]">Add new section</a>
+		| 
+		<a href="[% c.uri_for( '/admin', 'forums', 'list-sections' ) %]">List sections</a>
+		| 
+		[%- END %]
+		[%- IF controller == 'Events' AND c.user.has_role( 'Events Admin' ) %]
+		[%- IF event %]
+		<a href="[% c.uri_for( '/admin', 'events', 'edit', event.id ) %]">Edit event</a>
+		| 
+		[%- END %]
+		<a href="[% c.uri_for( '/admin', 'events' ) %]">List events</a>
+		| 
+		[%- END %]
+		[%- IF controller == 'Shop' AND c.user.has_role( 'Shop Admin' ) %]
+		[%- IF item %]
+		<a href="[% c.uri_for( '/admin', 'shop', 'item', ( item.code || item.id ), 'edit' ) %]">Edit item</a>
+		| 
+		[%- END %]
+		[%- IF category AND NOT categories %]
+		<a href="[% c.uri_for( '/admin', 'shop', 'category', category.url_name, 'edit' ) %]">Edit category</a>
+		| 
+		[%- END %]
+		<a href="[% c.uri_for( '/admin', 'shop', 'list-items' ) %]">List items</a>
+		| 
+		<a href="[% c.uri_for( '/admin', 'shop', 'list-categories' ) %]">List categories</a>
+		| 
+		[%- END %]
+		[%- IF controller == 'Newsletters' AND c.user.has_role( 'Newsletter Admin' ) %]
+		[%- IF newsletter %]
+		<a href="[% c.uri_for( '/admin', 'newsletters', newsletter.id, 'edit' ) %]">Edit newsletter</a>
+		| 
+		[%- END %]
+		<a href="[% c.uri_for( '/admin', 'newsletters', 'list' ) %]">List newsletters</a>
+		| 
+		<a href="[% c.uri_for( '/admin', 'newsletters', 'list-lists' ) %]">List mailing lists</a>
+		| 
+		[%- END %]
+		[%- IF controller == 'User' AND c.user.has_role( 'User Admin' ) %]
+		[%- IF user %]
+		<a href="[% c.uri_for( '/admin', 'user', 'edit', user.id ) %]">Edit user</a>
+		| 
+		<a href="[% c.uri_for( '/admin', 'user', 'add' ) %]">Add new user</a>
+		| 
+		[%- END %]
+		<a href="[% c.uri_for( '/admin', 'user', 'list' ) %]">List users</a>
+		| 
+		[%- END %]
+		<a href="[% c.uri_for( '/admin' ) %]">Admin area</a>
+		[%- END %]
+	</div>
+</div>
+[%- END %]
+

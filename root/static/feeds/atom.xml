@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <id>tag:cloudforfree.org,2010:blog</id>
+  <link rel="self" href="http://cloudforfree.org/static/feeds/atom.xml" type="application/atom+xml"/>
+  <link rel="alternate" href="http://cloudforfree.org/blog" type="text/html"/>
+  <updated>2016-11-05T08:54:23Z</updated>
+  <title>CloudForFree</title>
+  <subtitle>Recent blog posts from CloudForFree</subtitle>
+  <entry>
+    <id>tag:cloudforfree.org,2010:blog:2016:11:first_post</id>
+    <link rel="alternate" href="http://cloudforfree.org/blog/2016/11/first_post" type="text/html"/>
+    <author>
+      <name>Admin</name>
+    </author>
+    <updated>2016-11-05T01:00:00Z</updated>
+    <title>First Post!</title>
+    <content type="html">&lt;p&gt;I&amp;#39;m building the new CloudForFree user interface.&lt;/p&gt;&#13;
+&#13;
+&lt;p&gt;Exciting! &amp;nbsp;:-)&lt;/p&gt;&#13;
+</content>
+  </entry>
+</feed>
+

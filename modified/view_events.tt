@@ -1,0 +1,87 @@
+[%-	meta.wrapper = 'site-wrapper.tt';
+	meta.title   = 'Events';
+%]
+
+[%- IF view_date %]
+<h3>
+	Events starting in [% view_date.month_name %] [% view_date.year %]
+</h3>
+[%- ELSE %]
+<h3><div style="text-align: center;">
+	Upcoming Events
+</div></h3>
+[%- END %]
+
+[% IF events.size > 0 %]
+<table>
+	<tr>
+		<th>
+			&nbsp;
+		</th>
+		<th>
+			Date
+		</th>
+		<th>
+			Event
+		</th>
+		<th>
+			More information
+		</th>
+	</tr>
+[%- FOREACH event IN events %]
+	<tr>
+<!--- WBRASWELL 20140927 2014.270: change td class to "td_event" to preserve visible table borders, increase width of Date column, add Archive link -->
+		<td class="td_event">
+			[%- IF event.image %]
+			<img width="100px" src="[% c.uri_for( '/static', upload_dir, 'event-images', event.image ) %]" alt="">
+			[%- END %]
+		</td>
+		<td class="td_event" style="width: 20%;">
+			[%- IF event.start_date == event.end_date %]
+			[% event.start_date.day %] [% event.start_date.month_abbr %] [% event.start_date.year %]
+			<br>[% event.start_date.strftime('%H:%M') %] to [%event.end_date.strftime('%H:%M') %]
+			[%- ELSE %]
+			[% event.start_date.day %] [% event.start_date.month_abbr %] [% event.start_date.year %] to [% event.end_date.day %] [% event.end_date.month_abbr %] [% event.end_date.year %]
+			<br>[%event.start_date.strftime('%H:%M') %] to [% event.end_date.strftime('%H:%M') %]
+			[%- END %]
+		</td>
+		<td class="td_event">
+			<b><a href="[% c.uri_for( event.start_date.year, event.start_date.month, event.url_name ) %]">[% event.name | html %]</a></b>
+			<br>[% event.description | html %]
+		</td>
+		<td class="td_event">
+			[%- IF event.booking_link %]
+			<a href="[% event.booking_link | url %]" target="_new">Book now</a><br>
+			[%- END %]
+			[%- IF event.link %]
+			<a href="[% event.link | url %]" target="_new">Website</a><br>
+			[%- END %]
+			[%- IF event.email %]
+			<a href="mailto:[% event.email | url %]">Email Organiser</a><br>
+			[%- END %]
+			[%- IF event.postcode %]
+<!-- WBRASWELL 20141004 2014.277: switch from UK to US maps -->
+			<a href="http://maps.google.com/?q=[% event.postcode | url %]">Google Map</a><br>
+			[%- END %]
+		</td>
+	</tr>
+[%- END %]
+</table>
+<h3><div style="text-align: center;">
+<a href="[% c.uri_for( '/events', now.year, now.month )  %]">Event Archives</a>
+</div></h3>
+<br>
+[%- ELSE %]
+<p>
+	No events [% IF view_date %]starting in this month[% ELSE %]to display[% END %].
+</p>
+[%- END %]
+
+[%- IF view_date %]
+<p>
+	<a href="[% c.uri_for( prev_date.year, prev_date.month ) %]">&laquo; [% prev_date.month_name %] [% prev_date.year %]</a>
+	&nbsp; &nbsp; &nbsp; 
+	<a href="[% c.uri_for( next_date.year, next_date.month ) %]">[% next_date.month_name %] [% next_date.year %]  &raquo;</a>
+</p>
+[%- END %]
+

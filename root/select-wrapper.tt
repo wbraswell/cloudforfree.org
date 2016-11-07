@@ -1,0 +1,12 @@
+[%-	
+	IF meta.wrapper; 
+		PROCESS $meta.wrapper;
+	ELSIF meta.no_wrapper || template.no_wrapper;
+		content;
+	ELSIF c.stash.controller.match( '^Admin::' );
+		PROCESS 'admin/wrapper.tt';
+	ELSE;
+		PROCESS 'site-wrapper.tt';
+	END
+-%]
+

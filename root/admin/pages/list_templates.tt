@@ -1,0 +1,23 @@
+[%-	meta.title   = 'Page Templates';
+-%]
+<table class="list">
+	<tr>
+		<th class="main">
+			Page Template
+		</th>
+		<th>
+			Actions
+		</th>
+	</tr>
+	[%- FOREACH cms_template IN cms_templates %]
+	<tr onmouseover="style.backgroundColor='#eeffdd';" onmouseout="style.backgroundColor='transparent'">
+		<td>
+			[% cms_template.name | html %] 
+		</td>
+		<td>
+			<a href="[% c.uri_for( 'template', cms_template.id, 'edit' ) %]">Edit</a>
+		</td>
+	</tr>
+	[%- END %]
+</table>
+

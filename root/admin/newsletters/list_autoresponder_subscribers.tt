@@ -1,0 +1,38 @@
+[%-	meta.title   = 'Autoresponder Subscribers';
+-%]
+<h3>
+	Subscribers to: [% autoresponder.name %]
+</h3>
+<table class="list">
+	<tr>
+		<th>
+			Name
+		</th>
+		<th>
+			Email
+		</th>
+		<th>
+			Subscribed
+		</th>
+		<th>
+			Actions
+		</th>
+	</tr>
+	[%- FOREACH subscriber IN subscribers %]
+	<tr onmouseover="style.backgroundColor='#eeffdd';" onmouseout="style.backgroundColor='transparent'">
+		<td>
+			[% subscriber.name | html %]
+		</td>
+		<td>
+			[% subscriber.email | html %]
+		</td>
+		<td>
+			[% subscriber.subscribed.day | html %] [% subscriber.subscribed.month_abbr | html %] [% subscriber.subscribed.year | html %] [% subscriber.subscribed.time | html %]
+		</td>
+		<td>
+			<a href="[% c.uri_for( 'autoresponder', autoresponder.id, 'delete-subscriber', subscriber.id ) %]">Delete</a>
+		</td>
+	</tr>
+	[%- END %]
+</table>
+

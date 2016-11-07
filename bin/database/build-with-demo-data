@@ -1,0 +1,36 @@
+bin/database/utils/deploy-schema
+echo "Deployed database schema"
+
+bin/database/data/insert-required-data
+echo "Inserted required data"
+
+bin/database/data/insert-pages-demo-data
+echo "Inserted demo data for: Pages"
+
+bin/database/data/insert-shared-content-demo-data
+echo "Inserted demo data for: Shared Content"
+
+bin/database/data/insert-access-demo-data
+echo "Inserted demo data for: Access Control"
+
+bin/database/data/insert-news-demo-data
+echo "Inserted demo data for: News"
+
+bin/database/data/insert-blog-demo-data
+echo "Inserted demo data for: Blog"
+
+bin/database/data/insert-forums-demo-data
+echo "Inserted demo data for: Forums"
+
+bin/database/data/insert-shop-demo-data
+echo "Inserted demo data for: Shop"
+
+bin/database/data/insert-newsletter-demo-data
+echo "Inserted demo data for: Newsletter"
+
+bin/database/data/insert-events-demo-data
+echo "Inserted demo data for: Events"
+
+bin/database/data/insert-poll-demo-data
+echo "Inserted demo data for: Polls"
+

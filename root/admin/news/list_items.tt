@@ -1,0 +1,30 @@
+[%-	meta.title   = 'News Items';
+-%]
+<table class="list">
+	<tr>
+		<th class="main">
+			News Item
+		</th>
+		<th>
+			Posted
+		</th>
+		<th>
+			Actions
+		</th>
+	</tr>
+	[%- FOREACH item IN news_items %]
+	<tr onmouseover="style.backgroundColor='#eeffdd';" onmouseout="style.backgroundColor='transparent'">
+		<td>
+			[% item.title | html %]
+		</td>
+		<td>
+			[% item.posted.day %] [% item.posted.month_abbr %] [% item.posted.year %]
+		</td>
+		<td>
+			<a href="[% c.uri_for( item.posted.year, item.posted.month, item.url_title ) %]">View</a> / 
+			<a href="[% c.uri_for( 'edit', item.id ) %]">Edit</a>
+		</td>
+	</tr>
+	[%- END %]
+</table>
+

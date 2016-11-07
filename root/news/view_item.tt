@@ -1,0 +1,18 @@
+[%-	meta.wrapper = 'site-wrapper.tt';
+	meta.title   = news_item.title;
+%]
+
+<h2>
+	<a href="/news/[% news_item.posted.year %]/[% news_item.posted.month %]/[% news_item.url_title %]">[% news_item.title | html %]</a>
+</h2>
+<p>
+	<i>[% news_item.posted.strftime('%H:%M') %] on [% news_item.posted.day %] [% news_item.posted.month_abbr %] [% news_item.posted.year %]</i>
+</p>
+[% news_item.body %]
+
+[%- IF news_item.related_url %]
+<p>
+	Related download: [% news_item.related_url %]
+</p>
+[%- END %]
+

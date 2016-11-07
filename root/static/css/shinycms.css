@@ -1,0 +1,664 @@
+/* ========================================================
+	File:     root/static/css/shinycms.css
+	Project:  ShinyCMS
+	Purpose:  CSS file for admin pages
+	
+	Author:   Denny de la Haye <2014@denny.me>
+	Copyright (c) 2009-2014 Shiny Ideas - www.shinyideas.co.uk
+	
+	ShinyCMS is free software. You can redistribute it and/or modify it 
+	under the terms of the GNU Affero General Public License.
+   ================================================================== */
+
+
+/* ========== ( Stuff from HTML5 Boilerplate )  ========== */
+
+/* ========== ( Reset )  ========== */
+
+html, body, div, span, object, iframe,
+h1, h2, h3, h4, h5, h6, p, blockquote, pre,
+abbr, address, cite, code,
+del, dfn, em, img, ins, kbd, q, samp,
+small, strong, sub, sup, var,
+b, i,
+dl, dt, dd, ol, ul, li,
+fieldset, form, label, legend,
+table, caption, tbody, tfoot, thead, tr, th, td,
+article, aside, figure, footer, header, 
+hgroup, menu, nav, section, menu,
+time, mark, audio, video {
+	margin:				0;
+	padding:			0;
+	border:				0;
+	outline:			0;
+	font-size:			100%;
+	vertical-align:		baseline;
+	background:			transparent;
+}                  
+
+article, aside, figure, footer, header, hgroup, nav, section {
+	display: 			block;
+}
+
+nav ul {
+	list-style:			none;
+}
+
+blockquote, q {
+	quotes:				none;
+}
+
+blockquote:before, blockquote:after, q:before, q:after { 
+	content:			'';
+	content:			none;
+}
+
+a {
+	margin:				0;
+	padding:			0;
+	font-size:			100%;
+	vertical-align:		baseline;
+	background:			transparent;
+}
+
+ins {
+	background-color:	#ff9;
+	color:				#000;
+	text-decoration:	none;
+}
+
+mark {
+	background-color:	#ff9;
+	color:				#000;
+	font-style:			italic;
+	font-weight:		bold;
+}
+
+del {
+	text-decoration:	line-through;
+}
+
+abbr[title], dfn[title] {
+	border-bottom:		1px dotted #000;
+	cursor:				help;
+}
+
+/* tables still need cellspacing="0" in the markup */
+table {
+	border-collapse:	collapse;
+	border-spacing:		0;
+}
+
+hr {
+	display:			block;
+	height:				1px;
+	border:				0;
+	border-top:			1px solid #ccc;
+	margin:				1em 0;
+	padding:			0;
+}
+
+input, select {
+	vertical-align:		middle;
+}
+
+
+/* =========== ( Fonts ) ========== */
+
+body {
+	font:				13px sans-serif;
+/*	These IE fixes are invalid CSS - uncomment them if you don't mind that
+	*font-size:			small;
+	*font:				x-small;
+	line-height:		1.22;
+*/
+}
+
+table {
+	font-size:			inherit;
+/*	Not sure why this doesn't validate, but it doesn't
+	font:				100%;
+*/
+}
+
+select, input, textarea {
+	font:				99% sans-serif;
+}
+
+pre, code, kbd, samp {
+	font-family:		monospace, sans-serif;
+}
+
+
+/* =========== ( Minimal base styles ) ========== */
+
+body, select, input, textarea {
+	color:				#444;
+}
+
+h1,h2,h3,h4,h5,h6 {
+	font-weight:		bold;
+/*
+	text-rendering:		optimizeLegibility;
+*/
+}
+
+html {
+/*	Invalid CSS
+	-webkit-font-smoothing:	antialiased;
+*/
+}
+
+a:hover, a:active {
+	outline:			none;
+}
+
+a, a:active, a:visited {
+	color:				#607890;
+}
+a:hover {
+	color:				#036;
+}
+
+ul {
+	margin-left:		30px;
+}
+ol {
+	margin-left:		30px;
+	list-style-type: decimal;
+}
+
+small {
+	font-size:			85%;
+}
+strong, th {
+	font-weight:		bold;
+}
+
+td, td img {
+	vertical-align:		top;
+} 
+
+sub {
+	vertical-align:		sub;
+	font-size:			smaller;
+}
+sup {
+	vertical-align:		super;
+	font-size:			smaller;
+}
+
+pre { 
+	padding:			15px;
+	white-space:		pre;		/* CSS2 */
+	white-space:		pre-wrap;	/* CSS 2.1 */
+	white-space:		pre-line;	/* CSS 3 (and 2.1 as well, actually) */
+/*	Another IE fix that is invalid CSS
+	word-wrap:			break-word;
+*/
+}
+
+input[type="radio"] {
+	vertical-align:		text-bottom;
+}
+input[type="checkbox"] {
+	vertical-align:		bottom;
+/*	*vertical-align:	baseline;
+*/
+}
+.ie6 input {
+	vertical-align:		text-bottom;
+}
+
+label, input[type=button], input[type=submit], button {
+	cursor:				pointer;
+}
+
+/* Invalid CSS
+::-moz-selection{
+	background:			#00DDDD;
+	color:				#000;
+	text-shadow:		none;
+}
+::selection {
+	background:			#00DDDD;
+	color:				#000;
+	text-shadow:		none;
+}
+*/
+
+a:link {
+/*	Invalid CSS - uncomment to enable for webkit touch-screens
+	-webkit-tap-highlight-color:	#00DDDD;
+*/
+} 
+
+button {
+	width:				auto;
+	overflow:			visible;
+}
+
+.ie7 img {
+/* Invalid CSS - uncomment to make IE use bicubic image resizing
+	-ms-interpolation-mode:	bicubic;
+*/
+}
+
+
+/* ========== ( Non-semantic helper classes )  ========== */
+
+/* for image replacement */
+.ir {
+	display:			block;
+	text-indent:		-999em;
+	overflow:			hidden;
+	background-repeat:	no-repeat;
+}
+
+/* Hide for both screenreaders and browsers */
+.hidden {
+	display:			none;
+	visibility:			hidden;
+} 
+
+/* Hide only visually, but have it available for screenreaders */
+.visuallyhidden { position:absolute !important;    
+/*	Invalid CSS - makes this work in IE6 and IE7
+	clip:				rect(1px 1px 1px 1px);
+*/
+	clip:				rect(1px, 1px, 1px, 1px);
+}
+
+/* Hide visually and from screenreaders, but maintain layout */
+.invisible { visibility: hidden; }
+
+/* >> The Magnificent CLEARFIX << */
+.clearfix:after { content: "."; display: block; height: 0; clear: both; visibility: hidden; }
+.clearfix { display: inline-block; }
+* html .clearfix { height: 1%; } /* Hides from IE-mac \*/
+.clearfix { display: block; }
+
+
+/* ========== ( End of stuff from HTML5 Boilerplate )  ========== */
+
+
+
+
+/* =========== ( General ) ========== */
+
+body {
+	color:				#000000;
+	background:			#dae2e4;
+	text-align:			center;
+	font-family:		Verdana,Helvetica,Arial,sans-serif;
+	font-size:			100%;
+	padding:			0;
+	margin:				0;
+}
+
+a img {
+	border:				0;
+}
+
+.status {
+	color:				#000000;
+	background:			#88dd88;
+	padding:			5px;
+}
+
+.error {
+	color:				#000000;
+	background:			#dd8888;
+	padding:			5px;
+}
+
+h1,h2,h3,h4,h5,h6,p {
+	margin:				20px 0 10px 0;
+}
+
+h1 {
+	font-size:			200%;
+}
+
+h2 {
+	font-size:			150%;
+}
+
+h3 {
+	font-size:			120%;
+}
+
+.outlined {
+	border:				1px solid #000000;
+}
+
+
+/* =========== ( Menu ) ========== */
+
+#menubarWrapper {
+	background:			#000000 url('../images/admin/menubarWrapper.png') top center repeat-x;
+	height:				26px;
+}
+
+#menubarBg {
+	background:			transparent url('../images/admin/menubar-bg.png') top center no-repeat;
+	height:				26px;
+}
+
+#menubar {
+	width:				980px;
+	margin:				0 auto 0 auto;
+	text-align:			left;
+}
+
+#menu {
+	position:			absolute;
+	top:				0;
+	right:				0;
+	font-weight:		bold;
+}
+
+ul.topmenu {
+	font-size:			90%;
+	list-style:			none;
+	font-weight:		normal;
+	margin:				0;
+	padding:			0;
+}
+
+li.topmenu {
+	text-transform:		uppercase;
+	text-align:			left;
+	display:			inline block;
+	float:				left;
+	margin:				0;
+	padding:			0;
+	background:			url('../images/admin/menu-divide-top.png') top left no-repeat;
+	position:			relative;
+}
+
+li.topmenu:hover ul {
+	display: 			block;
+}
+
+li.topmenu a {
+	color:				#ffffff;
+	text-decoration:	none;
+	display:			block;
+	margin:				0;
+	padding:			3px 15px 0 15px;
+	height:				22px;
+}
+
+li.topmenu a:hover, a:active {
+	color:				#04222a;
+}
+
+li.topmenu a:hover {
+	display:			block;
+	background:			transparent url('../images/admin/menu-hover-bg.png') top left repeat-x;
+}
+
+.dropdown ul {
+	background:			#06334d url('../images/admin/dropdown.png') top left repeat-x;
+	font-size:			90%;
+	padding:			5px 0 0 0;
+	margin:				0;
+	list-style:			none;
+	border:				1px solid #076592;
+	position: 			absolute;
+	left: 				0;
+	top:				100%;
+	width:				175px;
+	display: 			none;
+	z-index:			100;
+}
+
+.last  {
+	width:				177px;
+}
+
+.dropdown li {
+	text-transform:		none;
+	margin:				0;
+}
+
+.dropdown li a {
+	color:				#ffffff;
+	text-decoration:	none;
+	list-style:			none;
+	background:			transparent;
+	padding:			6px 20px 3px 15px;
+}
+
+.dropdown li a:hover,
+.dropdown li a:active {
+	color:			 	#115267;
+	text-decoration:	none;
+	background:			#ddfafc url('../images/admin/dropdown-hover.png') bottom left repeat-x;
+	padding:			5px 20px 2px 15px;
+	border-top:			1px solid #076592;
+	border-bottom:		1px solid #076592;
+}
+
+
+/* =========== ( Header ) ========== */
+
+#headerWrapper {
+	background:			#ffffff url('../images/admin/headerWrapper.png') top center repeat-x;
+	height:				131px;
+}
+
+#headerBg {
+	background:			transparent url('../images/admin/header-bg.png') top center no-repeat;
+	height:				131px;
+}
+
+#header {
+	width:				980px;
+	margin:				0 auto 0 auto;
+}
+
+#shinyCMSlogo {
+	background:			transparent url('../images/admin/shinyCMSlogo-trans.png') top left no-repeat;
+	height:				0;
+	width:				300px;
+	padding:			100px 0 0 0;
+	overflow:			hidden;
+	position:			absolute;
+	top:				30px;
+	left:				20px;
+}
+
+
+/* =========== ( Bevel ) ========== */
+
+#bevelWrapper {
+	background:			#ffffff url('../images/admin/bevelWrapper.png') top center repeat-x;
+	height:				7px;
+}
+
+#bevelBg {
+	background:			transparent url('../images/admin/bevel-bg.png') top center no-repeat;
+	height:				7px;
+}
+
+#bevel {
+	width:				980px;
+	margin:				0 auto 0 auto;
+}
+
+
+/* =========== ( Content ) ========== */
+
+#contentWrapper {
+	background:			#ffffff url('../images/admin/content-bg.png') bottom center repeat-x;
+}
+
+#content {
+	color:				#000044;
+	min-width:			940px;
+	min-height:			400px;
+	margin:				0 auto 0 auto;
+	padding:			20px;
+	text-align:			left;
+}
+
+#content h2 {
+	color:				#021d23;
+}
+
+#content h3 {
+	color:				#02384e;
+}
+
+#content a {
+	color:				#12686e;
+	text-decoration:	none;
+}
+
+#content a:hover {
+	text-decoration:	underline;
+}
+
+#content label {
+	color:				#0e5c75;
+	padding:			0 0 5px 0;
+	font-size:			90%;
+}
+
+#content span.label {
+	color:				#0e5c75;
+	padding:			0 0 5px 0;
+	font-size:			90%;
+}
+
+#content input.textveryshort {
+	background:			#ffffff;
+	border:				1px solid #5da8b7;
+	width:				100px;
+	padding:			5px;
+	margin:				5px 0 0 0;
+}
+
+#content input.textshort {
+	background:			#ffffff;
+	border:				1px solid #5da8b7;
+	width:				200px;
+	padding:			5px;
+	margin:				5px 0 0 0;
+}
+
+#content input.textlong {
+	background:			#ffffff;
+	border:				1px solid #5da8b7;
+	width:				400px;
+	padding:			5px;
+	margin:				3px 0 0 0;
+}
+
+#content input.textverylong {
+	background:			#ffffff;
+	border:				1px solid #5da8b7;
+	width:				790px;
+	padding:			5px;
+	margin:				3px 0 0 0;
+}
+
+#content textarea {
+	background:			#ffffff;
+	border:				1px solid #5da8b7;
+	width:				400px;
+	padding:			5px;
+	margin:				3px 0 0 0;
+}
+
+#content select {
+	padding:			3px;
+	margin:				3px 0 0 0;
+	min-width:			200px;
+}
+
+#content ul {
+	color:				#0e5c75;
+	font-size:			90%;
+	line-height:		2em;
+}
+
+#content table {
+	color:				#0e5c75;
+}
+
+#content table.list th {
+	line-height:		2em;
+	padding:			0 20px;
+}
+
+#content table.list th.main {
+	min-width:			250px;
+}
+
+#content table.list td {
+	font-size:			90%;
+	line-height:		2em;
+	padding:			0 20px;
+}
+
+#user_profile_pic {
+	max-width:			200px;
+	max-height:			200px;
+}
+
+#user_icon {
+	max-width:			40px;
+	max-height:			40px;
+}
+
+div.cke {
+	margin:				3px 0 0 0;
+	border:				solid 1px #5da8b7;
+}
+
+.filemanager-file {
+	float: 				left;
+	height: 			200px; 		
+	margin: 			15px 15px 30px 15px;
+}
+
+.filemanager-img {
+	max-height:			200px;
+}
+
+/* =========== ( Footer ) ========== */
+
+#footerWrapper {
+	background:			#000000 url('../images/admin/footerWrapper.png') top center repeat-x;
+	height:				26px;
+}
+
+#footerBg {
+	background:			transparent url('../images/admin/footer-bg.png') top center no-repeat;
+	height:				26px;
+}
+
+#footer {
+	min-width:			940px;
+	margin:				0 auto 0 auto;
+	padding:			3px 5px 0 5px;
+	text-align:			right;
+	font-size:			80%;
+	color:				#ffffff;
+}
+
+#footer a {
+	color:				#ddffbb;
+	text-decoration:	none;
+}
+
+#footer a:hover {
+	color:				#66ff88;
+	text-decoration:	none;
+}
+
+
+

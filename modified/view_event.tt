@@ -1,0 +1,50 @@
+[%- meta.wrapper = 'site-wrapper.tt';
+    meta.title   = event.title;
+%]
+
+<h2>
+    [% event.name | html %]
+</h2>
+
+<p>
+    [%- IF event.start_date == event.end_date %]
+    [% event.start_date.day %] [% event.start_date.month_abbr %] [% event.start_date.year %]
+    ([% event.start_date.strftime('%H:%M') %] to [% event.end_date.strftime('%H:%M') %])
+    [%- ELSE %]
+    [% event.start_date.day %] [% event.start_date.month_abbr %] [% event.start_date.year %] to [% event.end_date.day %] [% event.end_date.month_abbr %] [% event.end_date.year %]
+    ([% event.start_date.strftime('%H:%M') %] to [% event.end_date.strftime('%H:%M') %])
+    [%- END %]
+</p>
+<p>
+    [% event.description | html %]
+</p>
+<!-- WBRASWELL 20140927 2014.270: Emphasize External Website Links For Image & Text -->
+[%- IF event.image %]
+<p>
+    [%- IF event.link %]
+    <a href="[% event.link | url %]" target="_new">
+        <img src="[% c.uri_for( '/static', upload_dir, 'event-images', event.image ) %]" alt="" >
+    </a><br>
+        [%- ELSE %]
+        <img src="[% c.uri_for( '/static', upload_dir, 'event-images', event.image ) %]" alt="" >
+    [%- END %]
+</p>
+[%- END %]
+<p>
+<!-- WBRASWELL 20141004 2014.277: switch from UK to US maps -->
+<!-- WBRASWELL 20141013 2014.286: change logic to not concatenate address and postcode fields -->
+        [%- IF event.address %]
+        LOCATION: <a href="http://maps.google.com/?q=[% event.address | url %]">[% event.address %]</a><br>
+        [%- ELSIF event.postcode %]
+        LOCATION: <a href="http://maps.google.com/?q=[% event.postcode | url %]">[% event.postcode %]</a><br>
+        [%- END %]
+        [%- IF event.booking_link %]
+        <a href="[% event.booking_link | url %]" target="_new">Book now</a><br>
+        [%- END %]
+        [%- IF event.link %]
+        <div style="text-align: center;"><a href="[% event.link | url %]" target="_new"><b><font size="14">CLICK HERE FOR MORE ABOUT THIS EVENT!</font></b></a></div><br>
+        [%- END %]
+        [%- IF event.email %]
+        <a href="mailto:[% event.email | url %]">Email Organiser</a><br>
+        [%- END %]
+</p>

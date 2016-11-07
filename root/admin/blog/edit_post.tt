@@ -1,0 +1,90 @@
+[%-	IF blog_post.id;
+		meta.title = 'Edit blog post';
+	ELSE;
+		meta.title = 'New blog post';
+	END;
+%]
+<script type="text/javascript">
+$(document).ready(
+	function() {
+		$("#posted_pick").datepicker({ 
+			dateFormat: 'dd-mm-yy',
+			altFormat:  'yy-mm-dd',
+			altField:   '#posted_date'
+		}
+	);
+});
+</script>
+
+<h2>
+	[% meta.title %]
+</h2>
+
+[%- IF blog_post.id %]
+<h3>
+	[% blog_post.title | html %]
+</h3>
+<p>
+	<span class="small">[ <a href="[% c.uri_for( '/blog', blog_post.posted.year, blog_post.posted.month, blog_post.url_title ) %]">view post</a> ]</span>
+</p>
+[%- END %]
+
+[%- IF blog_post.id %]
+<form id="edit_post" action="[% c.uri_for( 'post', blog_post.id, 'edit-do' ) %]" method="post">
+[%- ELSE %]
+<form id="add_post" action="add-do" method="post">
+[%- END %]
+	<p>
+		<label for="title">Title</label>
+		<br><input class="textshort" type="text" id="title" name="title" value="[% blog_post.title | html %]">
+	</p>
+	<p>
+		<label for="url_title">URL Title</label>
+		<br><input class="textshort" type="text" id="url_title" name="url_title" value="[% blog_post.url_title | html %]">
+	</p>
+	<p>
+		<label for="tags">Tags</label>
+		<br><input class="textlong" type="tags" id="tags" name="tags" value="[% blog_post_tags.join(', ') %]">
+	</p>
+	[%- IF c.user.has_role( 'Blog Admin' ) %]
+	<p>
+		<label for="author">Author</label>
+		<br><select id="author" name="author">
+			[%- FOREACH author IN authors %]
+			<option value="[% author.id %]"[% IF author.id == blog_post.author.id %] selected="selected"[% END %]>[% author.username %]</option>
+			[%- END %]
+		</select>
+	</p>
+	[%- END %]
+	<p>
+		<label for="posted_pick">Posted</label>
+		<br><input id="posted_pick" class="textveryshort" type="text" value="[% blog_post.posted.dmy %]"> 
+		<input id="posted_time" class="textveryshort" type="text" name="posted_time" value="[% blog_post.posted.strftime('%H:%M') %]">
+		<input id="posted_date" type="hidden" name="posted_date" value="[% blog_post.posted.date %]">
+	</p>
+	<p>
+		<label for="body">Body</label>
+		<br><textarea class="ckeditor" id="body" name="body" cols="60" rows="4">[% blog_post.body | html %]</textarea>
+	</p>
+	<p>
+		<label for="hidden">Hide post</label>
+		<br><input type="checkbox" id="hidden" name="hidden"[% ' checked="checked"' IF blog_post.hidden OR ( hide_new_posts AND NOT blog_post.id ) %]>
+	</p>
+	<p>
+		<label for="allow_comments">Allow comments</label>
+		<br><input type="checkbox" id="allow_comments" name="allow_comments"[% ' checked="checked"' IF blog_post.discussion OR ( comments_default_on AND NOT blog_post.id ) %]>
+	</p>
+	
+	<p>
+		[%- IF blog_post.id %]
+		<input type="submit" value="Save changes"> 
+		[%- ELSE %]
+		<input type="submit" value="Post"> 
+		[%- END %]
+		<input type="reset"  value="Reset"> 
+		[%- IF blog_post.id %]
+		<input name="delete"  type="submit" value="Delete" onclick="javascript:return confirm('Are you sure you want to delete this post?')">
+		[%- END %]
+	</p>
+</form>
+

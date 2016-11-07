@@ -1,0 +1,185 @@
+[%-	meta.wrapper = 'site-wrapper.tt';
+	IF tag;
+		meta.title = 'Forum posts tagged \'' _ tag _ '\'';
+	ELSE;
+		meta.title = forum.name _ ' -  ' _ section.name _ ' - Forums';
+	END;
+-%]
+
+<div id="top-left">
+	<h4 class="section-name">
+		<a href="/forums">Forum</a>
+	</h4>
+</div>
+
+[% INCLUDE 'includes/loggedout.tt' %]
+
+[% IF c.user_exists %]
+
+	<a href="[% c.uri_for( 'post', section.url_name, forum.url_name ) %]"><img src="/static/images/create-new-thread.jpg" alt="create new thread" class="create-new-thread" /></a>
+
+[% END %]
+
+
+[%- UNLESS forum_posts %]
+<p>
+	No [% IF page_num %]more [% END %]posts to display
+	[%- IF tag %] with this tag[% END -%].
+</p>
+[%- END %]
+
+
+<div class="forums">
+	<div class="header">
+		<div class="column1 top">
+			<a href="[% c.uri_for( section.url_name, forum.url_name ) %]">[% forum.name | html %]</a> 
+		</div>
+		<div class="column2 top">
+		</div>
+		<div class="column4 top">
+		</div>
+	</div>
+	<div class="subheader">
+		<div class="column1">
+			Topic</a>
+		</div>
+		<div class="column2">Most recent comment</div >
+		<div class="column4">Posts</div>
+	</div>
+	
+	[%- UNLESS page # only show sticky posts on first page %]
+	[%- FOREACH post IN sticky_posts %]
+	<div class="row2">
+		<div class="post">
+			<div class="sticky-post">
+				<a href="[% c.uri_for( section.url_name, forum.url_name, post.id, post.url_title ) %]">[% post.title %]</a><br />
+				by [% post.author.display_name || post.author.username | html %] 
+			</div>
+		</div>
+		<div class="comment">
+			[%- mrc = post.most_recent_comment %]
+			[%- IF mrc %]
+			<a href="[% c.uri_for( section.url_name, forum.url_name, post.id, post.url_title ) %]#comment-[% mrc.id %]">[% IF mrc.title %] [% mrc.title | html %][% END %]</a><br />
+			by <a href="[% c.uri_for( '/user', mrc.author.username ) %]">[% mrc.author.display_name || mrc.author.username | html %]</a> at [% mrc.posted.strftime('%H:%M') %] on [% mrc.posted.day %] [% mrc.posted.month_abbr %] [% mrc.posted.year %]
+			[%- END %]
+		</div>
+		<div class="posts">
+			[%- IF post.discussion %]
+			[% post.comment_count %]
+			[%- ELSE %]
+			-
+			[%- END %]
+		</div>
+	</div>
+	[%- END # for each sticky post %]
+	
+	[%- IF sticky_posts.size > 0 %]
+	
+</div>
+<div class="forums2">
+		
+	[%- END # if sticky posts %]
+	
+	[%- END # unless page %]
+	
+	[%- FOREACH post IN forum_posts %]
+	
+		[%- IF post.comment_count >= 50 %]
+		<div class="row2">
+			<div class="post-active">
+				<a href="[% c.uri_for( section.url_name, forum.url_name, post.id, post.url_title ) %]">[% post.title %]</a><br />
+				by [% post.author.display_name || post.author.username | html %] 
+			</div>
+			<div class="comment-active">
+				[%- mrc = post.most_recent_comment %]
+				[%- IF mrc %]
+				<a href="[% c.uri_for( section.url_name, forum.url_name, post.id, post.url_title ) %]#comment-[% mrc.id %]">[% IF mrc.title %] [% mrc.title | html %][% END %]</a><br />
+				by <a href="[% c.uri_for( '/user', mrc.author.username ) %]">[% mrc.author.display_name || mrc.author.username | html %]</a> at [% mrc.posted.strftime('%H:%M') %] on [% mrc.posted.day %] [% mrc.posted.month_abbr %] [% mrc.posted.year %]
+				[%- END %]
+			</div>
+			<div class="posts-active">
+				[%- IF post.discussion %]
+				[% post.comment_count %]
+				[%- ELSE %]
+				-
+				[%- END %]
+			</div>
+		</div>
+		[%- ELSE %]
+
+		<div class="row2">
+			<div class="post">
+				<a href="[% c.uri_for( post.forum.section.url_name, post.forum.url_name, post.id, post.url_title ) %]">[% post.title %]</a><br />
+				by [% post.author.display_name || post.author.username | html %] 
+			</div>
+			<div class="comment">
+				[%- mrc = post.most_recent_comment %]
+				[%- IF mrc %]
+				<a href="[% c.uri_for( section.url_name, forum.url_name, post.id, post.url_title ) %]#comment-[% mrc.id %]">[% IF mrc.title %] [% mrc.title | html %][% END %]</a><br />
+				by <a href="[% c.uri_for( '/user', mrc.author.username ) %]">[% mrc.author.display_name || mrc.author.username | html %]</a> at [% mrc.posted.strftime('%H:%M') %] on [% mrc.posted.day %] [% mrc.posted.month_abbr %] [% mrc.posted.year %]
+				[%- END %]
+			</div>
+			<div class="posts">
+				[%- IF post.discussion %]
+				[% post.comment_count %]
+				[%- ELSE %]
+				-
+				[%- END %]
+			</div>
+		</div>
+		[%- END %]
+	[%- END %]
+</div>
+
+[%- IF tag %]
+<p>
+	View <a href="[% c.uri_for( '/tag', tag ) %]">all content tagged '[% tag %]'</a>
+</p>
+[%- END %]
+
+[%- IF page_num %]
+<p class="pagenum">
+	[%- IF forum_posts.size >= post_count -%]
+	[%- IF post_count == 20 -%]
+	[%- IF tag %]
+	<a href="[% c.uri_for( 'tag', tag, page_num + 1 ) %]">&laquo; Older</a>
+	[%- ELSIF author %]
+	<a href="[% c.uri_for( 'author', author, page_num + 1 ) %]">&laquo; Older</a>
+	[%- ELSE %]
+	<a href="[% c.uri_for( section.url_name, forum.url_name, 'page', page_num + 1 ) %]">&laquo; Older</a>
+	[%- END -%]
+	[%- ELSE -%]
+	[%- IF tag %]
+	<a href="[% c.uri_for( 'tag', tag, page_num + 1, post_count ) %]">&laquo; Older</a>
+	[%- ELSIF author %]
+	<a href="[% c.uri_for( 'author', author, page_num + 1, post_count ) %]">&laquo; Older</a>
+	[%- ELSE %]
+	<a href="[% c.uri_for( section.url_name, forum.url_name, 'page', page_num + 1, post_count ) %]">&laquo; Older</a>
+	[%- END -%]
+	[%- END -%]
+	[%- END %]
+	&nbsp; &nbsp; &nbsp; 
+	[%- IF page_num > 1 -%]
+	[%- IF post_count == 20 -%]
+	[%- IF tag %]
+	<a href="[% c.uri_for( 'tag', tag, page_num - 1 ) %]">Newer &raquo;</a>
+	[%- ELSIF author %]
+	<a href="[% c.uri_for( 'author', author, page_num 1 1 ) %]">Newer &raquo;</a>
+	[%- ELSE %]
+	<a href="[% c.uri_for( section.url_name, forum.url_name, 'page', page_num - 1 ) %]">Newer &raquo;</a>
+	[%- END -%]
+	[%- ELSE -%]
+	[%- IF tag %]
+	<a href="[% c.uri_for( 'tag', tag, page_num - 1, post_count ) %]">Newer &raquo;</a>
+	[%- ELSIF author %]
+	<a href="[% c.uri_for( 'author', author, page_num - 1, post_count ) %]">Newer &raquo;</a>
+	[%- ELSE %]
+	<a href="[% c.uri_for( section.url_name, forum.url_name, 'page', page_num - 1, post_count ) %]">Newer &raquo;</a>
+	[%- END -%]
+	[%- END -%]
+	[%- END %]
+</p>
+[%- END %]
+
+[% INCLUDE 'includes/loggedout.tt' %]
+

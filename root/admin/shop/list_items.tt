@@ -1,0 +1,31 @@
+[%-	meta.title   = 'Shop Items';
+-%]
+<table class="list">
+	<tr>
+		<th class="main">
+			Item
+		</th>
+		<th>
+			Actions
+		</th>
+	</tr>
+	[%- FOREACH category IN categories   %]
+	<tr>
+		<td colspan="2">
+			<br><b>[% category.name | html %]</b>
+		</td>
+	</tr>
+	[%- FOREACH item IN category.items %]
+	<tr onmouseover="style.backgroundColor='#eeffdd';" onmouseout="style.backgroundColor='transparent'">
+		<td>
+			[% item.name | html %]
+		</td>
+		<td>
+			<a href="[% c.uri_for( '/shop', 'item', ( item.code || item.id ) ) %]">View</a> / 
+			<a href="[% c.uri_for( 'item', ( item.code || item.id ), 'edit' ) %]">Edit</a>
+		</td>
+	</tr>
+	[%- END %]
+	[%- END %]
+</table>
+

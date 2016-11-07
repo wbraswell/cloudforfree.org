@@ -1,0 +1,22 @@
+[%-	meta.wrapper = 'site-wrapper.tt';
+	meta.title   = 'Page Not Found';
+%]
+
+<p>
+	We're sorry, we couldn't find the page you were looking for.
+</p>
+<p>
+	This problem has been noted in our logs, and will be investigated 
+	and corrected if necessary.
+</p>
+<p>
+	From here you can <a href="/">return to our homepage</a> or 
+	<a href="/sitemap">look at our sitemap</a>.  
+	You can also search our site, using the form below:
+</p>
+
+<form id="search" action="/search" method="post">
+	<input type="text"   name="search">
+	<input type="submit" value="Search">
+</form>
+

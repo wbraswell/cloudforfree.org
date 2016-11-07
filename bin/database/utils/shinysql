@@ -1,0 +1,35 @@
+#!/usr/bin/env perl
+
+# ===================================================================
+# File:		bin/database/shinysql
+# Project:	ShinyCMS
+# Purpose:	Connect to database using details from shinycms.conf
+# 
+# Author:	Denny de la Haye <2014@denny.me>
+# Copyright (c) 2009-2014 Shiny Ideas - www.shinyideas.co.uk
+# 
+# ShinyCMS is free software. You can redistribute it and/or modify it
+# under the terms of the GNU Affero General Public License.
+# ===================================================================
+
+use strict;
+use warnings;
+
+# CPAN modules
+use Config::General;
+use FindBin qw( $Bin );
+
+# Get the database details
+my $reader = Config::General->new( $Bin .'/../../../shinycms.conf' );
+my %config = $reader->getall;
+my $connect_info = $config{ 'Model::DB' }->{ connect_info };
+
+# Extract the useful bits
+$connect_info->{ dsn } =~ m/:(\w+)$/;
+my $database = $1;
+my $username = $connect_info->{ user };
+my $password = $connect_info->{ password };
+
+# Issue the mysql command
+system "mysql --user=$username --password=$password $database";
+

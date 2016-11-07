@@ -1,0 +1,88 @@
+[%-	meta.wrapper       = 'site-wrapper.tt';
+	meta.title         = page.name;
+	meta.menu_selected = page.name;
+%]
+
+<div id="welcome">
+
+	<h2>	[% elements.heading1 | html %]
+	</h2>
+
+	[% elements.html1 %]
+</div>
+
+<!-- WBRASWELL 20140927 2014.270: add tables here to allow homepage-panel classes to center on page, link title of each homepage-panel -->
+<table style="width:100%">
+<tr>
+<td style="width: 50%;"></td>
+<td>
+    <div class="homepage-panel">
+	    [%- news_posts = c.controller( 'News' ).get_posts( c, 1, 5 ) %]
+    	[%- IF news_posts %]
+		<h3><a href="/news" style="color: #FFFFFF;">Latest News</a>
+    	</h3>
+    	<ul>
+    	[%- FOREACH news_post IN news_posts %]
+    		<li>	<a href="[% c.uri_for( '/news', news_post.posted.year, news_post.posted.month, news_post.url_title ) %]">[% news_post.title | html %]</a> - [% news_post.posted.day %] [% news_post.posted.month_abbr %] [% news_post.posted.year %]
+    		</li>
+    	[%- END %]
+    	</ul>
+    	[%- END %]
+    </div>
+</td>
+
+<td>
+    <div class="homepage-panel">
+		[%- blog_posts = c.controller( 'Blog' ).get_posts( c, 1, 5 ) %]
+		[%- IF blog_posts %]
+		<h3><a href="/blog" style="color: #FFFFFF;">Blog</a>
+		</h3>
+		<ul>
+		[%- FOREACH blog_post IN blog_posts %]
+			<li>	<a href="[% c.uri_for( '/blog', blog_post.posted.year, blog_post.posted.month, blog_post.url_title ) %]">[% blog_post.title | html %]</a> 
+			<!-- by <a href="[% c.uri_for( '/user', blog_post.author.username ) %]">[% blog_post.author.display_name || blog_post.author.username %]</a> -->
+			[%- IF blog_post.discussion %]
+			([% blog_post.comment_count %] comment[% 's' UNLESS blog_post.comment_count == 1 %])
+			[%- ELSE %]
+			<!-- (comments disabled) -->
+			[%- END %]
+			</li>
+		[%- END %]
+		</ul>
+		[%- END %]
+	</div>
+</td>
+<td style="width: 50%;"></td>
+</tr>
+
+<tr>
+<td style="width: 50%;"></td>
+<td>
+    <div class="homepage-panel">
+		[%- events = c.controller( 'Events' ).get_events( c, 5 ) %]
+		[%- IF events %]
+		<h3><a href="/events" style="color: #FFFFFF;">Events</a>
+		</h3>
+		<ul>
+		[%- FOREACH event IN events %]
+			<li>	<a href="[% c.uri_for( '/events', event.start_date.year, event.start_date.month, event.url_name ) %]">[% event.name | html %]</a> - [% event.start_date.day %] [% event.start_date.month_abbr %] [% event.start_date.year %]
+			</li>
+		[%- END %]
+		</ul>
+		[%- END %]
+	</div>
+</td>
+
+<td>
+    <div class="homepage-panel">
+		[%- most_recent = c.controller( 'Forums' ).most_recent_comment( c ) %]
+		<h3><a href="/forums" style="color: #FFFFFF;">Forums</a>
+		</h3>
+		<p>
+			<a href="[% c.uri_for( '/forums', most_recent.post.forum.section.url_name, most_recent.post.forum.url_name, most_recent.post.id, most_recent.post.url_title ) %]#comment-[% most_recent.id %]">[% most_recent.title || most_recent.body | remove( '<.+?>' ) | truncate | html %]</a> by [% IF most_recent.author_type == 'Site User' %]<a href="[% c.uri_for( '/user', most_recent.author.username ) %]">[% most_recent.author.display_name || most_recent.author.username %]</a>[% ELSIF most_recent.author_type == 'Unverified' %][% most_recent.author_name %][% ELSE %]Anonymous[% END %] at [% most_recent.posted.strftime('%H:%M') %] on [% most_recent.posted.day %] [% most_recent.posted.month_abbr %] [% most_recent.posted.year %]
+		</p>
+	</div>
+</td>
+<td style="width: 50%;"></td>
+</tr>
+</table>

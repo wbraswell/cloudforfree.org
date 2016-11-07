@@ -1,0 +1,5 @@
+fix new user account registration problem, "no sender"
+
+fix new comment in forum problem, "no sender" as well?!?
+
+fix contact us e-mails not being delivered

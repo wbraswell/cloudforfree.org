@@ -1,0 +1,20 @@
+[%-	meta.wrapper          = 'site-wrapper.tt';
+	meta.title            = page.title;
+	meta.menu_selected    = page.name;
+	head.meta_description = page.description;
+%]
+
+
+<img src="[% c.uri_for( '/static', upload_dir, 'images', elements.image1 ) %]" alt="" class="subpage-image">
+
+<h2>
+	[% elements.heading1 | html %]
+</h2>
+
+[% elements.paragraphs1 | html_para %]
+
+[%# USE Markdown; elements.paragraphs1 | markdown %]
+
+[% elements.html1 %]
+
+

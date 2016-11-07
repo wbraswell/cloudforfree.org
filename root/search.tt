@@ -1,0 +1,147 @@
+[%-	meta.wrapper       = 'site-wrapper.tt';
+	meta.menu_selected = 'Search';
+%]
+[%-	IF ( c.request.params.search );
+		meta.title  = 'Search Results';
+	ELSE;
+		meta.title  = 'Search';
+		render_form = 1;
+	END;
+%]
+
+
+[%- IF page_results AND page_results.size > 0 %]
+[%- render_form = 0 %]
+<h2>
+	Search results
+</h2>
+<ul>
+	[%- FOREACH result IN page_results %]
+	<li>	<a href="/pages/[% result.section.url_name %]/[% result.url_name %]">[% result.name | html %]</a>
+			<blockquote><p>[% result.match %]</p></blockquote>
+	</li>
+	[%- END -%]
+</ul>
+[%- END %]
+
+
+[%- IF news_results AND news_results.size > 0 %]
+[%- render_form = 0 %]
+<h3>
+	News
+</h3>
+<ul>
+	[%- FOREACH result IN news_results %]
+	<li>	<a href="[% c.uri_for( '/news', result.posted.year, result.posted.month, result.url_title ) %]">[% result.title | html %]</a>
+			<blockquote><p>[% result.match %]</p></blockquote>
+	</li>
+	[%- END %]
+</ul>
+[%- END %]
+
+
+[%- IF blog_results AND blog_results.size > 0 %]
+[%- render_form = 0 %]
+<h3>
+	Blog posts
+</h3>
+<ul>
+	[%- FOREACH result IN blog_results %]
+	<li>	<a href="[% c.uri_for( '/blog', result.posted.year, result.posted.month, result.url_title ) %]">[% result.title | html %]</a>
+			<blockquote><p>[% result.match %]</p></blockquote>
+	</li>
+	[%- END %]
+</ul>
+[%- END %]
+
+
+[%- IF forum_results AND forum_results.size > 0 %]
+[%- render_form = 0 %]
+<h3>
+	Forum threads
+</h3>
+<ul>
+	[%- FOREACH result IN forum_results %]
+	<li>	<a href="[% c.uri_for( '/forums', result.forum.section.url_name, result.forum.url_name, result.id, result.url_title ) %]">[% result.title | html %]</a>
+			<blockquote><p>[% result.match %]</p></blockquote>
+	</li>
+	[%- END %]
+</ul>
+[%- END %]
+
+
+[%- IF discussion_results AND discussion_results.size > 0 %]
+[%- render_form = 0 %]
+<h3>
+	Comments
+</h3>
+<ul>
+	[%- FOREACH result IN discussion_results %]
+	<li>	<a href="[% result.link %]">[% result.title || '(untitled)' | html %]</a>
+			<blockquote><p>[% result.match %]</p></blockquote>
+	</li>
+	[%- END %]
+</ul>
+[%- END %]
+
+
+[%- IF events_results AND events_results.size > 0 %]
+[%- render_form = 0 %]
+<h3>
+	Events
+</h3>
+<ul>
+	[%- FOREACH result IN events_results %]
+	<li>	<a href="[% c.uri_for( '/event', result.start_date.year, result.start_date.month, result.url_name ) %]">[% result.name | html %]</a>
+			<blockquote><p>[% result.match | html %]</p></blockquote>
+	</li>
+	[%- END %]
+</ul>
+[%- END %]
+
+
+[%- IF shop_results AND shop_results.size > 0 %]
+[%- render_form = 0 %]
+<h3>
+	Shop
+</h3>
+<ul>
+	[%- FOREACH result IN shop_results %]
+	<li>	<a href="[% c.uri_for( '/shop', 'item', result.code ) %]">[% result.name | html %]</a>
+			<blockquote><p>[% result.match | html %]</p></blockquote>
+	</li>
+	[%- END %]
+</ul>
+[%- END %]
+
+
+[%-	IF c.request.params.search AND NOT ( 
+		page_results.size   OR 
+		news_results.size   OR 
+		blog_results.size   OR 
+		events_results.size OR 
+		shop_results.size
+	)
+%]
+[%- render_form = 1 %]
+<p>
+	No results found - please try again.
+</p>
+[%- ELSE %]
+[%- IF render_form %]
+<p>
+	<label for="search">Search</label>
+</p>
+[%- END %]
+[%- END %]
+
+
+[%- IF render_form %]
+<form id="search_form" action="" method="post">
+	<p>
+		<input type="text" name="search" id="search" >
+		<input type="submit" value="Search">
+	</p>
+</form>
+[%- END %]
+

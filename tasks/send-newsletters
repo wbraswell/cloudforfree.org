@@ -1,0 +1,182 @@
+#!/usr/bin/env perl
+
+# ===================================================================
+# File:		tasks/send-newsletters
+# Project:	ShinyCMS
+# Purpose:	Check for queued newsletter mailshots and send them
+# Author:	Denny de la Haye <2014@denny.me>
+# 
+# ShinyCMS is free software. You can redistribute it and/or modify it
+# under the terms of the GNU Affero General Public License.
+# ===================================================================
+
+use strict;
+use warnings;
+
+
+# Local modules
+use FindBin qw( $Bin );
+use lib "$Bin/../lib";
+use ShinyCMS;
+use ShinyCMS::Schema;
+
+
+# Exit if already running
+use File::Pid;
+my $pidfile = File::Pid->new({
+	file => '/tmp/shinycms-send-newsletters.'. ShinyCMS->config->{ domain } .'.pid',
+});
+if ( my $num = $pidfile->running ) {
+	die "Already running: $num\n";
+}
+$pidfile->write;
+
+
+# CPAN modules
+use Template;
+use Email::MIME;
+use Email::Sender::Simple qw( try_to_sendmail );
+
+
+my $debug = 0;	# enable/disable debugging output
+
+
+# Get a database connection
+my $schema = ShinyCMS::Schema->connect(
+	ShinyCMS->config->{ 'Model::DB' }->{ connect_info }
+);
+
+# Get the current date and time
+my $now = DateTime->now;
+
+# Find newsletters that are marked or scheduled for sending
+my @newsletters = $schema->resultset( 'Newsletter' )->search([
+	{ status => 'Test'   },
+	{ status => 'Queued' },
+]);
+
+# Loop through the newsletters
+foreach my $newsletter ( @newsletters ) {
+	print 'Processing newsletter: ', $newsletter->title, "\n" if $debug;
+	
+	# Build up the newsletter body data
+	my $data = {};
+	$data->{ newsletter } = $newsletter;
+	$data->{ site_name  } = ShinyCMS->config->{ site_name };
+	$data->{ site_url   } = 'http://'. ShinyCMS->config->{ domain };
+	
+	# Get newsletter elements
+	my @elements = $newsletter->newsletter_elements->all;
+	$data->{ newsletter_elements } = \@elements;
+	
+	# Build up 'elements' structure for use by templates
+	foreach my $element ( @elements ) {
+		$data->{ elements }->{ $element->name } = $element->content;
+	}
+	
+	# Create the template object
+	my $tt = Template->new({
+		INCLUDE_PATH => ShinyCMS->path_to( 'root/newsletters/newsletter-templates' ),
+	});
+	
+	# Build up the email
+	my @parts = (
+		Email::MIME->create(
+			attributes => {
+				content_type => "text/plain",
+				charset      => "UTF-8",
+			},
+		),
+		Email::MIME->create(
+			attributes => {
+				content_type => "text/html",
+				charset      => "UTF-8",
+			},
+		),
+	);
+	my $email = Email::MIME->create(
+		header => [
+			From    => ShinyCMS->config->{ site_email },
+			Subject => $newsletter->title,
+			'Content-Type' => 'multipart/alternative; charset="UTF-8"',
+		],
+	);
+	
+	# Fetch the list of intended subscribers
+	my @subscribers = $newsletter->list->subscribers->all;
+	
+	# Send email to each subscriber
+	my $email_sent = 0;
+	foreach my $subscriber ( @subscribers ) {
+		print 'Sending email to ', $subscriber->name, "\n" if $debug;
+		
+		# Set the subscriber in the email header
+		$email->header_set(
+			To => $subscriber->name .' <'. $subscriber->email .'>'
+		);
+		
+		# Add the subscriber name+email to the template data
+		$data->{ subscriber } = $subscriber;
+		
+		# Build the newsletter
+		my $html_body = '';
+		$tt->process( $newsletter->template->filename, $data, \$html_body ) 
+			|| die $tt->error, "\n";
+		
+		# Make image src URLs absolute and URL-encoded
+		$html_body =~ s/src="([^"]+)"/fix_URLs($1)/egis;
+		
+		# Remove DOS line-endings, because they confuse Outlook.com (?!)
+		$html_body =~ s/\r\n/\n/;
+		
+		# Set the newsletter as the body of the email
+		$parts[0]->body_set( $newsletter->plaintext );
+		$parts[1]->body_set( $html_body );
+		$email->parts_set( [ @parts ] );
+		
+		# Send the email
+		my $status = try_to_sendmail( $email );
+		if ( $status ) {
+			$email_sent = 1;
+		}
+		else {
+			# Sending failed
+			print STDERR "Failed to send email to ", $subscriber->email, "\n";
+			print STDERR $email->as_string, "\n" if $debug;
+		}
+	}
+	
+	if ( $email_sent ) {
+		# Update the newsletter status appropriately
+		if ( $newsletter->status eq 'Test' ) {
+			$newsletter->update({ status => 'Not sent' });
+		}
+		else {
+			$newsletter->update({ status => 'Sent' });
+		}
+	}
+	else {
+		# Output an error
+		print STDERR "No emails sent.  Epic fail.\n";
+	}
+}
+
+# Remove the PID file
+$pidfile->remove;
+
+
+sub fix_URLs {
+	my $url = shift @_;
+	
+	# URL encoding for spaces
+	$url =~ s/ /%20/g;
+	
+	# Absolute URLs
+	my $site_url = 'http://'. ShinyCMS->config->{ domain };
+	unless ( $url =~ m{^https?://} ) {
+		$url = $site_url . $url;
+	}
+	
+	return 'src="'. $url .'"';
+}
+

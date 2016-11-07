@@ -1,0 +1,13 @@
+[%-	meta.wrapper          = 'site-wrapper.tt';
+	meta.title            = page.title;
+	meta.menu_selected    = page.name;
+	head.meta_description = page.description;
+%]
+
+
+<h2>
+	[% elements.page_heading | html %]
+</h2>
+
+[% elements.page_body %]
+

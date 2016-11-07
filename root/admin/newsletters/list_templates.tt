@@ -1,0 +1,23 @@
+[%-	meta.title   = 'Newsletter Templates';
+-%]
+<table class="list">
+	<tr>
+		<th class="main">
+			Newsletter Template
+		</th>
+		<th>
+			Actions
+		</th>
+	</tr>
+	[%- FOREACH nl_template IN newsletter_templates %]
+	<tr onmouseover="style.backgroundColor='#eeffdd';" onmouseout="style.backgroundColor='transparent'">
+		<td>
+			[% nl_template.name | html %]
+		</td>
+		<td>
+			<a href="[% c.uri_for( 'template', nl_template.id, 'edit' ) %]">Edit</a>
+		</td>
+	</tr>
+	[%- END %]
+</table>
+

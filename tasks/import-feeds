@@ -1,0 +1,105 @@
+#!/usr/bin/env perl
+
+# ============================================================
+# File:		import-feeds
+# Project:	ShinyCMS
+# Purpose:	Pull in Atom/RSS feeds and file them in database
+# Author:	Denny de la Haye <2014@denny.me>
+# 
+# ShinyCMS is free software. You can redistribute it and/or modify it
+# under the terms of the GNU Affero General Public License.
+# ============================================================
+
+use strict;
+use warnings;
+
+
+# Load local modules
+
+use FindBin qw( $Bin );
+use lib "$Bin/../lib";
+use ShinyCMS;
+use ShinyCMS::Schema;
+
+
+# Exit if already running
+use File::Pid;
+my $pidfile = File::Pid->new({
+	file => '/tmp/shinycms-feed-parser.'. ShinyCMS->config->{ domain } .'.pid',
+});
+if ( my $num = $pidfile->running ) {
+	die "Already running: $num\n";
+}
+$pidfile->write;
+
+
+# Load CPAN modules
+
+use LWP::UserAgent;
+use XML::Feed;
+
+use Data::Dumper;
+
+
+# Configure debug output level
+
+my $debug = 0;
+
+
+# Get the current date and time
+
+my $now = DateTime->now;
+
+
+# Get a database connection
+
+my $schema = ShinyCMS::Schema->connect(
+	ShinyCMS->config->{ 'Model::DB' }->{ connect_info }
+);
+
+
+# Get the list of feeds to check
+
+my @feeds = $schema->resultset( 'Feed' )->all;
+
+
+# Loop through the feeds
+
+foreach my $feed ( @feeds ) {
+	print $feed->url, "\n" if $debug;
+	
+	# Read in the feed
+	my $xmlfeed = XML::Feed->parse( URI->new( $feed->url ) );
+	
+	if ( $xmlfeed ) {
+		# Check to see if file has been updated since last check
+		if ( $xmlfeed->modified > $feed->last_checked ) {
+			# Update 'last checked' timestamp
+			$feed->update({ last_checked => $now });
+		
+			# Wipe the old items
+			$feed->feed_items->delete;
+		
+			# Loop through new items
+			foreach my $item ( $xmlfeed->entries ) {
+				# Put item in the database
+				$feed->add_to_feed_items({
+					url    => $item->link,
+					title  => $item->title,
+					body   => $item->content->body,
+					posted => $item->modified,
+				})
+			}
+		}
+		else {
+			print "Feed has not been updated since last check\n" if $debug;
+		}
+	}
+	else {
+		print 'Failed to read in feed: ', XML::Feed->errstr, "\n";
+	}
+}
+
+# Remove the PID file
+$pidfile->remove;
+

@@ -1,0 +1,201 @@
+name   ShinyCMS
+author Will Braswell <william.braswell@NOSPAM.autoparallel.com>
+
+site_name    CloudForFree
+domain       cloudforfree.org
+email_from   wbraswell@cloudforfree.org
+
+upload_dir   cms-uploads
+default_view HTML
+
+recaptcha_public_key  6Led1LwSAAAAAIrp5XqIB6xgo2cb4tV1rLF_imF9
+recaptcha_private_key 6Led1LwSAAAAAI9EMK3XSFUuXHd29drsJD-Ha68P
+
+<Controller::Pages>
+	# Leading part of URL for front-end CMS pages
+	# If you change this, you will also need to change the setting below, 
+	# and the PathPart of Controller::Pages::base()
+	page_prefix  pages
+</Controller::Pages>
+
+<Controller::Admin::Pages>
+	# Leading part of URL for front-end CMS pages
+	# If you change this, you will also need to change the setting above, 
+	# and the PathPart of Controller::Pages::base()
+	page_prefix        pages
+	# Hide new pages by default (Yes/No)
+	hide_new_pages     No
+	# Hide new sections by default (Yes/No)
+	hide_new_sections  No
+</Controller::Admin::Pages>
+
+<Controller::Blog>
+	# Default number of blog posts to display per page
+	posts_per_page    10
+</Controller::Blog>
+
+<Controller::Admin::Blog>
+	# Default to allowing comments or not (Yes/No)
+	comments_default  No
+	# Hide new posts by default (Yes/No)
+	hide_new_posts    No
+</Controller::Admin::Blog>
+
+<Controller::Discussion>
+	# Lowest user level allowed to post comments (User/Pseudonym/Anonymous)
+	can_comment    User
+	# Lowest user level allowed to like comments (User/Anonymous)
+	can_like       User
+	# Notify comment author by email when their comment is replied to
+	notify_user    Yes
+	# Notify content author by email when a comment is posted on their content
+	notify_author  Yes
+	# Notify site admin by email when a comment is posted on their site
+	notify_admin   Yes
+</Controller::Discussion>
+
+<Controller::Forums>
+	# Default number of forum posts to display per page
+	posts_per_page    20
+</Controller::Forums>
+
+<Controller::Admin::News>
+	# Default to allowing comments or not (Yes/No)
+	comments_default  No
+	# Hide new items by default (Yes/No)
+	hide_new_items    No
+</Controller::Admin::News>
+
+<Controller::Shop>
+	# Default number of items to display per page
+	items_per_page    10
+	# Lowest user level allowed to like items (User/Anonymous)
+	can_like    User
+	# Currency symbol
+	currency    &dollar;
+</Controller::Shop>
+
+<Controller::Shop::Basket>
+	# Currency symbol
+	currency    &pound;
+</Controller::Shop>
+
+<Controller::Shop::Checkout>
+	# Currency symbol
+	currency	&pound;
+</Controller::Shop>
+
+<Controller::Admin::Shop>
+	# Default to allowing comments or not (Yes/No)
+	comments_default    No
+	# Currency symbol
+	currency    &dollar;
+	# Display items in order list
+	display_items_in_order_list    Yes
+	# Hide new items by default (Yes/No)
+	hide_new_items    No
+	# Hide new categories by default (Yes/No)
+	hide_new_categories    No
+</Controller::Admin::Shop>
+
+<Controller::User>
+	# Allow users to create accounts?
+	allow_registration    Yes
+	# Default to allowing comments on profiles or not (Yes/No)
+	comments_default    No
+	# Maximum file size for user profile pics, in bytes
+	profile_pic_file_size    1048576	   # 1 MiB
+</Controller::User>
+
+<Controller::Admin::User>
+	# Default to allowing comments on profiles or not (Yes/No)
+	comments_default    No
+	# Maximum file size for user profile pics, in bytes
+	profile_pic_file_size    1048576	   # 1 MiB
+</Controller::Admin::User>
+
+<Controller::PaymentHandler::Subscription::CCBill>
+	# Verification key to be embedded in URL of postback requests
+	# e.g. http://example.com/paymenthandler/subscription/ccbill/[key]/success
+	key    op394jq20v378
+	# Name of access to grant
+	access    Member
+</Controller::PaymentHandler::Subscription::CCBill>
+
+<Controller::PaymentHandler::PhysicalGoods::CCBill>
+	# Verification key to be embedded in URL of postback requests
+	# e.g. http://example.com/paymenthandler/subscription/ccbill/[key]/success
+	key    op394jq20v378
+	# Email address to send despatch instructions to
+	despatch_email    william.braswell@NOSPAM.autoparallel.com
+</Controller::PaymentHandler::PhysicalGoods::CCBill>
+
+<ccbill-check-access>
+	account		123456
+	subacc		0000
+	username	datausr1
+	password	passwrd1
+</ccbill-check-access>
+
+
+<Plugin::Session>
+	# Session TTL, in seconds (3600=1h, 43200=12h)
+	expires 43200
+</Plugin::Session>
+
+<Model::DB>
+	schema_class ShinyCMS::Schema
+	<connect_info>
+		dsn        dbi:mysql:cloudforfree_org
+		user       cloudff_user
+		password   REDACTED
+		AutoCommit 1
+		# Quote SQL in case of reserved words (notably, 'user' and 'order' tables)
+		quote_char `
+		# Force MySQL to be more ANSI-compliant
+		on_connect_call set_strict_mode
+	</connect_info>
+</Model::DB>
+
+<View::HTML>
+	TEMPLATE_EXTENSION .tt
+	WRAPPER            select-wrapper.tt
+	render_die         1
+	# Template caching duration (in seconds)
+	STAT_TTL           1
+</View::HTML>
+
+<View::Email>
+	stash_key email_data
+	<default>
+		content_type text/plain
+		charset utf-8
+	</default>
+	<sender>
+		mailer SMTP
+		<mailer_args>
+			Host localhost
+		</mailer_args>
+	</sender>
+</View::Email>
+
+<View::Email::Template>
+	stash_key email_data
+	template_prefix emails
+	<default>
+		content_type text/html
+		charset utf-8
+		view HTML
+	</default>
+	<sender>
+		mailer SMTP
+		<mailer_args>
+			Host localhost
+		</mailer_args>
+	</sender>
+</View::Email::Template>
+
+<Plugin::Static::Simple>
+	ignore_dirs [ restricted-files ]
+</Plugin::Static::Simple>
+

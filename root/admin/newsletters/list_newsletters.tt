@@ -1,0 +1,42 @@
+[%-	meta.title   = 'Newsletters';
+-%]
+<table class="list">
+	<tr>
+		<th class="main">
+			Newsletter
+		</th>
+		<th>
+			Status
+		</th>
+		<th>
+			Actions
+		</th>
+	</tr>
+	[%- FOREACH nl IN newsletters %]
+	<tr onmouseover="style.backgroundColor='#eeffdd';" onmouseout="style.backgroundColor='transparent'">
+		<td>
+			[% nl.title | html %]</a>
+		</td>
+		<td>
+			[%- IF nl.status == 'Sent' %]
+			Sent
+			[%- ELSIF nl.status == 'Queued' %]
+			Queued for delivery
+			[%- END %]
+		</td>
+		<td>
+			[%- IF nl.status == 'Sent' %]
+			<a href="[% c.uri_for( '/newsletters', nl.sent.year, nl.sent.month, nl.url_title ) %]">View</a>
+			[%- ELSIF nl.status == 'Queued' %]
+			<a href="[% c.uri_for( '/newsletters', nl.sent.year, nl.sent.month, nl.url_title ) %]">View</a> | 
+			<a href="[% c.uri_for( 'unqueue', nl.id ) %]">Cancel delivery</a>
+			[%- ELSE %]
+			<a href="[% c.uri_for( 'edit',  nl.id ) %]">Edit</a> / 
+			<a href="[% c.uri_for( 'test',  nl.id ) %]">Send Test</a> / 
+			<a href="[% c.uri_for( 'queue', nl.id ) %]">Send</a>
+			[%- END %]
+		</td>
+	</tr>
+	[%- END %]
+</table>
+
