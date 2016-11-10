@@ -1,0 +1,34 @@
+[%-	meta.wrapper = 'site-wrapper.tt';
+	meta.title   = 'Posts from ' _ year;
+-%]
+
+[%- UNLESS months %]
+<p>
+	No code posts to display for this year.
+</p>
+[%- END %]
+
+[%- FOREACH month IN months %]
+<h2>
+	[% month.first.posted.month_name %]
+</h2>
+<ul>
+[%- FOREACH code_post IN month %]
+	<li>	<a href="[% c.uri_for( '/code', code_post.posted.year, code_post.posted.month, code_post.url_title ) | url %]">[% code_post.title | html %]</a> 
+	by <a href="[% c.uri_for( '/user', code_post.author.username ) %]">[% code_post.author.display_name || code_post.author.username %]</a>
+	[%- IF code_post.discussion %]
+	([% code_post.comment_count %] comment[% 's' UNLESS code_post.comment_count == 1 %])
+	[%- ELSE %]
+	<!-- <i>(comments disabled)</i> -->
+	[%- END %]
+	</li>
+[%- END %]
+</ul>
+[%- END %]
+
+<p>
+	<a href="[% c.uri_for( year - 1 ) %]">&laquo; [% year - 1 %]</a>
+	&nbsp; &nbsp; &nbsp; 
+	<a href="[% c.uri_for( year + 1 ) %]">[% year + 1 %] &raquo;</a>
+</p>
+
