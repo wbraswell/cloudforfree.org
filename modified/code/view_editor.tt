@@ -1,0 +1,16 @@
+[%-	meta.wrapper = 'site-wrapper.tt';
+	meta.title   = editor.title;
+%]
+
+<table border="1">
+<tr>
+<td>
+[% file_manager.NEED_ADD_DATA_FM %]
+</td>
+<td>
+[% file_input.NEED_ADD_DATA_FI %]
+</td>
+</tr>
+</table>
+
+

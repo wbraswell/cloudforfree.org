@@ -23,12 +23,18 @@
 
 
     <li class="topmenu">
-        <a href="/code"
+        <a href="/code/editor"
         [%- IF controller == 'Code' OR meta.menu_selected == 'Code' %] class="selected"[% END %]>Code</a>
         <div class="dropdown">
             <ul>
                 <li>
-                    <a href="[% c.uri_for( '/code', now.year, now.month )  %]">Archive</a>
+                    <a href="[% c.uri_for( '/code', 'editor' )  %]">IDE Editor</a>
+                </li>
+                <li>
+                    <a href="[% c.uri_for( '/code', 'repos' )  %]">GitHub Repos</a>
+                </li>
+                <li>
+                    <a href="[% c.uri_for( '/code', 'queue' )  %]">Job Queue</a>
                 </li>
             </ul>
         </div>
