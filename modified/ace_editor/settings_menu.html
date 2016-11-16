@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <title>Editor</title>
+  <style type="text/css" media="screen">
+    body {
+        overflow: hidden;
+    }
+    
+    #editor { 
+        margin: 0;
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        right: 0;
+    }
+  </style>
+</head>
+<body>
+
+<pre id="editor"></pre>
+    
+<!-- load ace -->
+<script src="src-min-noconflict/ace.js"></script>
+
+<!-- load ace settings_menu extension -->
+<script src="src-min-noconflict/ext-settings_menu.js"></script>
+<script>
+    var editor = ace.edit("editor");
+    ace.require('ace/ext/settings_menu').init(editor);
+    editor.setTheme("ace/theme/sqlserver");
+    editor.session.setMode("ace/mode/perl");
+	editor.commands.addCommands([{
+		name: "showSettingsMenu",
+		bindKey: {win: "Ctrl-m", mac: "Command-m"},
+		exec: function(editor) {
+			editor.showSettingsMenu();
+		},
+		readOnly: true
+	}]);
+</script>
+
+<!--  NEED ANSWER: what does this do?
+<script src="ace-builds-latest/show_own_source.js"></script>
+-->
+
+</body>
+</html>

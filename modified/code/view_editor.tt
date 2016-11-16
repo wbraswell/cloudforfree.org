@@ -2,15 +2,59 @@
 	meta.title   = editor.title;
 %]
 
-<table border="1">
-<tr>
-<td>
-[% file_manager.NEED_ADD_DATA_FM %]
-</td>
-<td>
-[% file_input.NEED_ADD_DATA_FI %]
-</td>
-</tr>
-</table>
+<!-- [% file_manager.NEED_ADD_DATA_FM %] -->
+
+<!-- [% file_input.default %] -->
 
 
+
+<head>
+  <style type="text/css" media="screen">
+    
+    #editor { 
+        margin: 0px;
+        width: 100%;
+        height: 500px;
+        border-style: solid;
+        border-width: 3px;
+        border-color: rgb(235,235,235);  <!-- grey to match the gutter -->
+    }
+  </style>
+</head>
+
+Type CTRL-m For IDE Editor Menu
+
+<pre id="editor"></pre>
+    
+<!-- load Ace editor -->
+<script src="/static/ace_editor/src-min-noconflict/ace.js"></script>
+
+<!-- load Ace settings_menu extension -->
+<script src="/static/ace_editor/src-min-noconflict/ext-settings_menu.js"></script>
+<script>
+    /* enable heredocs, so multi-line TT variables can be placed inside JS variables */ 
+    function heredoc (f) { return f.toString().match(/\/\*\s*([\s\S]*?)\s*\*\//m)[1]; };
+
+    var editor = ace.edit("editor");
+    ace.require('ace/ext/settings_menu').init(editor);
+    editor.setTheme("ace/theme/sqlserver");
+    editor.session.setMode("ace/mode/perl");
+    editor.getSession().setTabSize(4);
+    editor.getSession().setUseSoftTabs(true);
+    editor.setPrintMarginColumn(160);
+
+    var code = heredoc(function(){/*
+    [% file_input.default %]
+    */});
+    editor.setValue(code);
+
+    editor.commands.addCommands([{
+        name: "showSettingsMenu",
+        bindKey: {win: "Ctrl-m", mac: "Command-m"},
+        exec: function(editor) {
+            editor.showSettingsMenu();
+        },
+        readOnly: true
+    }]);
+    editor.setKeyboardHandler("ace/keyboard/vim");
+</script>

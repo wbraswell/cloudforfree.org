@@ -34,7 +34,7 @@ BEGIN { extends 'ShinyCMS::Controller'; }
 
 # [[[ INCLUDES ]]]
 use Data::Dumper;
-use Apache2::FileManager;
+#use Apache2::FileManager;
 
 # [[[ CONSTANTS ]]]
 has posts_per_page => (
@@ -75,30 +75,37 @@ Display the IDE code editor.
 
 sub view_editor : Chained( 'base' ) : PathPart( 'editor' ) {
     my ( $self, $c ) = @_;
-    print {*STDERR} '<<< DEBUG >>>: in Code::view_editor(), received $self = ', "\n", Dumper($self), "\n\n";
-    print {*STDERR} '<<< DEBUG >>>: in Code::view_editor(), received $c = ', "\n", Dumper($c), "\n\n";
+#    print {*STDERR} '<<< DEBUG >>>: in Code::view_editor(), received $self = ', "\n", Dumper($self), "\n\n";
+#    print {*STDERR} '<<< DEBUG >>>: in Code::view_editor(), received $c = ', "\n", Dumper($c), "\n\n";
 
     $c->stash->{ template } = 'code/view_editor.tt';
 
-
-
-
-
-
-my $obj = Apache2::FileManager->new({ DOCUMENT_ROOT => '/home/wbraswell/public_html/cloudforfree.org-latest/root/user_files/' });
-$obj->print();
- 
-
-
-
-
-    $c->stash->{ editor } = { title => 'Integrated Development Environment (IDE) Code Editor' };
-    $c->stash->{ file_manager } = { NEED_ADD_DATA_FM => 23 };
-    $c->stash->{ file_input } = { NEED_ADD_DATA_FI => 2323 };
+    # NEED FIX: must be running in modperl mode for Apache2::FileManager to work
+    #my $obj = Apache2::FileManager->new({ DOCUMENT_ROOT => '/home/wbraswell/public_html/cloudforfree.org-latest/root/user_files/' });
+    #$obj->print();
     
+    my $learning_rperl_ch1_ex1 = <<'EOF';
+#!/usr/bin/perl
 
+# Learning RPerl, Chapter 1, Exercise 1
+# Print "Hello, world!"; the classic first program for new programmers
 
+# [[[ HEADER ]]]
+use RPerl;
+use strict;
+use warnings;
+our $VERSION = 0.001_000;
 
+# [[[ CRITICS ]]]
+## no critic qw(ProhibitUselessNoCritic ProhibitMagicNumbers RequireCheckedSyscalls)  # USER DEFAULT 1: allow numeric values & print operator
+
+# [[[ OPERATIONS ]]]
+print 'Hello, world!', "\n";
+EOF
+
+    $c->stash->{ editor } = { title => 'IDE Code Editor' };
+    $c->stash->{ file_manager } = { NEED_ADD_DATA_FM => 23 };
+    $c->stash->{ file_input } = { default => $learning_rperl_ch1_ex1 };
 }
 
 

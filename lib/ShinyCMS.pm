@@ -1,9 +1,16 @@
 package ShinyCMS;
 
+print {*STDERR} '<<< DEBUG >>>: top of ShinyCMS.pm', "\n\n";
+print {*STDERR} '<<< DEBUG >>>: in ShinyCMS.pm, about to use Moose', "\n\n";
+
 use Moose;
 use namespace::autoclean;
 
+print {*STDERR} '<<< DEBUG >>>: in ShinyCMS.pm, about to use Catalyst::Runtime', "\n\n";
+
 use Catalyst::Runtime 5.80;
+
+print {*STDERR} '<<< DEBUG >>>: in ShinyCMS.pm, about to use Catalyst', "\n\n";
 
 use Catalyst qw/
 	ConfigLoader
@@ -16,7 +23,11 @@ use Catalyst qw/
 	Session::State::Cookie
 /;
 
+print {*STDERR} '<<< DEBUG >>>: in ShinyCMS.pm, about to use CatalystX::RoleApplicator', "\n\n";
+
 use CatalystX::RoleApplicator;
+
+print {*STDERR} '<<< DEBUG >>>: in ShinyCMS.pm, about to use Method::Signatures::Simple', "\n\n";
 
 use Method::Signatures::Simple;
 
@@ -35,6 +46,8 @@ $VERSION = eval $VERSION;
 # details given here can function as a default configuration,
 # with an external configuration file acting as an override for
 # local deployment.
+
+print {*STDERR} '<<< DEBUG >>>: in ShinyCMS.pm, about to call config()', "\n\n";
 
 __PACKAGE__->config(
 	name => 'ShinyCMS',
@@ -80,10 +93,13 @@ __PACKAGE__->apply_request_class_roles(
 
 
 
+print {*STDERR} '<<< DEBUG >>>: in ShinyCMS.pm, have __PACKAGE__ = ', __PACKAGE__, "\n\n";
+print {*STDERR} '<<< DEBUG >>>: in ShinyCMS.pm, about to call setup()...', "\n\n";
+
 # Start the application
 __PACKAGE__->setup;
 
-
+print {*STDERR} '<<< DEBUG >>>: in ShinyCMS.pm, returned from setup()', "\n\n";
 
 =head1 NAME
 
@@ -122,6 +138,8 @@ along with this program (see docs/AGPL-3.0.txt).  If not, see
 http://www.gnu.org/licenses/
 
 =cut
+
+print {*STDERR} '<<< DEBUG >>>: in ShinyCMS.pm, about to return 1', "\n\n";
 
 1;
 
