@@ -1,16 +1,20 @@
 package ShinyCMS;
 
-print {*STDERR} '<<< DEBUG >>>: top of ShinyCMS.pm', "\n\n";
-print {*STDERR} '<<< DEBUG >>>: in ShinyCMS.pm, about to use Moose', "\n\n";
+print {*STDERR} '<<< DEBUG >>>: top of ShinyCMS.pm', "\n";
+print {*STDERR} '<<< DEBUG >>>: in ShinyCMS.pm, about to use ShinyCMS_dependencies', "\n";
+
+#use ShinyCMS_dependencies;
+
+print {*STDERR} '<<< DEBUG >>>: in ShinyCMS.pm, about to use Moose', "\n";
 
 use Moose;
 use namespace::autoclean;
 
-print {*STDERR} '<<< DEBUG >>>: in ShinyCMS.pm, about to use Catalyst::Runtime', "\n\n";
+print {*STDERR} '<<< DEBUG >>>: in ShinyCMS.pm, about to use Catalyst::Runtime', "\n";
 
 use Catalyst::Runtime 5.80;
 
-print {*STDERR} '<<< DEBUG >>>: in ShinyCMS.pm, about to use Catalyst', "\n\n";
+print {*STDERR} '<<< DEBUG >>>: in ShinyCMS.pm, about to use Catalyst', "\n";
 
 use Catalyst qw/
 	ConfigLoader
@@ -23,11 +27,11 @@ use Catalyst qw/
 	Session::State::Cookie
 /;
 
-print {*STDERR} '<<< DEBUG >>>: in ShinyCMS.pm, about to use CatalystX::RoleApplicator', "\n\n";
+print {*STDERR} '<<< DEBUG >>>: in ShinyCMS.pm, about to use CatalystX::RoleApplicator', "\n";
 
 use CatalystX::RoleApplicator;
 
-print {*STDERR} '<<< DEBUG >>>: in ShinyCMS.pm, about to use Method::Signatures::Simple', "\n\n";
+print {*STDERR} '<<< DEBUG >>>: in ShinyCMS.pm, about to use Method::Signatures::Simple', "\n";
 
 use Method::Signatures::Simple;
 
@@ -47,7 +51,7 @@ $VERSION = eval $VERSION;
 # with an external configuration file acting as an override for
 # local deployment.
 
-print {*STDERR} '<<< DEBUG >>>: in ShinyCMS.pm, about to call config()', "\n\n";
+print {*STDERR} '<<< DEBUG >>>: in ShinyCMS.pm, about to call config()', "\n";
 
 __PACKAGE__->config(
 	name => 'ShinyCMS',
@@ -93,13 +97,13 @@ __PACKAGE__->apply_request_class_roles(
 
 
 
-print {*STDERR} '<<< DEBUG >>>: in ShinyCMS.pm, have __PACKAGE__ = ', __PACKAGE__, "\n\n";
-print {*STDERR} '<<< DEBUG >>>: in ShinyCMS.pm, about to call setup()...', "\n\n";
+print {*STDERR} '<<< DEBUG >>>: in ShinyCMS.pm, have __PACKAGE__ = ', __PACKAGE__, "\n";
+print {*STDERR} '<<< DEBUG >>>: in ShinyCMS.pm, about to call setup()...', "\n";
 
 # Start the application
 __PACKAGE__->setup;
 
-print {*STDERR} '<<< DEBUG >>>: in ShinyCMS.pm, returned from setup()', "\n\n";
+print {*STDERR} '<<< DEBUG >>>: in ShinyCMS.pm, returned from setup()', "\n";
 
 =head1 NAME
 
@@ -139,7 +143,18 @@ http://www.gnu.org/licenses/
 
 =cut
 
-print {*STDERR} '<<< DEBUG >>>: in ShinyCMS.pm, about to return 1', "\n\n";
+#use Data::Dumper;
+#print {*STDERR} '<<< DEBUG >>>: in ShinyCMS.pm, have %INC =', Dumper(\%INC), "\n";
+#print {*STDERR} '<<< DEBUG >>>: in ShinyCMS.pm, BEGIN loaded packages', "\n\n";
+#foreach my $module_filename (sort keys %INC) {
+#    substr $module_filename, -3, 3, q{};  # trim .pm
+#    $module_filename =~ s/\//::/g;  # convert / to ::
+#    print '        use ', $module_filename, ';', "\n";
+#}
+#print {*STDERR} "\n", '<<< DEBUG >>>: in ShinyCMS.pm, END loaded packages', "\n";
+
+
+print {*STDERR} '<<< DEBUG >>>: in ShinyCMS.pm, about to return 1', "\n";
 
 1;
 

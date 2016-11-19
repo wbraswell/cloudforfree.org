@@ -42,11 +42,11 @@ requires (
 	'HTML::TreeBuilder'                          => '0',
 
     # WBRASWELL 20161109 2016.314: enable file manager
-    'Archive::Any'                               => '0.03',
-    'CGI::Cookie'                                => '1.20',
-    'File::NCopy'                                => '0.32',
-    'File::Remove'                               => '0.20',
-    'Apache2::FileManager'                       => '0',
+#    'Archive::Any'                               => '0.03',
+#    'CGI::Cookie'                                => '1.20',
+#    'File::NCopy'                                => '0.32',
+#    'File::Remove'                               => '0.20',
+#    'Apache2::FileManager'                       => '0',
 );
 
 recommends (
