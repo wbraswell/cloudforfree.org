@@ -1,60 +1,102 @@
-[%-	meta.wrapper = 'site-wrapper.tt';
-	meta.title   = editor.title;
+[%- meta.wrapper = 'site-wrapper.tt';
+    meta.title   = editor.title;
 %]
 
 <!-- [% file_manager.NEED_ADD_DATA_FM %] -->
-
 <!-- [% file_input.default %] -->
 
+<!-- user must be logged in -->
+[%- IF NOT c.user_exists %]
+    [% INCLUDE 'user/login.tt' %]
+[%- ELSE %]
 
+    <head>
+        <style type="text/css" media="screen">
+            #editor_div { 
+                margin: 0px;
+                width: 100%;
+                height: 500px;
+                border-style: solid;
+                border-width: 3px;
+                border-color: rgb(235,235,235);  <!-- grey to match the gutter -->
+            }
+            textarea {
+                display: block;  <!-- if set to "none", will not allow keyboard input -->
+                margin: 0px;
+                width: 1px;
+                height: 1px;
+                border-style: none;
+            }
+        </style>
+    </head>
 
-<head>
-  <style type="text/css" media="screen">
+    <b><u>IDE Code Editor</u></b><br><br>
     
-    #editor { 
-        margin: 0px;
-        width: 100%;
-        height: 500px;
-        border-style: solid;
-        border-width: 3px;
-        border-color: rgb(235,235,235);  <!-- grey to match the gutter -->
-    }
-  </style>
-</head>
-
-Type CTRL-m For IDE Editor Menu
-
-<pre id="editor"></pre>
+    <!-- text heading above Ace editor -->
+    Default Keybindings: vi
+    <br>
+    Type CTRL-m To Show IDE Editor Menu, ESC To Hide Menu
+    <br>
     
-<!-- load Ace editor -->
-<script src="/static/ace_editor/src-min-noconflict/ace.js"></script>
+    <!-- RPerl Syntax Check button & soon-to-be-hidden textarea -->
+    <form action="syntax_check" method="post" target="_blank">
+        <input type="submit" value="RPerl Syntax Check" id='submit'>
+        Select File Suffix:
+        <input type="radio" name="file_suffix" value="pl" checked> Perl Program .pl File
+        <input type="radio" name="file_suffix" value="pm"> Perl Module .pm File<br>
+        <!-- purposefully empty textarea, to avoid any visible pixels before textarea.hide() occurs -->
+        <textarea name="editor_textarea"></textarea>
+    </form>
+    
+    <!-- create Ace editor div with default file input from Code.pm -->
+    <div id="editor_div"></div>
+    
+    <!-- load jQuery & Ace editor -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1/jquery.min.js" type="text/javascript"></script>
+    <script src="/static/ace_editor/src-min-noconflict/ace.js" type="text/javascript" charset="utf-8"></script>
+    
+    <!-- load Ace settings_menu extension -->
+    <script src="/static/ace_editor/src-min-noconflict/ext-settings_menu.js" type="text/javascript" charset="utf-8"></script>
+    
+    <script>
+        // don't load code before editor: enable heredocs, so multi-line TT variables can be placed inside JS variables
+        function heredoc (f) { return f.toString().match(/\/\*\s*([\s\S]*?)\s*\*\//m)[1]; };
+    
+        // create textarea object & hide
+        var textarea = $('textarea[name="editor_textarea"]');
+        textarea.hide();
+    
+        // create Ace editor object & configure settings
+        var editor = ace.edit("editor_div");
+        ace.require('ace/ext/settings_menu').init(editor);
+        editor.setTheme("ace/theme/sqlserver");
+        editor.getSession().setMode("ace/mode/perl");
+        editor.getSession().setTabSize(4);
+        editor.getSession().setUseSoftTabs(true);
+        editor.setPrintMarginColumn(160);
+    
+        // don't load code before editor: now load default source code input received from Code.pm, de-select-all
+        var code = heredoc(function(){/*
+        [%- file_input.default %]
+        */});
+        editor.setValue(code);
+        editor.session.selection.clearSelection();
+    
+        // set Ace editor key bindings for menu & vim commands
+        editor.commands.addCommands([
+            {
+                name: "showSettingsMenu",
+                bindKey: {win: "Ctrl-m", mac: "Command-m"},
+                exec: function(editor) { editor.showSettingsMenu(); },
+                readOnly: true
+            }
+        ]);
+        editor.setKeyboardHandler("ace/keyboard/vim");
+    
+        // set hidden textarea value to Ace editor value
+        $('#submit').on('click', function() {
+            textarea.val(editor.getSession().getValue());
+        });
+    </script>
 
-<!-- load Ace settings_menu extension -->
-<script src="/static/ace_editor/src-min-noconflict/ext-settings_menu.js"></script>
-<script>
-    /* enable heredocs, so multi-line TT variables can be placed inside JS variables */ 
-    function heredoc (f) { return f.toString().match(/\/\*\s*([\s\S]*?)\s*\*\//m)[1]; };
-
-    var editor = ace.edit("editor");
-    ace.require('ace/ext/settings_menu').init(editor);
-    editor.setTheme("ace/theme/sqlserver");
-    editor.session.setMode("ace/mode/perl");
-    editor.getSession().setTabSize(4);
-    editor.getSession().setUseSoftTabs(true);
-    editor.setPrintMarginColumn(160);
-
-    var code = heredoc(function(){/*
-    [% file_input.default %]
-    */});
-    editor.setValue(code);
-
-    editor.commands.addCommands([{
-        name: "showSettingsMenu",
-        bindKey: {win: "Ctrl-m", mac: "Command-m"},
-        exec: function(editor) {
-            editor.showSettingsMenu();
-        },
-        readOnly: true
-    }]);
-    editor.setKeyboardHandler("ace/keyboard/vim");
-</script>
+[%- END %]

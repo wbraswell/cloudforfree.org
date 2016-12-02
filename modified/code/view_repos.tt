@@ -1,0 +1,22 @@
+[%-	meta.wrapper = 'site-wrapper.tt';
+	meta.title   = repos.title;
+%]
+
+<!-- [% repos.NEED_ADD_OTHER_DATA %] -->
+
+<!-- user must be logged in -->
+[%- IF NOT c.user_exists %]
+    [% INCLUDE 'user/login.tt' %]
+[%- ELSE %]
+
+<head>
+    <style type="text/css" media="screen">
+        textarea {
+            width:100%;
+        }
+    </style>
+</head>
+
+<b>GitHub Support Coming Soon!</b>
+
+[%- END %]

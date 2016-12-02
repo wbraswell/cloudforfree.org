@@ -1,0 +1,54 @@
+[%- meta.wrapper = 'site-wrapper.tt';
+    meta.title   = run_command.title;
+%]
+
+<!-- user must be logged in -->
+[%- IF NOT c.user_exists %]
+    [% INCLUDE 'user/login.tt' %]
+[%- ELSE %]
+
+<!-- START HERE: fix spaces in output by using either <pre> or textarea??? -->
+<!-- START HERE: fix spaces in output by using either <pre> or textarea??? -->
+<!-- START HERE: fix spaces in output by using either <pre> or textarea??? -->
+
+    <head>
+        <style type="text/css" media="screen">
+            textarea {
+                width:100%;
+            }
+        </style>
+    </head>
+
+    <!-- append instead of overwriting output div -->
+    <script>
+        function js_run_command_output_div_append() {
+            var input1 = arguments[0].trim();
+            if (input1) {
+                document.getElementById('run_command_output_div').innerHTML = document.getElementById('run_command_output_div').innerHTML.concat("<br>");
+                document.getElementById('run_command_output_div').innerHTML = document.getElementById('run_command_output_div').innerHTML.concat(input1);
+            }
+        }
+    </script>
+
+    <b><u>Run Command</u></b><br><br>
+    
+    <b>Command:</b>
+    <br>
+    <i>cloud_user@cloud_machine:~$ [%- run_command.command %]</i>
+    <br><br>
+    
+    <b>Process ID:</b>
+    <br>
+    <i>[%- run_command.pid %]</i>
+    <br><br>
+    
+    <b>STDOUT & STDERR Output:</b>
+    <pre id="run_command_output_div">[%- run_command.stdout_stderr %]</pre>
+    <br><br>
+
+    <b>TMP AJAX OUTPUT:</b>
+    <br>
+    [%- run_command.output_ajax %]
+
+
+[%- END %]

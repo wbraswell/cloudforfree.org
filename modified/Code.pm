@@ -2,10 +2,11 @@
 # <<< TYPE_CHECKING: OFF >>>
 
 # [[[ HEADER ]]]
-#use RPerl;
+#use RPerl;  # scans CGI* & Catalyst* etc, lots of delay & warnings
 package ShinyCMS::Controller::Code;
 use strict;
 use warnings;
+use RPerl::AfterSubclass;
 our $VERSION = 0.001_000;
 
 =head1 NAME
@@ -34,7 +35,59 @@ BEGIN { extends 'ShinyCMS::Controller'; }
 
 # [[[ INCLUDES ]]]
 use Data::Dumper;
-#use Apache2::FileManager;
+use English qw(-no_match_vars);
+use Carp;
+use File::Temp qw(tempfile);
+use IPC::Run3 qw(run3);
+use IPC::Open3;
+use IO::Select;
+use CGI qw(params);
+use CGI::Ajax;
+use Symbol qw(gensym); 
+use rperloptions;
+
+=DISABLE_TMP
+use Plack::Request;
+use Plack::App::Apache2FileManager::Mocks;
+use Apache2::FileManager;
+
+
+my $document_root = '/tmp';
+
+our $R;
+our $CONFIG;
+
+*Apache2::FileManager::r = sub { return $R };
+
+
+
+ShinyCMS->config(
+  psgi_middleware => [
+    'Delegate' => { psgi_app =>
+       sub {
+    my $env = shift;
+    print {*STDERR} 'in app.psgi, received $env = ', Dumper($env), "\n";
+    my $req = Plack::Request->new($env);
+
+    local $R = Plack::App::Apache2FileManager::Mocks->new(
+        {   request       => $req,
+            document_root => $document_root
+        }
+    );
+    local $CONFIG = {};
+
+    Apache2::FileManager->handler();
+
+    return $R->response->finalize;
+} 
+         },
+  ]);
+ 
+ShinyCMS->setup;
+=cut
+
+
+
 
 # [[[ CONSTANTS ]]]
 has posts_per_page => (
@@ -45,7 +98,21 @@ has posts_per_page => (
 # NEED FIX: remove Moose, replace w/ RPerl constant below
 #use constant POSTS_PER_PAGE => my integer $TYPED_POSTS_PER_PAGE = 10;
 
+
+
+
+our hashref $JOBS = {};
+
+
+
+
 # [[[ SUBROUTINES & OO METHODS ]]]
+
+
+
+
+
+
 
 =head1 METHODS
 
@@ -78,11 +145,18 @@ sub view_editor : Chained( 'base' ) : PathPart( 'editor' ) {
 #    print {*STDERR} '<<< DEBUG >>>: in Code::view_editor(), received $self = ', "\n", Dumper($self), "\n\n";
 #    print {*STDERR} '<<< DEBUG >>>: in Code::view_editor(), received $c = ', "\n", Dumper($c), "\n\n";
 
+    my $req = $c->request();
+    my $parameters = $req->parameters();
+    if ((exists $parameters->{editor_textarea}) and (defined $parameters->{editor_textarea})) {
+        my $editor_textarea = $parameters->{editor_textarea};
+        print {*STDERR} '<<< DEBUG >>>: in Code::view_editor(), have parameter $editor_textarea = ', "\n", Dumper($editor_textarea), "\n\n";
+    }
+
     $c->stash->{ template } = 'code/view_editor.tt';
 
     # NEED FIX: must be running in modperl mode for Apache2::FileManager to work
-    #my $obj = Apache2::FileManager->new({ DOCUMENT_ROOT => '/home/wbraswell/public_html/cloudforfree.org-latest/root/user_files/' });
-    #$obj->print();
+#    my $obj = Apache2::FileManager->new({ DOCUMENT_ROOT => '/home/wbraswell/public_html/cloudforfree.org-latest/root/user_files/' });
+#    $obj->print();
     
     my $learning_rperl_ch1_ex1 = <<'EOF';
 #!/usr/bin/perl
@@ -106,6 +180,383 @@ EOF
     $c->stash->{ editor } = { title => 'IDE Code Editor' };
     $c->stash->{ file_manager } = { NEED_ADD_DATA_FM => 23 };
     $c->stash->{ file_input } = { default => $learning_rperl_ch1_ex1 };
+}
+
+=head2 view_repos
+
+Display the GitHub repos manager.
+
+=cut
+
+sub view_repos : Chained( 'base' ) : PathPart( 'repos' ) {
+    my ( $self, $c ) = @_;
+#    print {*STDERR} '<<< DEBUG >>>: in Code::view_repos(), received $self = ', "\n", Dumper($self), "\n\n";
+#    print {*STDERR} '<<< DEBUG >>>: in Code::view_repos(), received $c = ', "\n", Dumper($c), "\n\n";
+
+    $c->stash->{ template } = 'code/view_repos.tt';
+    $c->stash->{ repos } = { };
+    $c->stash->{ repos }->{ title } = 'GiHub Repos Manager';
+    $c->stash->{ repos }->{ NEED_ADD_OTHER_DATA } = 2_112;
+}
+
+=head2 view_queue
+
+Display the job queue.
+
+=cut
+
+sub view_queue : Chained( 'base' ) : PathPart( 'queue' ) {
+    my ( $self, $c ) = @_;
+#    print {*STDERR} '<<< DEBUG >>>: in Code::view_queue(), received $self = ', "\n", Dumper($self), "\n\n";
+#    print {*STDERR} '<<< DEBUG >>>: in Code::view_queue(), received $c = ', "\n", Dumper($c), "\n\n";
+
+    my $req = $c->request();
+#    print {*STDERR} '<<< DEBUG >>>: in Code::view_queue(), have $req->param() = ', "\n", Dumper($req->param()), "\n\n";
+#    print {*STDERR} '<<< DEBUG >>>: in Code::view_queue(), have $req->parameters() = ', "\n", Dumper($req->parameters()), "\n\n";
+
+    $c->stash->{template} = 'code/view_queue.tt';
+    $c->stash->{queue} = {};
+    $c->stash->{queue}->{title} = 'Job Queue';
+
+    # list of all RPerl options, arguments, modes; generate HTML
+#    my $rperl_options_html = q{};
+#    $rperl_options_html .= 'RPERL COMMAND-LINE OPTIONS' . '<br>';
+#    $rperl_options_html .= '<br>';
+#    $rperl_options_html .= GetOptions ( %{$::rperl_options} ) or die("Error in command line arguments\n");
+#    $c->stash->{queue}->{rperl_options_html} = $rperl_options_html;
+
+}
+
+
+
+
+
+=head2 syntax_check
+
+Check the RPerl syntax of input source code.
+
+=cut
+
+sub syntax_check : Chained( 'base' ) : PathPart( 'syntax_check' ) {
+    my ( $self, $c ) = @_;
+#    print {*STDERR} '<<< DEBUG >>>: in Code::syntax_check(), received $self = ', "\n", Dumper($self), "\n\n";
+#    print {*STDERR} '<<< DEBUG >>>: in Code::syntax_check(), received $c = ', "\n", Dumper($c), "\n\n";
+
+    my $req = $c->request();
+#    print {*STDERR} '<<< DEBUG >>>: in Code::syntax_check(), have $req->param() = ', "\n", Dumper($req->param()), "\n\n";
+#    print {*STDERR} '<<< DEBUG >>>: in Code::syntax_check(), have $req->parameters() = ', "\n", Dumper($req->parameters()), "\n\n";
+
+    # set up stash
+    $c->stash->{template} = 'code/view_syntax_check.tt';
+    $c->stash->{syntax_check} = {};
+    $c->stash->{syntax_check}->{title} = 'Syntax Check';
+    $c->stash->{syntax_check}->{stdout_stderr} = q{};
+
+    # accept HTML parameters
+    my $parameters = $req->parameters();
+    if (not ((exists $parameters->{editor_textarea}) and (defined $parameters->{editor_textarea}))) 
+        { croak("\n" . q{ERROR ECOSCPA00, SYNTAX CHECK, PARAMETERS: Missing HTML parameter 'editor_textarea', should contain source code to be syntax checked, croaking}); }
+    # append newline to avoid "ERROR ECOPAPC13, RPERL PARSER, PERL CRITIC VIOLATION: RPerl source code input file '/tmp/rperl_tempfileFOO.pl' does not end with newline character or line of all-whitespace characters, dying
+    # append return character to avoid "ERROR ECOPAPC02, RPERL PARSER, PERL CRITIC VIOLATION: Perl::Critic::Policy::CodeLayout::RequireConsistentNewlines"
+    my string $input_source_code = $parameters->{editor_textarea} . "\r\n";
+    print {*STDERR} '<<< DEBUG >>>: in Code::syntax_check(), have $input_source_code = ', "\n", $input_source_code, "\n\n";
+    if ($input_source_code eq q{}) 
+        { croak("\n" . q{ERROR ECOSCPA01, SYNTAX CHECK, PARAMETERS: Empty HTML parameter 'input_source_code', should contain source code to be syntax checked, croaking}); }
+
+    if (not ((exists $parameters->{file_suffix}) and (defined $parameters->{file_suffix}))) 
+        { croak("\n" . q{ERROR ECOSCPA02, SYNTAX CHECK, PARAMETERS: Missing HTML parameter 'file_suffix', should contain temporary file suffix, croaking}); }
+    my string $file_suffix = $parameters->{file_suffix};
+    print {*STDERR} '<<< DEBUG >>>: in Code::syntax_check(), have $file_suffix = ', $input_source_code, "\n";
+    if ($file_suffix eq q{}) 
+        { croak("\n" . q{ERROR ECOSCPA03, SYNTAX CHECK, PARAMETERS: Empty HTML parameter 'file_suffix', should contain temporary file suffix, croaking}); }
+
+    # create temporary file
+    my filehandleref $FILE_HANDLE_REFERENCE_TMP;
+    my string $file_name_reference_tmp;
+    ( $FILE_HANDLE_REFERENCE_TMP, $file_name_reference_tmp ) = tempfile( 'rperl_tempfileXXXX', SUFFIX => q{.} . $file_suffix, UNLINK => 1, TMPDIR => 1 );
+    print {*STDERR} '<<< DEBUG >>>: in Code::syntax_check(), have $file_name_reference_tmp = ', q{'}, $file_name_reference_tmp, q{'}, "\n" ;
+ 
+    # save source code into temporary file
+    print {$FILE_HANDLE_REFERENCE_TMP} $input_source_code
+        or croak("\nERROR ECOSCFI00, SYNTAX CHECK, FILE SYSTEM: Attempting to save new file '$file_name_reference_tmp', cannot write to file,\ncroaking: $OS_ERROR");
+    close $FILE_HANDLE_REFERENCE_TMP 
+        or croak("\nERROR ECOSCFI01, SYNTAX CHECK, FILE SYSTEM: Attempting to save new file '$file_name_reference_tmp', cannot close file,\ncroaking: $OS_ERROR");
+
+    # create syntax check command string
+    my string $syntax_check_command = 'rperl --Verbose --Debug --Warnings --mode ops=PERL --mode types=PERL --mode compile=GENERATE --mode parallel=OFF --mode execute=OFF ' . $file_name_reference_tmp;
+#    my string $syntax_check_command = 'rperl -V -D -W -t -nop -noe ' . $file_name_reference_tmp;  # short-hand
+
+    print {*STDERR} '<<< DEBUG >>>: in Code::syntax_check(), have $syntax_check_command = ', $syntax_check_command, "\n";
+
+    my string $stdout_stderr = q{};
+
+    print {*STDERR} '<<< DEBUG >>>: in Code::syntax_check(), START running $syntax_check_command = ', $syntax_check_command, "\n";
+
+    # run syntax check command
+    run3( $syntax_check_command, \undef, \$stdout_stderr, \$stdout_stderr );
+
+    print {*STDERR} '<<< DEBUG >>>: in Code::syntax_check(), FINISH running $syntax_check_command = ', $syntax_check_command, "\n";
+
+    my $syntax_check_exit_status = $CHILD_ERROR >> 8;
+
+    print {*STDERR} '<<< DEBUG >>>: in Code::syntax_check(), have $CHILD_ERROR = ', $CHILD_ERROR, "\n" ;
+    print {*STDERR} '<<< DEBUG >>>: in Code::syntax_check(), have $syntax_check_exit_status = ', $syntax_check_exit_status, "\n" ;
+
+    my boolean $stdout_stderr_content = ( ( defined $stdout_stderr ) and ( $stdout_stderr =~ m/[^\s]+/g ) );
+
+    # stash syntax check command output
+    if ( $stdout_stderr_content ) {
+        print {*STDERR} "\n", '<<< DEBUG >>>: in Code::syntax_check(), have [[[ SYNTAX CHECK COMMAND STDOUT & STDERR ]]]', "\n\n", $stdout_stderr, "\n" ;
+        $c->stash->{syntax_check}->{stdout_stderr} = $stdout_stderr;
+    }
+
+    if ($syntax_check_exit_status) {               # UNIX process exit status (AKA return code) not 0, error
+    # syntax errors cause error exit status, but we don't want to actually croak
+#        if ( not $stdout_stderr_content ) {
+#            print {*STDERR}  "\n", '[[[ SYNTAX CHECK COMMAND STDOUT & STDERR ARE BOTH EMPTY ]]]', "\n\n" ;
+#        }
+#        croak 'ERROR ECOSCES, SYNTAX CHECK, COMMAND: RPerl compiler returned error exit status,', "\n"
+#           , 'please run again with `rperl -D` command or RPERL_DEBUG=1 environmental variable for error messages if none appear above,', "\n"
+#           , 'croaking';
+        $c->stash->{syntax_check}->{stdout_stderr} .= "\n\n" . '[[[ SYNTAX ERRORS WERE FOUND ]]]';
+    }
+    else {
+        $c->stash->{syntax_check}->{stdout_stderr} .= "\n\n" . '[[[ NO SYNTAX ERRORS WERE FOUND ]]]';
+    }
+}
+
+
+=head2 run_command
+
+Run the RPerl command.
+
+=cut
+
+sub run_command_input_ajax : Chained( 'base' ) : PathPart( 'run_command_input_ajax' ) {
+    my ( $self, $c ) = @_;
+#    print {*STDERR} '<<< DEBUG >>>: in Code::run_command_input_ajax(), received $self = ', "\n", Dumper($self), "\n\n";
+#    print {*STDERR} '<<< DEBUG >>>: in Code::run_command_input_ajax(), received $c = ', "\n", Dumper($c), "\n\n";
+
+    my $req = $c->request();
+
+    # set up stash
+    $c->stash->{template} = 'code/view_run_command_input_ajax.tt';
+    $c->stash->{wrapper_disable} = 1;
+    $c->stash->{run_command_input_ajax} = {};
+    $c->stash->{run_command_input_ajax}->{output} = q{};
+
+    # require pid & input parameters
+    my $parameters = $req->parameters();
+    if (not ((exists $parameters->{run_command_pid}) and (defined $parameters->{run_command_pid}))) {
+        croak("\n" . q{ERROR ECORCIAPA00, RUN COMMAND INPUT AJAX, PARAMETERS: Missing HTML parameter 'run_command_pid', should contain PID of running command, croaking});
+    }
+    if (not ((exists $parameters->{run_command_input_param}) and (defined $parameters->{run_command_input_param}))) {
+        croak("\n" . q{ERROR ECORCIAPA01, RUN COMMAND INPUT AJAX, PARAMETERS: Missing HTML parameter 'run_command_input_param', should contain input for running command, croaking});
+    }
+
+    # accept pid & input parameters
+    my $pid = $parameters->{run_command_pid};
+    my $input = $parameters->{run_command_input_param};
+#    print {*STDERR} '<<< DEBUG >>>: in Code::run_command_input_ajax(), have $pid = ', $pid, "\n";
+#    print {*STDERR} '<<< DEBUG >>>: in Code::run_command_input_ajax(), have $input = ', $input, "\n";
+
+    # handle input
+#    print {*STDERR} '<<< DEBUG >>>: in Code::run_command_input_ajax(), have $Code::JOBS = ', "\n", Dumper($Code::JOBS), "\n\n";
+    my filehandleref $COMMAND_IN = $Code::JOBS->{$pid}->{IN};
+    my filehandleref $COMMAND_OUT = $Code::JOBS->{$pid}->{OUT};
+    my filehandleref $COMMAND_ERR = $Code::JOBS->{$pid}->{ERR};
+    
+    # strip trailing newline from input
+    chomp $input;
+
+    my string $stdout_stderr = q{};
+
+    # actually print input value to input filehandle
+    print $COMMAND_IN $input, "\n";
+
+# START HERE: don't rely on keypress to load output
+# START HERE: don't rely on keypress to load output
+# START HERE: don't rely on keypress to load output
+
+    # get output
+    my IO::Select $selector = IO::Select->new();
+    $selector->add(*{$COMMAND_ERR}, *{$COMMAND_OUT});
+
+##    while (my @readable_filehandles = $selector->can_read) {
+    my @readable_filehandles = $selector->can_read();
+        foreach my filehandleref $readable_filehandle (@readable_filehandles) {
+        if (fileno($readable_filehandle) == fileno(*{$COMMAND_ERR})) 
+            { $stdout_stderr .= scalar <$COMMAND_ERR>; }
+        else
+            { $stdout_stderr .= scalar <$COMMAND_OUT>; }
+        if (eof($readable_filehandle)) { $selector->remove($readable_filehandle); }
+        }
+##    }
+
+    # append input to output just like in a console
+    $stdout_stderr .= $input;
+
+#    print {*STDERR} '<<< DEBUG >>>: in Code::run_command_input_ajax(), about to return $stdout_stderr = ', $stdout_stderr, "\n";
+    $c->stash->{run_command_input_ajax}->{output} = $stdout_stderr;
+}
+
+
+sub run_command : Chained( 'base' ) : PathPart( 'run_command' ) {
+    my ( $self, $c ) = @_;
+#    print {*STDERR} '<<< DEBUG >>>: in Code::run_command(), received $self = ', "\n", Dumper($self), "\n\n";
+#    print {*STDERR} '<<< DEBUG >>>: in Code::run_command(), received $c = ', "\n", Dumper($c), "\n\n";
+
+    my $req = $c->request();
+#    print {*STDERR} '<<< DEBUG >>>: in Code::run_command(), have $req->param() = ', "\n", Dumper($req->param()), "\n\n";
+#    print {*STDERR} '<<< DEBUG >>>: in Code::run_command(), have $req->parameters() = ', "\n", Dumper($req->parameters()), "\n\n";
+
+    # set up stash
+    $c->stash->{template} = 'code/view_run_command.tt';
+    $c->stash->{run_command} = {};
+    $c->stash->{run_command}->{title} = 'Run Command';
+    $c->stash->{run_command}->{command} = q{};
+    $c->stash->{run_command}->{pid} = q{};
+    $c->stash->{run_command}->{stdout_stderr} = q{};
+    $c->stash->{run_command}->{output_ajax} = q{};
+
+    # require command parameter
+    my $parameters = $req->parameters();
+    if (not ((exists $parameters->{command}) and (defined $parameters->{command}))) {
+        croak("\n" . q{ERROR ECORCPA00, RUN COMMAND, PARAMETERS: Missing HTML parameter 'command', should contain command to be run, croaking});
+    }
+
+    # accept command parameter
+    my $command = $parameters->{command};
+    print {*STDERR} '<<< DEBUG >>>: in Code::run_command(), have $command = ', $command, "\n";
+
+    # SECURITY: disallow multiple commands, only allow 1 RPerl command!
+    if ($command =~ m/[;|><]/) {
+        print {*STDERR}  '<<< DEBUG >>>: SECURITY: in Code::run_command(), intercepted command with forbidden control character', "\n";
+        $c->stash->{run_command}->{stdout_stderr} = 'ERROR: Command with forbidden control character ; or | or < or >';
+        return;
+    }
+
+    # SECURITY: all commands must be RPerl commands!
+    $command = 'rperl ' . $command;
+
+    # store command back in stash to be displayed
+    $c->stash->{run_command}->{command} = $command;
+
+    # SECURITY: run all commands as www-data user; we automatically inherit PERL env vars, must explicitly inherit PATH env var
+    $command = q{su www-data -c "PATH=$PATH; } . $command . q{"};
+
+    print {*STDERR} '<<< DEBUG >>>: in Code::run_command(), START running $command = ', $command, "\n";
+
+
+
+
+
+
+
+
+    my string $stdout_stderr = q{};
+    my filehandleref $COMMAND_IN;
+    my filehandleref $COMMAND_OUT;
+    my filehandleref $COMMAND_ERR = gensym;
+#    my integer $pid = open3(*{COMMAND_IN}, *{COMMAND_OUT}, *{COMMAND_ERR}, $command);
+    my integer $pid = open3($COMMAND_IN, $COMMAND_OUT, $COMMAND_ERR, $command);
+    $c->stash->{run_command}->{pid} = $pid;
+    $Code::JOBS->{$pid} = {};
+    $Code::JOBS->{$pid}->{IN} = $COMMAND_IN;
+    $Code::JOBS->{$pid}->{OUT} = $COMMAND_OUT;
+    $Code::JOBS->{$pid}->{ERR} = $COMMAND_ERR;
+
+    # handle child process exiting
+#    $SIG{CHLD} = sub {
+#        if (waitpid($pid, 0) > 0) {
+#            print {*STDERR} 'CHILD PROCESS: exit status ', $CHILD_ERROR, ' on PID ', $pid, "\n";
+#            close($Code::JOBS->{$pid}->{IN});
+#            close($Code::JOBS->{$pid}->{OUT});
+#            close($Code::JOBS->{$pid}->{ERR});
+#        }
+#    };
+
+#    print {*COMMAND_IN} "23\n";  # NEED CHANGE: TEMP TEST INPUT
+#    close(*{COMMAND_IN});
+
+    # get initial output, up to first request for input or end of program
+#    my IO::Select $selector = IO::Select->new();
+#    $selector->add(*{COMMAND_ERR}, *{COMMAND_OUT});
+
+##    while (my @readable_filehandles = $selector->can_read) {
+#    my @readable_filehandles = $selector->can_read();
+#        foreach my filehandleref $readable_filehandle (@readable_filehandles) {
+#        if (fileno($readable_filehandle) == fileno(*{COMMAND_ERR})) 
+#            { $stdout_stderr .= scalar <COMMAND_ERR>; }
+#        else
+#            { $stdout_stderr .= scalar <COMMAND_OUT>; }
+#        if (eof($readable_filehandle)) { $selector->remove($readable_filehandle); }
+#        }
+##    }
+
+#    close(*{COMMAND_OUT});
+#    close(*{COMMAND_ERR});
+
+
+
+
+
+
+
+
+#    print {*STDERR} '<<< DEBUG >>>: in Code::run_command(), FINISH running $command = ', $command, "\n";
+
+#    my $new_job_exit_status = $CHILD_ERROR >> 8;
+
+#    print {*STDERR} '<<< DEBUG >>>: in Code::run_command(), have $CHILD_ERROR = ', $CHILD_ERROR, "\n" ;
+#    print {*STDERR} '<<< DEBUG >>>: in Code::run_command(), have $new_job_exit_status = ', $new_job_exit_status, "\n" ;
+
+    my boolean $stdout_stderr_content = ( ( defined $stdout_stderr ) and ( $stdout_stderr =~ m/[^\s]+/g ) );
+
+    # stash command output
+    if ( $stdout_stderr_content ) {
+        print {*STDERR} "\n", '<<< DEBUG >>>: in Code::run_command(), have [[[ NEW JOB COMMAND STDOUT & STDERR ]]]', "\n\n", $stdout_stderr, "\n" ;
+        $c->stash->{run_command}->{stdout_stderr} = $stdout_stderr;
+    }
+
+#    if ($new_job_exit_status) {           # UNIX process exit status (AKA return code) not 0, error
+#        $c->stash->{run_command}->{stdout_stderr} .= "\n\n" . '[[[ JOB ENDED WITH ERROR ]]]';
+#    }
+#    else {
+#        $c->stash->{run_command}->{stdout_stderr} .= "\n\n" . '[[[ JOB ENDED WITH SUCCESS ]]]';
+#    }
+
+
+
+
+
+
+
+    # generate AJAX
+    my CGI $cgi = CGI->new();
+    my CGI::Ajax $cgi_ajax = new CGI::Ajax( run_command_input_ajax => 'run_command_input_ajax', skip_header => 1 );
+    $cgi_ajax->skip_header(1);
+    my string $run_command_output_ajax_html = <<EOHTML;
+<html>
+<body>
+Enter something: 
+<input type="hidden" name="run_command_pid" id="run_command_pid" value="$pid">
+<input type="text" name="run_command_input_param" id="run_command_input_param"
+  onkeyup="run_command_input_ajax( ['run_command_pid', 'run_command_input_param'], [js_run_command_output_div_append] );">
+<br>
+<div id="run_command_output_div_FOO"></div>
+</body>
+</html>
+EOHTML
+
+    my string $output_ajax = $cgi_ajax->build_html($cgi, $run_command_output_ajax_html);
+#    print {*STDERR} '<<< DEBUG >>>: in Code::run_command(), have $output_ajax = ', "\n", $output_ajax, "\n\n";
+    $c->stash->{run_command}->{output_ajax} = $output_ajax;
+
+
+
+
+
 }
 
 

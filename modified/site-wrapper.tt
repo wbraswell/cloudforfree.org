@@ -1,3 +1,9 @@
+<!-- WBRASWELL 20161201 2016.336: allow unwrapped pages, such as embedded AJAX divs -->
+[%- IF wrapper_disable %]
+    [%- content %]
+[%- ELSE %]
+
+
 <!DOCTYPE html>
 <html>
 <head>
@@ -23,11 +29,6 @@
         [%- END %]
     [%- END %]
     [%- END %]
-
-
-
-
-
 
 <!-- WBRASWELL 20141114 2014.318: fix favicon link -->
     <link rel="shortcut icon" href="/favicon.ico">
@@ -78,3 +79,6 @@
 
 </body>
 </html>
+
+
+[%- END %]

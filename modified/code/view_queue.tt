@@ -1,0 +1,30 @@
+[%- meta.wrapper = 'site-wrapper.tt';
+    meta.title   = queue.title;
+%]
+
+<!-- [% queue.NEED_ADD_OTHER_DATA %] -->
+
+<!-- user must be logged in -->
+[%- IF NOT c.user_exists %]
+    [% INCLUDE 'user/login.tt' %]
+[%- ELSE %]
+
+    <head>
+        <style type="text/css" media="screen">
+            textarea {
+                width:100%;
+            }
+        </style>
+    </head>
+
+    <b><u>Job Queue</u></b><br><br>
+
+    <form method="post" action="run_command">
+        <b>Enter A New RPerl Command:</b><br>
+        cloud_user@cloud_machine:~$ rperl <input type="text" name="command" size="120"><br>
+        <input type="submit" value="Submit As New Job">
+    </form>
+   
+    [%- queue.rperl_options_html %]
+
+[%- END %]

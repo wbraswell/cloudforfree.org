@@ -41,7 +41,10 @@ requires (
 	'File::Pid'                                  => '0',
 	'HTML::TreeBuilder'                          => '0',
 
-    # WBRASWELL 20161109 2016.314: enable file manager
+    # WBRASWELL 20161126 2016.331
+    # enable temp build files
+    'File::Temp'                                 => '0.2304',
+    # enable file manager
 #    'Archive::Any'                               => '0.03',
 #    'CGI::Cookie'                                => '1.20',
 #    'File::NCopy'                                => '0.32',

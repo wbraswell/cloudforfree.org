@@ -1,0 +1,33 @@
+[%- meta.wrapper = 'site-wrapper.tt';
+    meta.title   = syntax_check.title;
+%]
+
+<!-- user must be logged in -->
+[%- IF NOT c.user_exists %]
+    [% INCLUDE 'user/login.tt' %]
+[%- ELSE %]
+
+<!-- START HERE: fix spaces in output by using either <pre> or textarea??? -->
+<!-- START HERE: fix spaces in output by using either <pre> or textarea??? -->
+<!-- START HERE: fix spaces in output by using either <pre> or textarea??? -->
+
+    <head>
+        <style type="text/css" media="screen">
+            textarea {
+                width:100%;
+            }
+        </style>
+    </head>
+
+    <b><u>Syntax Check</u></b><br><br>
+    
+    [%- IF (syntax_check.stdout_stderr != '') %]
+        <b>STDOUT & STDERR Output:</b>
+        <br>
+        <pre>
+            [%- syntax_check.stdout_stderr %]
+        </pre>
+        <br><br>
+    [%- END %]
+
+[%- END %]

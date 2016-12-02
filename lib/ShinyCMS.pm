@@ -1,8 +1,8 @@
 package ShinyCMS;
 
 print {*STDERR} '<<< DEBUG >>>: top of ShinyCMS.pm', "\n";
-print {*STDERR} '<<< DEBUG >>>: in ShinyCMS.pm, about to use ShinyCMS_dependencies', "\n";
 
+#print {*STDERR} '<<< DEBUG >>>: in ShinyCMS.pm, about to use ShinyCMS_dependencies', "\n";
 #use ShinyCMS_dependencies;
 
 print {*STDERR} '<<< DEBUG >>>: in ShinyCMS.pm, about to use Moose', "\n";

@@ -1,5 +1,12 @@
 #!/usr/bin/env perl
 
+# WBRASWELL
+BEGIN {
+    use lib '/home/wbraswell/perl5/lib/perl5';
+    use lib '/home/wbraswell/github_repos/rperl-latest/lib';
+}
+
+
 BEGIN {
     $ENV{CATALYST_SCRIPT_GEN} = 40;
 }
