@@ -7,7 +7,7 @@ package ShinyCMS::Controller::Code;
 use strict;
 use warnings;
 use RPerl::AfterSubclass;
-our $VERSION = 0.001_000;
+our $VERSION = 0.010_000;
 
 =head1 NAME
 
@@ -98,13 +98,28 @@ has posts_per_page => (
 # NEED FIX: remove Moose, replace w/ RPerl constant below
 #use constant POSTS_PER_PAGE => my integer $TYPED_POSTS_PER_PAGE = 10;
 
-
-
+# [[ PACKAGE VARIABLES ]]
 
 our hashref $JOBS = {};
-
-
-
+our hashref $KEY_CODES = {  # more listed here:  https://metacpan.org/pod/Term::ANSIMenu
+    '__B__'  => [ "\b", '__B__' ],   # BACKSPACE
+    '__T__'  => [ "\t", '__T__' ],   # TAB
+    '__E__'  => [ "\n",  '<br>'  ],   # ENTER
+#    '__S__'  => [ "FOO", '__S__' ],   # SHIFT
+#    '__C__'  => [ "FOO", '__C__' ],   # CTRL
+#    '__A__'  => [ "FOO", '__A__' ],   # ALT
+    '__ES__' => [ "\e", '__ES__' ],  # ESCAPE
+#    '__PU__' => [ "\e[3~", '__PU__' ],  # PAGE UP
+#    '__PD__' => [ "\e[6~", '__PD__' ],  # PAGE DOWN
+    '__EN__' => [ "\e[5~", '__EN__' ],  # END
+    '__HO__' => [ "\e[2~", '__HO__' ],  # HOME
+    '__AL__' => [ "\e[D", '__AL__' ],  # ARROW LEFT
+    '__AU__' => [ "\e[A", '__AU__' ],  # ARROW UP
+    '__AR__' => [ "\e[C", '__AR__' ],  # ARROW RIGHT
+    '__AD__' => [ "\e[B", '__AD__' ],  # ARROW DOWN
+#    '__I__'  => [ "\e[1~", '__I__' ],   # INSERT
+    '__D__'  => [ "\e[4~", '__D__' ],   # DELETE
+};
 
 # [[[ SUBROUTINES & OO METHODS ]]]
 
@@ -344,6 +359,7 @@ sub run_command_input_ajax : Chained( 'base' ) : PathPart( 'run_command_input_aj
     $c->stash->{wrapper_disable} = 1;
     $c->stash->{run_command_input_ajax} = {};
     $c->stash->{run_command_input_ajax}->{output} = q{};
+    my string $stdout_stderr = q{};
 
     # require pid & input parameters
     my $parameters = $req->parameters();
@@ -357,46 +373,139 @@ sub run_command_input_ajax : Chained( 'base' ) : PathPart( 'run_command_input_aj
     # accept pid & input parameters
     my $pid = $parameters->{run_command_pid};
     my $input = $parameters->{run_command_input_param};
-#    print {*STDERR} '<<< DEBUG >>>: in Code::run_command_input_ajax(), have $pid = ', $pid, "\n";
-#    print {*STDERR} '<<< DEBUG >>>: in Code::run_command_input_ajax(), have $input = ', $input, "\n";
+    print {*STDERR} '<<< DEBUG >>>: in Code::run_command_input_ajax(), have $pid = ', $pid, "\n";
+    print {*STDERR} '<<< DEBUG >>>: in Code::run_command_input_ajax(), have $input = ', q{'}, $input, q{'}, "\n";
 
-    # handle input
+    # load this PID's I/O stream handles from shared global $JOBS package (class) variable
 #    print {*STDERR} '<<< DEBUG >>>: in Code::run_command_input_ajax(), have $Code::JOBS = ', "\n", Dumper($Code::JOBS), "\n\n";
     my filehandleref $COMMAND_IN = $Code::JOBS->{$pid}->{IN};
     my filehandleref $COMMAND_OUT = $Code::JOBS->{$pid}->{OUT};
     my filehandleref $COMMAND_ERR = $Code::JOBS->{$pid}->{ERR};
-    
+
+    # setup selector to collect available output
+#    print {*STDERR} '<<< DEBUG >>>: in Code::run_command_input_ajax(), begin selector setup', "\n";
+#    my IO::Select $selector = IO::Select->new();
+#    $selector->add(*{$COMMAND_OUT}, *{$COMMAND_ERR});
+#    print {*STDERR} '<<< DEBUG >>>: in Code::run_command_input_ajax(), end selector setup', "\n";
+
+    # read available output before input has been provided
+#    print {*STDERR} '<<< DEBUG >>>: in Code::run_command_input_ajax(), begin pre-input collection of output', "\n";
+#    while (my @readable_filehandles = $selector->can_read(1)) {
+##    my @readable_filehandles = $selector->can_read(0.1);
+#        print {*STDERR} '<<< DEBUG >>>: in Code::run_command_input_ajax(), have @readable_filehandles = ', "\n", Dumper(\@readable_filehandles), "\n\n";
+#        foreach my filehandleref $readable_filehandle (@readable_filehandles) {
+#            print {*STDERR} '<<< DEBUG >>>: in Code::run_command_input_ajax(), have $readable_filehandle = ', Dumper($readable_filehandle), "\n";
+#            if (fileno($readable_filehandle) == fileno(*{$COMMAND_ERR})) 
+#                { $stdout_stderr .= scalar <$COMMAND_ERR>; }
+#            else
+#                { $stdout_stderr .= scalar <$COMMAND_OUT>; }
+#            if (eof($readable_filehandle)) { $selector->remove($readable_filehandle); }
+#        }
+#    }
+#    print {*STDERR} '<<< DEBUG >>>: in Code::run_command_input_ajax(), end pre-input collection of output', "\n";
+
+
+
+
+
+
+
+    print {*STDERR} '<<< DEBUG >>>: in Code::run_command_input_ajax(), begin selector setup', "\n";
+    my $selector = IO::Select->new();
+    $selector->add($COMMAND_OUT);
+    $selector->add($COMMAND_ERR);
+    print {*STDERR} '<<< DEBUG >>>: in Code::run_command_input_ajax(), end selector setup', "\n";
+
+    print {*STDERR} '<<< DEBUG >>>: in Code::run_command_input_ajax(), begin pre-input collection of output', "\n";
+    my string $stdout_stderr_tmp = q{};
+    while (my @readable_filehandles = $selector->can_read(0.1)) {
+        print {*STDERR} '<<< DEBUG >>>: in Code::run_command_input_ajax(), have @readable_filehandles = ', "\n", Dumper(\@readable_filehandles);
+        foreach my $readable_filehandle (@readable_filehandles) {
+            if ($readable_filehandle == $COMMAND_OUT) {
+                my $bytes_read = sysread($readable_filehandle, $stdout_stderr_tmp, 1024);
+                if ($bytes_read == -1) {
+                    warn("Error reading from child's STDOUT: $!\n");
+                    $selector->remove($readable_filehandle);
+                    next;
+                }
+                if ($bytes_read == 0) {
+                    print("Child's STDOUT closed\n");
+                    $selector->remove($readable_filehandle);
+                    next;
+                }
+                printf("%4d bytes read from child's STDOUT\n", $bytes_read);
+                $stdout_stderr .= $stdout_stderr_tmp;
+            }
+            elsif ($readable_filehandle == $COMMAND_ERR) {
+                my $bytes_read = sysread($readable_filehandle, $stdout_stderr_tmp, 1024);
+                if ($bytes_read == -1) {
+                    warn("Error reading from child's STDERR: $!\n");
+                    $selector->remove($readable_filehandle);
+                    next;
+                }
+                if ($bytes_read == 0) {
+                    print("Child's STDERR closed\n");
+                    $selector->remove($readable_filehandle);
+                    next;
+                }
+                printf("%4d bytes read from child's STDERR\n", $bytes_read);
+                $stdout_stderr .= $stdout_stderr_tmp;
+            }
+        }
+    }
+    print {*STDERR} '<<< DEBUG >>>: in Code::run_command_input_ajax(), end pre-input collection of output', "\n";
+
+
+
+
+
+
+
+
+
+
     # strip trailing newline from input
     chomp $input;
 
-    my string $stdout_stderr = q{};
+    # START HERE: handle other special keys, clean up messy code
+    # START HERE: handle other special keys, clean up messy code
+    # START HERE: handle other special keys, clean up messy code
+
+    # decode ENTER key if found, append input to output which has been read
+    if (exists $KEY_CODES->[$input]) {
+        $input = $KEY_CODES->[$input]->[0];
+        $stdout_stderr = $KEY_CODES->[$input]->[1];
+    }
+    else {
+        $stdout_stderr .= $input;
+    }
 
     # actually print input value to input filehandle
-    print $COMMAND_IN $input, "\n";
+#    print {*STDERR} '<<< DEBUG >>>: in Code::run_command_input_ajax(), begin input print', "\n";
+#    print $COMMAND_IN $input;
+#    print {*STDERR} '<<< DEBUG >>>: in Code::run_command_input_ajax(), end input print', "\n";
 
-# START HERE: don't rely on keypress to load output
-# START HERE: don't rely on keypress to load output
-# START HERE: don't rely on keypress to load output
+    print {*STDERR} '<<< DEBUG >>>: in Code::run_command_input_ajax(), begin input syswrite', "\n";
+    syswrite $COMMAND_IN, $input;
+    print {*STDERR} '<<< DEBUG >>>: in Code::run_command_input_ajax(), end input syswrite', "\n";
 
-    # get output
-    my IO::Select $selector = IO::Select->new();
-    $selector->add(*{$COMMAND_ERR}, *{$COMMAND_OUT});
+    # read available output after input has been provided
+#    print {*STDERR} '<<< DEBUG >>>: in Code::run_command_input_ajax(), begin post-input collection of output', "\n";
+#    $selector->remove(*{$COMMAND_OUT}, *{$COMMAND_ERR});
+#    $selector->add(*{$COMMAND_OUT}, *{$COMMAND_ERR});
+#    while (my @readable_filehandles = $selector->can_read(1)) {
+##    my @readable_filehandles = $selector->can_read(0.1);
+#        foreach my filehandleref $readable_filehandle (@readable_filehandles) {
+#            if (fileno($readable_filehandle) == fileno(*{$COMMAND_ERR})) 
+#                { $stdout_stderr .= scalar <$COMMAND_ERR>; }
+#            else
+#                { $stdout_stderr .= scalar <$COMMAND_OUT>; }
+#            if (eof($readable_filehandle)) { $selector->remove($readable_filehandle); }
+#        }
+#    }
+#    print {*STDERR} '<<< DEBUG >>>: in Code::run_command_input_ajax(), end post-input collection of output', "\n";
 
-##    while (my @readable_filehandles = $selector->can_read) {
-    my @readable_filehandles = $selector->can_read();
-        foreach my filehandleref $readable_filehandle (@readable_filehandles) {
-        if (fileno($readable_filehandle) == fileno(*{$COMMAND_ERR})) 
-            { $stdout_stderr .= scalar <$COMMAND_ERR>; }
-        else
-            { $stdout_stderr .= scalar <$COMMAND_OUT>; }
-        if (eof($readable_filehandle)) { $selector->remove($readable_filehandle); }
-        }
-##    }
-
-    # append input to output just like in a console
-    $stdout_stderr .= $input;
-
-#    print {*STDERR} '<<< DEBUG >>>: in Code::run_command_input_ajax(), about to return $stdout_stderr = ', $stdout_stderr, "\n";
+    print {*STDERR} '<<< DEBUG >>>: in Code::run_command_input_ajax(), about to return $stdout_stderr = ', $stdout_stderr, "\n";
     $c->stash->{run_command_input_ajax}->{output} = $stdout_stderr;
 }
 
@@ -443,22 +552,16 @@ sub run_command : Chained( 'base' ) : PathPart( 'run_command' ) {
     $c->stash->{run_command}->{command} = $command;
 
     # SECURITY: run all commands as www-data user; we automatically inherit PERL env vars, must explicitly inherit PATH env var
-    $command = q{su www-data -c "PATH=$PATH; } . $command . q{"};
+    # DEV NOTE: must use `unbuffer -p` to avoid 4K libc buffer min limit, which requires erroneous newline input before unblocking output
+    $command = q{su www-data -c "PATH=$PATH; unbuffer -p } . $command . q{"};
 
     print {*STDERR} '<<< DEBUG >>>: in Code::run_command(), START running $command = ', $command, "\n";
-
-
-
-
-
-
-
 
     my string $stdout_stderr = q{};
     my filehandleref $COMMAND_IN;
     my filehandleref $COMMAND_OUT;
     my filehandleref $COMMAND_ERR = gensym;
-#    my integer $pid = open3(*{COMMAND_IN}, *{COMMAND_OUT}, *{COMMAND_ERR}, $command);
+
     my integer $pid = open3($COMMAND_IN, $COMMAND_OUT, $COMMAND_ERR, $command);
     $c->stash->{run_command}->{pid} = $pid;
     $Code::JOBS->{$pid} = {};
@@ -528,6 +631,7 @@ sub run_command : Chained( 'base' ) : PathPart( 'run_command' ) {
 
 
 
+# KEYCODE
 
 
 
@@ -542,9 +646,57 @@ sub run_command : Chained( 'base' ) : PathPart( 'run_command' ) {
 Enter something: 
 <input type="hidden" name="run_command_pid" id="run_command_pid" value="$pid">
 <input type="text" name="run_command_input_param" id="run_command_input_param"
-  onkeyup="run_command_input_ajax( ['run_command_pid', 'run_command_input_param'], [js_run_command_output_div_append] );">
+    onkeydown="
+        handle_keydown(event);
+    "
+    onkeyup="
+        run_command_input_ajax( ['run_command_pid', 'run_command_input_param'], [js_run_command_output_div_append] );
+        document.getElementById('run_command_input_param').value = '';
+    "
 <br>
-<div id="run_command_output_div_FOO"></div>
+
+<script>
+var key_codes = [];
+key_codes[08] = '__B__';   // BACKSPACE
+key_codes[09] = '__T__';   // TAB
+key_codes[13] = '__E__';   // ENTER
+//key_codes[16] = '__S__';   // SHIFT
+//key_codes[17] = '__C__';   // CTRL
+//key_codes[18] = '__A__';   // ALT
+key_codes[27] = '__ES__';  // ESCAPE
+//key_codes[33] = '__PU__';  // PAGE UP
+//key_codes[34] = '__PD__';  // PAGE DOWN
+key_codes[35] = '__EN__';  // END
+key_codes[36] = '__HO__';  // HOME
+key_codes[37] = '__AL__';  // ARROW LEFT
+key_codes[38] = '__AU__';  // ARROW UP
+key_codes[39] = '__AR__';  // ARROW RIGHT
+key_codes[40] = '__AD__';  // ARROW DOWN
+//key_codes[45] = '__I__';   // INSERT
+key_codes[46] = '__D__';   // DELETE
+//key_codes[XX] = '__X__';  // FOO
+
+    function handle_keydown(e){
+        if (key_codes[e.keyCode] !== undefined) {
+            e.preventDefault();
+            document.getElementById('run_command_input_param').value = key_codes[e.keyCode];
+            run_command_input_ajax( ['run_command_pid', 'run_command_input_param'], [js_run_command_output_div_append] );
+            document.getElementById('run_command_input_param').value = '';
+            return;
+        }
+
+        // TEST TO DETERMINE UNKNOWN KEYCODES
+//        if (1) {
+//            e.preventDefault();
+//            document.getElementById('run_command_input_param').value = '__CODE_' + e.keyCode + '__';
+//            run_command_input_ajax( ['run_command_pid', 'run_command_input_param'], [js_run_command_output_div_append] );
+//            document.getElementById('run_command_input_param').value = '';
+//            return;
+//        }
+    }
+</script>
+
+
 </body>
 </html>
 EOHTML

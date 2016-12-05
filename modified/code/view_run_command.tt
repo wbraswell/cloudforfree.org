@@ -24,7 +24,7 @@
         function js_run_command_output_div_append() {
             var input1 = arguments[0].trim();
             if (input1) {
-                document.getElementById('run_command_output_div').innerHTML = document.getElementById('run_command_output_div').innerHTML.concat("<br>");
+                //document.getElementById('run_command_output_div').innerHTML = document.getElementById('run_command_output_div').innerHTML.concat("<br>");
                 document.getElementById('run_command_output_div').innerHTML = document.getElementById('run_command_output_div').innerHTML.concat(input1);
             }
         }
