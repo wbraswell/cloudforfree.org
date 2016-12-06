@@ -102,27 +102,28 @@ has posts_per_page => (
 
 our hashref $JOBS = {};
 our hashref $KEY_CODES = {  # more listed here:  https://metacpan.org/pod/Term::ANSIMenu
-    '__B__'  => [ "\b", '__B__' ],   # BACKSPACE
-    '__T__'  => [ "\t", '__T__' ],   # TAB
-    '__E__'  => [ "\n",  '<br>'  ],   # ENTER
-#    '__S__'  => [ "FOO", '__S__' ],   # SHIFT
-#    '__C__'  => [ "FOO", '__C__' ],   # CTRL
-#    '__A__'  => [ "FOO", '__A__' ],   # ALT
-    '__ES__' => [ "\e", '__ES__' ],  # ESCAPE
-#    '__PU__' => [ "\e[3~", '__PU__' ],  # PAGE UP
-#    '__PD__' => [ "\e[6~", '__PD__' ],  # PAGE DOWN
-    '__EN__' => [ "\e[5~", '__EN__' ],  # END
-    '__HO__' => [ "\e[2~", '__HO__' ],  # HOME
-    '__AL__' => [ "\e[D", '__AL__' ],  # ARROW LEFT
-    '__AU__' => [ "\e[A", '__AU__' ],  # ARROW UP
-    '__AR__' => [ "\e[C", '__AR__' ],  # ARROW RIGHT
-    '__AD__' => [ "\e[B", '__AD__' ],  # ARROW DOWN
-#    '__I__'  => [ "\e[1~", '__I__' ],   # INSERT
-    '__D__'  => [ "\e[4~", '__D__' ],   # DELETE
+    '__B__'  => [ "\x08", '__B__' ],   # BACKSPACE  "\b" does not work
+    '__T__'  => [ "\x09", '__T__' ],   # TAB  "\t" does work
+    '__E__'  => [ "\x0A",  '<br>'  ],   # ENTER  "\n" does work
+#    '__S__'  => [ "FOO", '__S__' ],   # SHIFT  UNTESTED
+#    '__C__'  => [ "FOO", '__C__' ],   # CTRL  UNTESTED
+    '__Cc__'  => [ "\x03", '__Cc__' ],   # CTRL-c  UNTESTED
+#    '__A__'  => [ "FOO", '__A__' ],   # ALT  UNTESTED
+    '__ES__' => [ "\e", '__ES__' ],  # ESCAPE  UNTESTED
+#    '__SP__' => [ "\x20", '__SP__' ],  # SPACE  UNTESTED
+#    '__PU__' => [ "\e[5~", '__PU__' ],  # PAGE UP  UNTESTED
+#    '__PD__' => [ "\e[6~", '__PD__' ],  # PAGE DOWN  UNTESTED
+#    '__EN__' => [ "\eOF", '__EN__' ],  # END   "\e[4~" & "\e[F" & "\eOF" does not work  NEED FIX
+#    '__HO__' => [ "\eOH", '__HO__' ],  # HOME  "\e[1~" & "\e[H" & "\eOH" does not work  NEED FIX
+#    '__AL__' => [ "\e[D", '__AL__' ],  # ARROW LEFT "\e[D" & "\e0D" does not work  NEED FIX 
+#    '__AU__' => [ "\e[A", '__AU__' ],  # ARROW UP
+#    '__AR__' => [ "\e[C", '__AR__' ],  # ARROW RIGHT
+#    '__AD__' => [ "\e[B", '__AD__' ],  # ARROW DOWN
+#    '__I__'  => [ "\e[2~", '__I__' ],   # INSERT
+    '__D__'  => [ "\x7F", '__D__' ],   # DELETE  "\e[3~" does not work NEED FIX
 };
 
 # [[[ SUBROUTINES & OO METHODS ]]]
-
 
 
 
@@ -470,11 +471,15 @@ sub run_command_input_ajax : Chained( 'base' ) : PathPart( 'run_command_input_aj
     # START HERE: handle other special keys, clean up messy code
     # START HERE: handle other special keys, clean up messy code
     # START HERE: handle other special keys, clean up messy code
+    
+    # START HERE: then add JS cursor handler    http://stackoverflow.com/questions/512528/set-cursor-position-in-html-textbox
+    # START HERE: then add JS cursor handler    http://stackoverflow.com/questions/512528/set-cursor-position-in-html-textbox
+    # START HERE: then add JS cursor handler    http://stackoverflow.com/questions/512528/set-cursor-position-in-html-textbox
 
     # decode ENTER key if found, append input to output which has been read
-    if (exists $KEY_CODES->[$input]) {
-        $input = $KEY_CODES->[$input]->[0];
-        $stdout_stderr = $KEY_CODES->[$input]->[1];
+    if (exists $KEY_CODES->{$input}) {
+        $input = $KEY_CODES->{$input}->[0];
+        $stdout_stderr = $KEY_CODES->{$input}->[1];
     }
     else {
         $stdout_stderr .= $input;
@@ -553,7 +558,7 @@ sub run_command : Chained( 'base' ) : PathPart( 'run_command' ) {
 
     # SECURITY: run all commands as www-data user; we automatically inherit PERL env vars, must explicitly inherit PATH env var
     # DEV NOTE: must use `unbuffer -p` to avoid 4K libc buffer min limit, which requires erroneous newline input before unblocking output
-    $command = q{su www-data -c "PATH=$PATH; unbuffer -p } . $command . q{"};
+    $command = q{su www-data -c "PATH=$PATH; set | grep TERM; unbuffer -p } . $command . q{"};
 
     print {*STDERR} '<<< DEBUG >>>: in Code::run_command(), START running $command = ', $command, "\n";
 
@@ -664,6 +669,7 @@ key_codes[13] = '__E__';   // ENTER
 //key_codes[17] = '__C__';   // CTRL
 //key_codes[18] = '__A__';   // ALT
 key_codes[27] = '__ES__';  // ESCAPE
+//key_codes[32] = '__SP__';  // SPACE
 //key_codes[33] = '__PU__';  // PAGE UP
 //key_codes[34] = '__PD__';  // PAGE DOWN
 key_codes[35] = '__EN__';  // END

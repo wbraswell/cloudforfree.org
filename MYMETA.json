@@ -1,0 +1,80 @@
+{
+   "abstract" : "unknown",
+   "author" : [
+      "Denny de la Haye <2014@denny.me>"
+   ],
+   "dynamic_config" : 0,
+   "generated_by" : "Module::Install version 1.17, CPAN::Meta::Converter version 2.150005",
+   "license" : [
+      "open_source"
+   ],
+   "meta-spec" : {
+      "url" : "http://search.cpan.org/perldoc?CPAN::Meta::Spec",
+      "version" : "2"
+   },
+   "name" : "ShinyCMS",
+   "no_index" : {
+      "directory" : [
+         "inc",
+         "t"
+      ]
+   },
+   "prereqs" : {
+      "build" : {
+         "requires" : {
+            "ExtUtils::MakeMaker" : "6.36"
+         }
+      },
+      "configure" : {
+         "requires" : {
+            "ExtUtils::MakeMaker" : "0"
+         }
+      },
+      "runtime" : {
+         "recommends" : {
+            "FCGI" : "0",
+            "FCGI::ProcManager" : "0",
+            "Template::Plugin::Markdown" : "0"
+         },
+         "requires" : {
+            "CGI::Ajax" : "0.707",
+            "Captcha::reCAPTCHA" : "0",
+            "Catalyst::Action::RenderView" : "0",
+            "Catalyst::Authentication::Realm::SimpleDB" : "0",
+            "Catalyst::Plugin::Authentication" : "0",
+            "Catalyst::Plugin::ConfigLoader" : "0",
+            "Catalyst::Plugin::Session" : "0",
+            "Catalyst::Plugin::Session::State::Cookie" : "0",
+            "Catalyst::Plugin::Session::Store::DBIC" : "0",
+            "Catalyst::Plugin::Static::Simple" : "0",
+            "Catalyst::Runtime" : "5.80004",
+            "Catalyst::TraitFor::Request::BrowserDetect" : "0",
+            "Catalyst::View::Email" : "0",
+            "Catalyst::View::TT" : "0",
+            "CatalystX::RoleApplicator" : "0",
+            "Config::General" : "0",
+            "DBIx::Class::EncodedColumn" : "0",
+            "DBIx::Class::Schema::Loader" : "0",
+            "DBIx::Class::TimeStamp" : "0",
+            "Email::Sender" : "0.102360",
+            "Email::Valid" : "0",
+            "File::Pid" : "0",
+            "File::Temp" : "0.2304",
+            "HTML::Restrict" : "0",
+            "HTML::TreeBuilder" : "0",
+            "Method::Signatures::Simple" : "0",
+            "MooseX::MarkAsMethods" : "0",
+            "MooseX::NonMoose" : "0",
+            "Net::Domain::TLD" : "0",
+            "Term::VT102::Boundless" : "0.04",
+            "Term::VT102::Incremental" : "0.05",
+            "Text::CSV::Simple" : "0",
+            "XML::Feed" : "0",
+            "parent" : "0"
+         }
+      }
+   },
+   "release_status" : "stable",
+   "version" : "0.007",
+   "x_serialization_backend" : "JSON::PP version 2.27300"
+}

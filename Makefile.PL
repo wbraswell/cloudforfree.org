@@ -42,6 +42,10 @@ requires (
 	'HTML::TreeBuilder'                          => '0',
 
     # WBRASWELL 20161126 2016.331
+    # enable AJAX terminal emulation
+    'CGI::Ajax'                                  => '0.707',
+    'Term::VT102::Boundless'                     => '0.04',
+    'Term::VT102::Incremental'                   => '0.05',
     # enable temp build files
     'File::Temp'                                 => '0.2304',
     # enable file manager
