@@ -7,7 +7,7 @@ package ShinyCMS::Controller::Code;
 use strict;
 use warnings;
 use RPerl::AfterSubclass;
-our $VERSION = 0.010_000;
+our $VERSION = 0.011_000;
 
 =head1 NAME
 
@@ -34,9 +34,6 @@ BEGIN { extends 'ShinyCMS::Controller'; }
 ## no critic qw(RequireInterpolationOfMetachars)  # USER DEFAULT 2: allow single-quoted control characters & sigils
 
 # [[[ INCLUDES ]]]
-use Data::Dumper;
-use English qw(-no_match_vars);
-use Carp;
 use File::Temp qw(tempfile);
 use IPC::Run3 qw(run3);
 use IPC::Open3;
@@ -44,50 +41,11 @@ use IO::Select;
 use CGI qw(params);
 use CGI::Ajax;
 use Symbol qw(gensym); 
-use rperloptions;
-
-=DISABLE_TMP
 use Plack::Request;
-use Plack::App::Apache2FileManager::Mocks;
+use Apache2::FileManager::PSGI;
 use Apache2::FileManager;
-
-
-my $document_root = '/tmp';
-
-our $R;
-our $CONFIG;
-
-*Apache2::FileManager::r = sub { return $R };
-
-
-
-ShinyCMS->config(
-  psgi_middleware => [
-    'Delegate' => { psgi_app =>
-       sub {
-    my $env = shift;
-    print {*STDERR} 'in app.psgi, received $env = ', Dumper($env), "\n";
-    my $req = Plack::Request->new($env);
-
-    local $R = Plack::App::Apache2FileManager::Mocks->new(
-        {   request       => $req,
-            document_root => $document_root
-        }
-    );
-    local $CONFIG = {};
-
-    Apache2::FileManager->handler();
-
-    return $R->response->finalize;
-} 
-         },
-  ]);
- 
-ShinyCMS->setup;
-=cut
-
-
-
+use rperloptions;
+use RPerl::Config;
 
 # [[[ CONSTANTS ]]]
 has posts_per_page => (
@@ -130,6 +88,9 @@ our hashref $KEY_CODES = {  # more listed here:  https://metacpan.org/pod/Term::
 
 
 
+
+
+
 =head1 METHODS
 
 =cut
@@ -141,7 +102,7 @@ Set up path and stash some useful info.
 =cut
 
 sub base : Chained( '/base' ) : PathPart( 'code' ) : CaptureArgs( 0 ) {
-    my ( $self, $c ) = @_;
+    my ( $self, $c ) = @ARG;
     
     # Stash the upload_dir setting
     $c->stash->{ upload_dir } = $c->config->{ upload_dir };
@@ -157,23 +118,37 @@ Display the IDE code editor.
 =cut
 
 sub view_editor : Chained( 'base' ) : PathPart( 'editor' ) {
-    my ( $self, $c ) = @_;
+    my ( $self, $c ) = @ARG;
 #    print {*STDERR} '<<< DEBUG >>>: in Code::view_editor(), received $self = ', "\n", Dumper($self), "\n\n";
 #    print {*STDERR} '<<< DEBUG >>>: in Code::view_editor(), received $c = ', "\n", Dumper($c), "\n\n";
 
-    my $req = $c->request();
-    my $parameters = $req->parameters();
-    if ((exists $parameters->{editor_textarea}) and (defined $parameters->{editor_textarea})) {
-        my $editor_textarea = $parameters->{editor_textarea};
-        print {*STDERR} '<<< DEBUG >>>: in Code::view_editor(), have parameter $editor_textarea = ', "\n", Dumper($editor_textarea), "\n\n";
-    }
+    my $request = $c->request();
+    # NEED ANSWER: are we going to accept input parameters on this page?
+#    my $parameters = $request->parameters();
+#    if ((exists $parameters->{editor_textarea}) and (defined $parameters->{editor_textarea})) {
+#        my $editor_textarea = $parameters->{editor_textarea};
+#        print {*STDERR} '<<< DEBUG >>>: in Code::view_editor(), have parameter $editor_textarea = ', "\n", Dumper($editor_textarea), "\n\n";
+#    }
 
+    # set up stash
     $c->stash->{ template } = 'code/view_editor.tt';
+    $c->stash->{ editor } = { title => 'IDE Code Editor' };
 
-    # NEED FIX: must be running in modperl mode for Apache2::FileManager to work
-#    my $obj = Apache2::FileManager->new({ DOCUMENT_ROOT => '/home/wbraswell/public_html/cloudforfree.org-latest/root/user_files/' });
-#    $obj->print();
+    # Apache2::FileManager: variables
+    my $shiny_username = $c->user->{_user}->{_column_data}->{username};
+    my $document_root = '/home/wbraswell/public_html/cloudforfree.org-latest/root/user_files/' . $shiny_username . '/';
+    my $request_wrapped_psgi;
     
+    # Apache2::FileManager: override $r with $request_wrapped_psgi, thereby wrapping $r
+    undef *Apache2::FileManager::r;
+    *Apache2::FileManager::r = sub { return $request_wrapped_psgi };
+    
+    # Apache2::FileManager: create new $request_wrapped_psgi, generate HTML
+    $request_wrapped_psgi = Apache2::FileManager::PSGI::new_from_psgi($request->env, $document_root);
+    my $handler_retval = Apache2::FileManager->handler_noprint();
+    $c->stash->{ file_manager } = { handler_retval => $handler_retval };
+
+    # ACE Editor: default source code file input
     my $learning_rperl_ch1_ex1 = <<'EOF';
 #!/usr/bin/perl
 
@@ -192,9 +167,6 @@ our $VERSION = 0.001_000;
 # [[[ OPERATIONS ]]]
 print 'Hello, world!', "\n";
 EOF
-
-    $c->stash->{ editor } = { title => 'IDE Code Editor' };
-    $c->stash->{ file_manager } = { NEED_ADD_DATA_FM => 23 };
     $c->stash->{ file_input } = { default => $learning_rperl_ch1_ex1 };
 }
 
@@ -205,7 +177,7 @@ Display the GitHub repos manager.
 =cut
 
 sub view_repos : Chained( 'base' ) : PathPart( 'repos' ) {
-    my ( $self, $c ) = @_;
+    my ( $self, $c ) = @ARG;
 #    print {*STDERR} '<<< DEBUG >>>: in Code::view_repos(), received $self = ', "\n", Dumper($self), "\n\n";
 #    print {*STDERR} '<<< DEBUG >>>: in Code::view_repos(), received $c = ', "\n", Dumper($c), "\n\n";
 
@@ -222,13 +194,13 @@ Display the job queue.
 =cut
 
 sub view_queue : Chained( 'base' ) : PathPart( 'queue' ) {
-    my ( $self, $c ) = @_;
+    my ( $self, $c ) = @ARG;
 #    print {*STDERR} '<<< DEBUG >>>: in Code::view_queue(), received $self = ', "\n", Dumper($self), "\n\n";
 #    print {*STDERR} '<<< DEBUG >>>: in Code::view_queue(), received $c = ', "\n", Dumper($c), "\n\n";
 
-    my $req = $c->request();
-#    print {*STDERR} '<<< DEBUG >>>: in Code::view_queue(), have $req->param() = ', "\n", Dumper($req->param()), "\n\n";
-#    print {*STDERR} '<<< DEBUG >>>: in Code::view_queue(), have $req->parameters() = ', "\n", Dumper($req->parameters()), "\n\n";
+    my $request = $c->request();
+#    print {*STDERR} '<<< DEBUG >>>: in Code::view_queue(), have $request->param() = ', "\n", Dumper($request->param()), "\n\n";
+#    print {*STDERR} '<<< DEBUG >>>: in Code::view_queue(), have $request->parameters() = ', "\n", Dumper($request->parameters()), "\n\n";
 
     $c->stash->{template} = 'code/view_queue.tt';
     $c->stash->{queue} = {};
@@ -254,13 +226,13 @@ Check the RPerl syntax of input source code.
 =cut
 
 sub syntax_check : Chained( 'base' ) : PathPart( 'syntax_check' ) {
-    my ( $self, $c ) = @_;
+    my ( $self, $c ) = @ARG;
 #    print {*STDERR} '<<< DEBUG >>>: in Code::syntax_check(), received $self = ', "\n", Dumper($self), "\n\n";
 #    print {*STDERR} '<<< DEBUG >>>: in Code::syntax_check(), received $c = ', "\n", Dumper($c), "\n\n";
 
-    my $req = $c->request();
-#    print {*STDERR} '<<< DEBUG >>>: in Code::syntax_check(), have $req->param() = ', "\n", Dumper($req->param()), "\n\n";
-#    print {*STDERR} '<<< DEBUG >>>: in Code::syntax_check(), have $req->parameters() = ', "\n", Dumper($req->parameters()), "\n\n";
+    my $request = $c->request();
+#    print {*STDERR} '<<< DEBUG >>>: in Code::syntax_check(), have $request->param() = ', "\n", Dumper($request->param()), "\n\n";
+#    print {*STDERR} '<<< DEBUG >>>: in Code::syntax_check(), have $request->parameters() = ', "\n", Dumper($request->parameters()), "\n\n";
 
     # set up stash
     $c->stash->{template} = 'code/view_syntax_check.tt';
@@ -269,7 +241,7 @@ sub syntax_check : Chained( 'base' ) : PathPart( 'syntax_check' ) {
     $c->stash->{syntax_check}->{stdout_stderr} = q{};
 
     # accept HTML parameters
-    my $parameters = $req->parameters();
+    my $parameters = $request->parameters();
     if (not ((exists $parameters->{editor_textarea}) and (defined $parameters->{editor_textarea}))) 
         { croak("\n" . q{ERROR ECOSCPA00, SYNTAX CHECK, PARAMETERS: Missing HTML parameter 'editor_textarea', should contain source code to be syntax checked, croaking}); }
     # append newline to avoid "ERROR ECOPAPC13, RPERL PARSER, PERL CRITIC VIOLATION: RPerl source code input file '/tmp/rperl_tempfileFOO.pl' does not end with newline character or line of all-whitespace characters, dying
@@ -349,11 +321,11 @@ Run the RPerl command.
 =cut
 
 sub run_command_input_ajax : Chained( 'base' ) : PathPart( 'run_command_input_ajax' ) {
-    my ( $self, $c ) = @_;
+    my ( $self, $c ) = @ARG;
 #    print {*STDERR} '<<< DEBUG >>>: in Code::run_command_input_ajax(), received $self = ', "\n", Dumper($self), "\n\n";
 #    print {*STDERR} '<<< DEBUG >>>: in Code::run_command_input_ajax(), received $c = ', "\n", Dumper($c), "\n\n";
 
-    my $req = $c->request();
+    my $request = $c->request();
 
     # set up stash
     $c->stash->{template} = 'code/view_run_command_input_ajax.tt';
@@ -363,7 +335,7 @@ sub run_command_input_ajax : Chained( 'base' ) : PathPart( 'run_command_input_aj
     my string $stdout_stderr = q{};
 
     # require pid & input parameters
-    my $parameters = $req->parameters();
+    my $parameters = $request->parameters();
     if (not ((exists $parameters->{run_command_pid}) and (defined $parameters->{run_command_pid}))) {
         croak("\n" . q{ERROR ECORCIAPA00, RUN COMMAND INPUT AJAX, PARAMETERS: Missing HTML parameter 'run_command_pid', should contain PID of running command, croaking});
     }
@@ -516,13 +488,13 @@ sub run_command_input_ajax : Chained( 'base' ) : PathPart( 'run_command_input_aj
 
 
 sub run_command : Chained( 'base' ) : PathPart( 'run_command' ) {
-    my ( $self, $c ) = @_;
+    my ( $self, $c ) = @ARG;
 #    print {*STDERR} '<<< DEBUG >>>: in Code::run_command(), received $self = ', "\n", Dumper($self), "\n\n";
 #    print {*STDERR} '<<< DEBUG >>>: in Code::run_command(), received $c = ', "\n", Dumper($c), "\n\n";
 
-    my $req = $c->request();
-#    print {*STDERR} '<<< DEBUG >>>: in Code::run_command(), have $req->param() = ', "\n", Dumper($req->param()), "\n\n";
-#    print {*STDERR} '<<< DEBUG >>>: in Code::run_command(), have $req->parameters() = ', "\n", Dumper($req->parameters()), "\n\n";
+    my $request = $c->request();
+#    print {*STDERR} '<<< DEBUG >>>: in Code::run_command(), have $request->param() = ', "\n", Dumper($request->param()), "\n\n";
+#    print {*STDERR} '<<< DEBUG >>>: in Code::run_command(), have $request->parameters() = ', "\n", Dumper($request->parameters()), "\n\n";
 
     # set up stash
     $c->stash->{template} = 'code/view_run_command.tt';
@@ -534,7 +506,7 @@ sub run_command : Chained( 'base' ) : PathPart( 'run_command' ) {
     $c->stash->{run_command}->{output_ajax} = q{};
 
     # require command parameter
-    my $parameters = $req->parameters();
+    my $parameters = $request->parameters();
     if (not ((exists $parameters->{command}) and (defined $parameters->{command}))) {
         croak("\n" . q{ERROR ECORCPA00, RUN COMMAND, PARAMETERS: Missing HTML parameter 'command', should contain command to be run, croaking});
     }
@@ -558,7 +530,8 @@ sub run_command : Chained( 'base' ) : PathPart( 'run_command' ) {
 
     # SECURITY: run all commands as www-data user; we automatically inherit PERL env vars, must explicitly inherit PATH env var
     # DEV NOTE: must use `unbuffer -p` to avoid 4K libc buffer min limit, which requires erroneous newline input before unblocking output
-    $command = q{su www-data -c "PATH=$PATH; set | grep TERM; unbuffer -p } . $command . q{"};
+#    $command = q{su www-data -c "PATH=$PATH; set | grep TERM; unbuffer -p } . $command . q{"};
+    $command = q{su www-data -c "PATH=$PATH; unbuffer -p } . $command . q{"};
 
     print {*STDERR} '<<< DEBUG >>>: in Code::run_command(), START running $command = ', $command, "\n";
 

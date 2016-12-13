@@ -2,7 +2,6 @@
     meta.title   = editor.title;
 %]
 
-<!-- [% file_manager.NEED_ADD_DATA_FM %] -->
 <!-- [% file_input.default %] -->
 
 <!-- user must be logged in -->
@@ -29,6 +28,16 @@
             }
         </style>
     </head>
+
+
+
+
+    <div>
+        [% file_manager.handler_retval %]
+    </div>
+
+
+
 
     <b><u>IDE Code Editor</u></b><br><br>
     
