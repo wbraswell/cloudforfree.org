@@ -2,16 +2,42 @@
     meta.title   = editor.title;
 %]
 
-<!-- [% file_input.default %] -->
-
 <!-- user must be logged in -->
 [%- IF NOT c.user_exists %]
     [% INCLUDE 'user/login.tt' %]
 [%- ELSE %]
 
+    </body>
     <head>
+        <!-- AceEditor & W2UI: load JQuery -->
+        <script src="http://ajax.googleapis.com/ajax/libs/jquery/2.1.0/jquery.min.js"></script>
+
+        <!-- W2UI: load JQuery & W2UI -->
+        <script type="text/javascript" src="http://rawgit.com/vitmalina/w2ui/master/dist/w2ui.min.js"></script>
+        <link rel="stylesheet" type="text/css" href="http://rawgit.com/vitmalina/w2ui/master/dist/w2ui.min.css" />
+
+        <!-- AJAX & Apache2::FileManager: header JavaScript code -->
+        [%- editor_file_manager.output_js %]
+
+        <script>
+            // AJAX & Apache2::FileManager: overwrite output div
+            function js_editor_file_manager_div_update() {
+                var input1 = arguments[0].trim();
+                if (input1) {
+                    document.getElementById('editor_file_manager_div').innerHTML = input1;
+                    $(function () { w2ui['layout'].content('left', $('#editor_file_manager_div').html()); });
+                    //alert("in js_editor_file_manager_div_update()...");
+                }
+            }
+        </script>
+
+        <!-- ACE Editor: load ACE Editor & settings_menu Extension -->
+        <script src="/static/ace_editor/src-min-noconflict/ace.js" type="text/javascript" charset="utf-8"></script>
+        <script src="/static/ace_editor/src-min-noconflict/ext-settings_menu.js" type="text/javascript" charset="utf-8"></script>
+
+        <!-- ACE Editor: CSS styles -->
         <style type="text/css" media="screen">
-            #editor_div { 
+            #editor_ace_div { 
                 margin: 0px;
                 width: 100%;
                 height: 500px;
@@ -19,7 +45,7 @@
                 border-width: 3px;
                 border-color: rgb(235,235,235);  <!-- grey to match the gutter -->
             }
-            textarea {
+            editor_ace_textarea_var {
                 display: block;  <!-- if set to "none", will not allow keyboard input -->
                 margin: 0px;
                 width: 1px;
@@ -27,70 +53,130 @@
                 border-style: none;
             }
         </style>
+
     </head>
+    <body>
 
+    <!-- AJAX & Apache2::FileManager: create div, default input value, will be overwritten by js_editor_file_manager_div_update() -->
+    <div id="editor_file_manager_div" style="display: none;">[%- editor_file_manager.output %]</div>
 
+    <!-- ACE Editor & Apache2::FileManager & Syntax Check: create div for page header -->
+    <div id="editor_header_div" style="display: none;">
+        <b><u>IDE Code Editor</u></b><br>
 
+        <!-- text heading above Ace editor -->
+        Default Keybindings: vi
+        <br>
+        Type CTRL-m To Show IDE Editor Menu, ESC To Hide Menu
+        <br>
 
-    <div>
-        [% file_manager.handler_retval %]
+        <!-- RPerl Syntax Check button & soon-to-be-hidden textarea -->
+        <form action="syntax_check" method="post" target="_blank">
+            <input type="submit" value="RPerl Syntax Check" id='syntax_check_submit'>
+            Select File Suffix:
+            <input type="radio" name="file_suffix" value="pl" checked> Perl Program .pl File
+            <input type="radio" name="file_suffix" value="pm"> Perl Module .pm File<br>
+            <!-- purposefully empty textarea, to avoid any visible pixels before editor_ace_textarea_var.hide() occurs -->
+            <textarea name="editor_ace_textarea"></textarea>
+        </form>
     </div>
 
 
 
 
-    <b><u>IDE Code Editor</u></b><br><br>
-    
-    <!-- text heading above Ace editor -->
-    Default Keybindings: vi
-    <br>
-    Type CTRL-m To Show IDE Editor Menu, ESC To Hide Menu
-    <br>
-    
-    <!-- RPerl Syntax Check button & soon-to-be-hidden textarea -->
-    <form action="syntax_check" method="post" target="_blank">
-        <input type="submit" value="RPerl Syntax Check" id='submit'>
-        Select File Suffix:
-        <input type="radio" name="file_suffix" value="pl" checked> Perl Program .pl File
-        <input type="radio" name="file_suffix" value="pm"> Perl Module .pm File<br>
-        <!-- purposefully empty textarea, to avoid any visible pixels before textarea.hide() occurs -->
-        <textarea name="editor_textarea"></textarea>
-    </form>
-    
-    <!-- create Ace editor div with default file input from Code.pm -->
-    <div id="editor_div"></div>
-    
-    <!-- load jQuery & Ace editor -->
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1/jquery.min.js" type="text/javascript"></script>
-    <script src="/static/ace_editor/src-min-noconflict/ace.js" type="text/javascript" charset="utf-8"></script>
-    
-    <!-- load Ace settings_menu extension -->
-    <script src="/static/ace_editor/src-min-noconflict/ext-settings_menu.js" type="text/javascript" charset="utf-8"></script>
-    
+
+
+
+
+
+
+
+
+
+
+    <!-- W2UI: set up layout -->
+    <div id="tab1_content_div" style="display: none;">Tab 1 Content</div>
+    <div id="tab2_content_div" style="display: none;">Tab 2 Content</div>
+    <div id="tab3_content_div" style="display: none;">Tab 3 Content</div>
+
+    <div id="layout" style="width: 100%; height: 400px;"></div>
+
+    <script type="text/javascript">
+    $(function () { 
+        var pstyle = 'border: 1px solid #dfdfdf; padding: 5px;';
+        $('#layout').w2layout({
+            name: 'layout',
+            panels: [
+                { type: 'top', size: 100, resizable: true, style: pstyle, content: $('#editor_header_div').html() },
+                { type: 'left', size: 200, resizable: true, style: pstyle, content: $('#editor_file_manager_div').html() },
+                { type: 'main', style: pstyle + 'border-top: 0px;', content: $('#tab1_content_div').html(),
+//                { type: 'main', style: pstyle + 'border-top: 0px;', content: $('#editor_ace_div').html(),
+//                { type: 'main', style: pstyle + 'border-top: 0px;', content: '<div id="editor_ace_div"></div>',
+                    tabs: {
+                        active: 'tab1',
+                        tabs: [
+                            { id: 'tab1', text: 'Tab 1 Title', content: $('#tab1_content_div').html() },
+//                            { id: 'tab1', text: 'Tab 1 Title', content: $('#editor_ace_div').html() },
+                            { id: 'tab2', text: 'Tab 2 Title', content: $('#tab2_content_div').html() },
+                            { id: 'tab3', text: 'Tab 3 Title', content: $('#tab3_content_div').html() }
+                        ],
+                        onClick: function (event) {
+                            this.owner.content('main', event.tab.content);
+                        }
+                    }
+                }
+            ]
+        });
+    });
+    </script>
+
+    <br><br>
+
+
+
+
+
+
+    <!-- ACE Editor: create div -->
+    <div id="editor_ace_div"></div>
+
     <script>
         // don't load code before editor: enable heredocs, so multi-line TT variables can be placed inside JS variables
         function heredoc (f) { return f.toString().match(/\/\*\s*([\s\S]*?)\s*\*\//m)[1]; };
-    
+
         // create textarea object & hide
-        var textarea = $('textarea[name="editor_textarea"]');
-        textarea.hide();
-    
+        var editor_ace_textarea_var = $('textarea[name="editor_ace_textarea"]');
+        editor_ace_textarea_var.hide();
+
+
+
+
+// START HERE: get ace editor to go inside w2ui layout, fix syntax check button
+// START HERE: get ace editor to go inside w2ui layout, fix syntax check button
+// START HERE: get ace editor to go inside w2ui layout, fix syntax check button
+
+
+
+
         // create Ace editor object & configure settings
-        var editor = ace.edit("editor_div");
+        var editor = ace.edit("editor_ace_div");
+        //var editor = ace.edit(window.document.getElementById('editor_ace_div'));
+        //alert('just created ace editor!');
+
         ace.require('ace/ext/settings_menu').init(editor);
         editor.setTheme("ace/theme/sqlserver");
         editor.getSession().setMode("ace/mode/perl");
         editor.getSession().setTabSize(4);
         editor.getSession().setUseSoftTabs(true);
         editor.setPrintMarginColumn(160);
-    
+
         // don't load code before editor: now load default source code input received from Code.pm, de-select-all
         var code = heredoc(function(){/*
         [%- file_input.default %]
         */});
         editor.setValue(code);
         editor.session.selection.clearSelection();
-    
+
         // set Ace editor key bindings for menu & vim commands
         editor.commands.addCommands([
             {
@@ -101,11 +187,25 @@
             }
         ]);
         editor.setKeyboardHandler("ace/keyboard/vim");
-    
+
         // set hidden textarea value to Ace editor value
-        $('#submit').on('click', function() {
-            textarea.val(editor.getSession().getValue());
+        $('#syntax_check_submit').on('click', function() {
+            editor_ace_textarea_var.val(editor.getSession().getValue());
         });
     </script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 [%- END %]

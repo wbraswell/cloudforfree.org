@@ -7,7 +7,7 @@ package ShinyCMS::Controller::Code;
 use strict;
 use warnings;
 use RPerl::AfterSubclass;
-our $VERSION = 0.011_000;
+our $VERSION = 0.013_000;
 
 =head1 NAME
 
@@ -90,7 +90,6 @@ our hashref $KEY_CODES = {  # more listed here:  https://metacpan.org/pod/Term::
 
 
 
-
 =head1 METHODS
 
 =cut
@@ -117,6 +116,129 @@ Display the IDE code editor.
 
 =cut
 
+sub editor_file_manager_input_ajax : Chained( 'base' ) : PathPart( 'editor_file_manager_input_ajax' ) {
+    my ( $self, $c ) = @ARG;
+#    print {*STDERR} '<<< DEBUG >>>: in Code::editor_file_manager_input_ajax(), received $self = ', "\n", Dumper($self), "\n\n";
+#    print {*STDERR} '<<< DEBUG >>>: in Code::editor_file_manager_input_ajax(), received $c = ', "\n", Dumper($c), "\n\n";
+
+    my $request = $c->request();
+
+    # set up stash
+    $c->stash->{template} = 'code/view_editor_file_manager_input_ajax.tt';
+    $c->stash->{wrapper_disable} = 1;
+    # DEV NOTE: directly modify stash entries for editor_file_manager, instead of indirect editor_file_manager_input_ajax, removes redundant data copies
+    $c->stash->{editor_file_manager} = {};
+    $c->stash->{editor_file_manager}->{output} = q{};
+
+    # require user to be logged in
+    if ((not defined $c->user) or
+        (not exists  $c->user->{_user}) or
+        (not defined $c->user->{_user}) or
+        (not exists  $c->user->{_user}->{_column_data}) or
+        (not defined $c->user->{_user}->{_column_data}) or
+        (not exists  $c->user->{_user}->{_column_data}->{username}) or
+        (not defined $c->user->{_user}->{_column_data}->{username})) {
+       return; 
+    }
+
+    # require parameters (???)
+    my $parameters = $request->parameters();
+    print {*STDERR} '<<< DEBUG >>>: in Code::editor_file_manager_input_ajax(), have $parameters = ', Dumper($parameters), "\n";
+
+=DISABLE do we need to check & accep params in this way?
+
+    if (not ((exists $parameters->{editor_file_manager_input_param}) and (defined $parameters->{editor_file_manager_input_param}))) {
+        croak("\n" . q{ERROR ECOEFMIAPA01, EDITOR FILE MANAGER INPUT AJAX, PARAMETERS: Missing HTML parameter 'editor_file_manager_input_param', should contain input for FOOOOO, croaking});
+    }
+
+    # accept input parameters
+    my $input = $parameters->{editor_file_manager_input_param};
+    print {*STDERR} '<<< DEBUG >>>: in Code::editor_file_manager_input_ajax(), have $input = ', q{'}, $input, q{'}, "\n";
+=cut
+
+    # Apache2::FileManager: variables
+    my $shiny_username = $c->user->{_user}->{_column_data}->{username};
+    my $document_root = '/home/wbraswell/public_html/cloudforfree.org-latest/root/user_files/' . $shiny_username . '/';
+    my $request_wrapped_psgi;
+
+    # Apache2::FileManager: override $r with $request_wrapped_psgi, thereby wrapping $r
+    undef *Apache2::FileManager::r;
+    *Apache2::FileManager::r = sub { return $request_wrapped_psgi };
+
+    # Apache2::FileManager: create new $request_wrapped_psgi, generate HTML
+    $request_wrapped_psgi = Apache2::FileManager::PSGI::new_from_psgi($request->env, $document_root);
+    my $handler_retval = Apache2::FileManager->handler_noprint();
+
+    # AJAX & Apache2::FileManager:
+    # intercept calls to f.submit() for submitting the FileManager form data, which is used by all file & directory links plus most primary features;
+    # replace with calls to editor_file_manager_input_ajax() for submitting the same FileManager form data via CGI::Ajax
+    my $ajax_call_string = q{editor_file_manager_input_ajax( ['FILEMANAGER_curr_file', 'FILEMANAGER_curr_dir', 'FILEMANAGER_cmd', 'FILEMANAGER_arg', 'FILEMANAGER_last_select_all'], [js_editor_file_manager_div_update] );};
+#    $ajax_call_string = q{alert('about to call editor_file_manager_input_ajax()...');} . "\n" . $ajax_call_string;
+    $handler_retval =~ s/f\.submit\(\);/$ajax_call_string/gxms;
+
+    # AJAX & Apache2::FileManager: intercept calls to window.document.FileManager which does not work inside W2UI layout, 
+    # replace with window.document.forms.namedItem("FileManager")
+    # hardcoded example, intercepted
+    #window.document.FileManager
+    # hardcoded example, replacement
+    #window.document.forms.namedItem("FileManager")
+    $handler_retval =~ s/window\.document\.FileManager/window\.document\.forms\.namedItem\('FileManager'\)/gxms;
+
+
+
+    # START HERE: fix support for raw files below
+    # START HERE: fix support for raw files below
+    # START HERE: fix support for raw files below
+
+
+    # AJAX & Apache2::FileManager: intercept links to raw files, replace with AJAX code
+    # hardcoded example, intercepted
+    #<A HREF="/FOO?nossi=1"
+    #    TARGET=_blank>
+    # hardcoded example, replacement
+    #<A HREF=# onclick="
+    #        var f=window.document.FileManager;
+    #        f.FILEMANAGER_curr_file.value='FOO';
+    #        editor_file_manager_input_ajax( ['FILEMANAGER_curr_file', 'FILEMANAGER_curr_dir', 'FILEMANAGER_cmd', 'FILEMANAGER_arg', 'FILEMANAGER_last_select_all'], [js_editor_file_manager_div_update] );
+    #        return false;">
+    $handler_retval =~ s/<A\s+HREF="(.+)"[\s\n\r]*TARGET=_blank>/
+        <A HREF=\# onclick="
+            var f=window.document.FileManager; 
+            f.FILEMANAGER_curr_file.value='$1'; 
+            $ajax_call_string
+            return false;">
+        /gxms;
+
+    # AJAX & Apache2::FileManager: add FILEMANAGER_curr_file parameter
+    # hardcoded example, find
+    #    <INPUT TYPE=HIDDEN NAME=FILEMANAGER_curr_dir
+    # hardcoded example, prepend
+    #    <INPUT TYPE=HIDDEN NAME=FILEMANAGER_curr_file VALUE=''>
+    my $handler_retval_tmp = q{};
+    foreach my $handler_retval_line (split /\n/, $handler_retval) {
+        if ($handler_retval_line eq '    <INPUT TYPE=HIDDEN NAME=FILEMANAGER_curr_dir') {
+            $handler_retval_tmp .= q{    <INPUT TYPE=HIDDEN NAME=FILEMANAGER_curr_file VALUE=''>} . "\n";
+        }
+        $handler_retval_tmp .= $handler_retval_line . "\n";
+    }
+    $handler_retval = $handler_retval_tmp;
+
+    # AJAX: create objects
+    my CGI $cgi = CGI->new();
+    my CGI::Ajax $cgi_ajax = new CGI::Ajax( editor_file_manager_input_ajax => 'editor_file_manager_input_ajax', skip_header => 1 );
+    $cgi_ajax->skip_header(1);
+
+    # AJAX: build & stash
+    # initial call from view_editor(), no parameters, do include AJAX javascript from build_html()
+    if (not exists $parameters->{FILEMANAGER_curr_dir}) {
+#        $handler_retval = $cgi_ajax->build_html($cgi, $handler_retval);
+        $c->stash->{editor_file_manager}->{output_js} = $cgi_ajax->show_javascript();
+    }
+    # subsequent calls from user clicking on links, yes parameters, do not include AJAX javascript from build_html()
+    $c->stash->{editor_file_manager}->{output} = $handler_retval;
+}
+
+
 sub view_editor : Chained( 'base' ) : PathPart( 'editor' ) {
     my ( $self, $c ) = @ARG;
 #    print {*STDERR} '<<< DEBUG >>>: in Code::view_editor(), received $self = ', "\n", Dumper($self), "\n\n";
@@ -125,28 +247,29 @@ sub view_editor : Chained( 'base' ) : PathPart( 'editor' ) {
     my $request = $c->request();
     # NEED ANSWER: are we going to accept input parameters on this page?
 #    my $parameters = $request->parameters();
-#    if ((exists $parameters->{editor_textarea}) and (defined $parameters->{editor_textarea})) {
-#        my $editor_textarea = $parameters->{editor_textarea};
-#        print {*STDERR} '<<< DEBUG >>>: in Code::view_editor(), have parameter $editor_textarea = ', "\n", Dumper($editor_textarea), "\n\n";
+#    if ((exists $parameters->{editor_ace_textarea}) and (defined $parameters->{editor_ace_textarea})) {
+#        my $editor_ace_textarea = $parameters->{editor_ace_textarea};
+#        print {*STDERR} '<<< DEBUG >>>: in Code::view_editor(), have parameter $editor_ace_textarea = ', "\n", Dumper($editor_ace_textarea), "\n\n";
 #    }
 
-    # set up stash
+    # create default file manager
+    editor_file_manager_input_ajax($self, $c);
+
+    # set up stash, must be after call to editor_file_manager_input_ajax()
     $c->stash->{ template } = 'code/view_editor.tt';
+    $c->stash->{wrapper_disable} = 0;
     $c->stash->{ editor } = { title => 'IDE Code Editor' };
 
-    # Apache2::FileManager: variables
-    my $shiny_username = $c->user->{_user}->{_column_data}->{username};
-    my $document_root = '/home/wbraswell/public_html/cloudforfree.org-latest/root/user_files/' . $shiny_username . '/';
-    my $request_wrapped_psgi;
-    
-    # Apache2::FileManager: override $r with $request_wrapped_psgi, thereby wrapping $r
-    undef *Apache2::FileManager::r;
-    *Apache2::FileManager::r = sub { return $request_wrapped_psgi };
-    
-    # Apache2::FileManager: create new $request_wrapped_psgi, generate HTML
-    $request_wrapped_psgi = Apache2::FileManager::PSGI::new_from_psgi($request->env, $document_root);
-    my $handler_retval = Apache2::FileManager->handler_noprint();
-    $c->stash->{ file_manager } = { handler_retval => $handler_retval };
+    # require user to be logged in
+    if ((not defined $c->user) or
+        (not exists  $c->user->{_user}) or
+        (not defined $c->user->{_user}) or
+        (not exists  $c->user->{_user}->{_column_data}) or
+        (not defined $c->user->{_user}->{_column_data}) or
+        (not exists  $c->user->{_user}->{_column_data}->{username}) or
+        (not defined $c->user->{_user}->{_column_data}->{username})) {
+       return; 
+    }
 
     # ACE Editor: default source code file input
     my $learning_rperl_ch1_ex1 = <<'EOF';
@@ -185,6 +308,17 @@ sub view_repos : Chained( 'base' ) : PathPart( 'repos' ) {
     $c->stash->{ repos } = { };
     $c->stash->{ repos }->{ title } = 'GiHub Repos Manager';
     $c->stash->{ repos }->{ NEED_ADD_OTHER_DATA } = 2_112;
+
+    # require user to be logged in
+    if ((not defined $c->user) or
+        (not exists  $c->user->{_user}) or
+        (not defined $c->user->{_user}) or
+        (not exists  $c->user->{_user}->{_column_data}) or
+        (not defined $c->user->{_user}->{_column_data}) or
+        (not exists  $c->user->{_user}->{_column_data}->{username}) or
+        (not defined $c->user->{_user}->{_column_data}->{username})) {
+       return; 
+    }
 }
 
 =head2 view_queue
@@ -205,6 +339,17 @@ sub view_queue : Chained( 'base' ) : PathPart( 'queue' ) {
     $c->stash->{template} = 'code/view_queue.tt';
     $c->stash->{queue} = {};
     $c->stash->{queue}->{title} = 'Job Queue';
+
+    # require user to be logged in
+    if ((not defined $c->user) or
+        (not exists  $c->user->{_user}) or
+        (not defined $c->user->{_user}) or
+        (not exists  $c->user->{_user}->{_column_data}) or
+        (not defined $c->user->{_user}->{_column_data}) or
+        (not exists  $c->user->{_user}->{_column_data}->{username}) or
+        (not defined $c->user->{_user}->{_column_data}->{username})) {
+       return; 
+    }
 
     # list of all RPerl options, arguments, modes; generate HTML
 #    my $rperl_options_html = q{};
@@ -240,13 +385,24 @@ sub syntax_check : Chained( 'base' ) : PathPart( 'syntax_check' ) {
     $c->stash->{syntax_check}->{title} = 'Syntax Check';
     $c->stash->{syntax_check}->{stdout_stderr} = q{};
 
+    # require user to be logged in
+    if ((not defined $c->user) or
+        (not exists  $c->user->{_user}) or
+        (not defined $c->user->{_user}) or
+        (not exists  $c->user->{_user}->{_column_data}) or
+        (not defined $c->user->{_user}->{_column_data}) or
+        (not exists  $c->user->{_user}->{_column_data}->{username}) or
+        (not defined $c->user->{_user}->{_column_data}->{username})) {
+       return; 
+    }
+
     # accept HTML parameters
     my $parameters = $request->parameters();
-    if (not ((exists $parameters->{editor_textarea}) and (defined $parameters->{editor_textarea}))) 
-        { croak("\n" . q{ERROR ECOSCPA00, SYNTAX CHECK, PARAMETERS: Missing HTML parameter 'editor_textarea', should contain source code to be syntax checked, croaking}); }
+    if (not ((exists $parameters->{editor_ace_textarea}) and (defined $parameters->{editor_ace_textarea}))) 
+        { croak("\n" . q{ERROR ECOSCPA00, SYNTAX CHECK, PARAMETERS: Missing HTML parameter 'editor_ace_textarea', should contain source code to be syntax checked, croaking}); }
     # append newline to avoid "ERROR ECOPAPC13, RPERL PARSER, PERL CRITIC VIOLATION: RPerl source code input file '/tmp/rperl_tempfileFOO.pl' does not end with newline character or line of all-whitespace characters, dying
     # append return character to avoid "ERROR ECOPAPC02, RPERL PARSER, PERL CRITIC VIOLATION: Perl::Critic::Policy::CodeLayout::RequireConsistentNewlines"
-    my string $input_source_code = $parameters->{editor_textarea} . "\r\n";
+    my string $input_source_code = $parameters->{editor_ace_textarea} . "\r\n";
     print {*STDERR} '<<< DEBUG >>>: in Code::syntax_check(), have $input_source_code = ', "\n", $input_source_code, "\n\n";
     if ($input_source_code eq q{}) 
         { croak("\n" . q{ERROR ECOSCPA01, SYNTAX CHECK, PARAMETERS: Empty HTML parameter 'input_source_code', should contain source code to be syntax checked, croaking}); }
@@ -325,8 +481,6 @@ sub run_command_input_ajax : Chained( 'base' ) : PathPart( 'run_command_input_aj
 #    print {*STDERR} '<<< DEBUG >>>: in Code::run_command_input_ajax(), received $self = ', "\n", Dumper($self), "\n\n";
 #    print {*STDERR} '<<< DEBUG >>>: in Code::run_command_input_ajax(), received $c = ', "\n", Dumper($c), "\n\n";
 
-    my $request = $c->request();
-
     # set up stash
     $c->stash->{template} = 'code/view_run_command_input_ajax.tt';
     $c->stash->{wrapper_disable} = 1;
@@ -334,7 +488,19 @@ sub run_command_input_ajax : Chained( 'base' ) : PathPart( 'run_command_input_aj
     $c->stash->{run_command_input_ajax}->{output} = q{};
     my string $stdout_stderr = q{};
 
+    # require user to be logged in
+    if ((not defined $c->user) or
+        (not exists  $c->user->{_user}) or
+        (not defined $c->user->{_user}) or
+        (not exists  $c->user->{_user}->{_column_data}) or
+        (not defined $c->user->{_user}->{_column_data}) or
+        (not exists  $c->user->{_user}->{_column_data}->{username}) or
+        (not defined $c->user->{_user}->{_column_data}->{username})) {
+       return; 
+    }
+
     # require pid & input parameters
+    my $request = $c->request();
     my $parameters = $request->parameters();
     if (not ((exists $parameters->{run_command_pid}) and (defined $parameters->{run_command_pid}))) {
         croak("\n" . q{ERROR ECORCIAPA00, RUN COMMAND INPUT AJAX, PARAMETERS: Missing HTML parameter 'run_command_pid', should contain PID of running command, croaking});
@@ -614,7 +780,7 @@ sub run_command : Chained( 'base' ) : PathPart( 'run_command' ) {
 
 
 
-    # generate AJAX
+    # AJAX: generate code
     my CGI $cgi = CGI->new();
     my CGI::Ajax $cgi_ajax = new CGI::Ajax( run_command_input_ajax => 'run_command_input_ajax', skip_header => 1 );
     $cgi_ajax->skip_header(1);
@@ -680,6 +846,7 @@ key_codes[46] = '__D__';   // DELETE
 </html>
 EOHTML
 
+    # AJAX: build & stash
     my string $output_ajax = $cgi_ajax->build_html($cgi, $run_command_output_ajax_html);
 #    print {*STDERR} '<<< DEBUG >>>: in Code::run_command(), have $output_ajax = ', "\n", $output_ajax, "\n\n";
     $c->stash->{run_command}->{output_ajax} = $output_ajax;
