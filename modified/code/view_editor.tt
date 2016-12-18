@@ -29,6 +29,149 @@
                     //alert("in js_editor_file_manager_div_update()...");
                 }
             }
+
+            // W2UI: resize layout div on window resize
+            function body_resized() {
+                var window_inner_height = window.innerHeight;
+                //alert('in body_resize(), have window_inner_height = ' + window_inner_height);
+                if (document.getElementById('layout').style.height != "100%") {
+                    document.getElementById('layout').style.height = (window_inner_height - 200) + "px";
+                }
+            }
+
+            // W2UI: full size layout div 
+            function w2ui_layout_fullsize() {
+                // do not re-run this if already in full size layout
+                if (document.getElementById('layout').style.height == "100%") { return; }
+
+                // NEED FIX: why doesn't hiding the buttons work???
+                //document.getElementById('w2ui_layout_fullsize_button').style.display = "none";
+                //document.getElementById('w2ui_layout_normal_button').style.display = null;
+
+                var container_var = document.getElementById('container');
+                if (container_var.style.position && (! container_var.style.position_saved)) { container_var.style.position_saved = container_var.style.position; }
+                if (container_var.style.top && (! container_var.style.top_saved)) { container_var.style.top_saved = container_var.style.top; }
+                if (container_var.style.bottom && (! container_var.style.bottom_saved)) { container_var.style.bottom_saved = container_var.style.bottom; }
+                if (container_var.style.left && (! container_var.style.left_saved)) { container_var.style.left_saved = container_var.style.left; }
+                if (container_var.style.right && (! container_var.style.right_saved)) { container_var.style.right_saved = container_var.style.right; }
+                if (container_var.style.height && (! container_var.style.height_saved)) { container_var.style.height_saved = container_var.style.height; }
+                if (container_var.style.width && (! container_var.style.width_saved)) { container_var.style.width_saved = container_var.style.width; }
+                container_var.style.position = "absolute";
+                container_var.style.top = "0px";
+                container_var.style.bottom = "0px";
+                container_var.style.left = "0px";
+                container_var.style.right = "0px";
+                container_var.style.height = "100%";
+                container_var.style.width = "100%";
+
+                var content_var = document.getElementById('content');
+                if (content_var.style.position && (! content_var.style.position_saved)) { content_var.style.position_saved = content_var.style.position; }
+                if (content_var.style.top && (! content_var.style.top_saved)) { content_var.style.top_saved = content_var.style.top; }
+                if (content_var.style.bottom && (! content_var.style.bottom_saved)) { content_var.style.bottom_saved = content_var.style.bottom; }
+                if (content_var.style.left && (! content_var.style.left_saved)) { content_var.style.left_saved = content_var.style.left; }
+                if (content_var.style.right && (! content_var.style.right_saved)) { content_var.style.right_saved = content_var.style.right; }
+                if (content_var.style.height && (! content_var.style.height_saved)) { content_var.style.height_saved = content_var.style.height; }
+                if (content_var.style.width && (! content_var.style.width_saved)) { content_var.style.width_saved = content_var.style.width; }
+                content_var.style.position = "absolute";
+                content_var.style.top = "0px";
+                content_var.style.bottom = "0px";
+                content_var.style.left = "0px";
+                content_var.style.right = "0px";
+                content_var.style.height = "100%";
+                content_var.style.width = "100%";
+
+                var layout_var = document.getElementById('layout');
+                if (layout_var.style.position && (! layout_var.style.position_saved)) { layout_var.style.position_saved = layout_var.style.position; }
+                if (layout_var.style.top && (! layout_var.style.top_saved)) { layout_var.style.top_saved = layout_var.style.top; }
+                if (layout_var.style.bottom && (! layout_var.style.bottom_saved)) { layout_var.style.bottom_saved = layout_var.style.bottom; }
+                if (layout_var.style.left && (! layout_var.style.left_saved)) { layout_var.style.left_saved = layout_var.style.left; }
+                if (layout_var.style.right && (! layout_var.style.right_saved)) { layout_var.style.right_saved = layout_var.style.right; }
+                if (layout_var.style.height && (! layout_var.style.height_saved)) { layout_var.style.height_saved = layout_var.style.height; }
+                if (layout_var.style.width && (! layout_var.style.width_saved)) { layout_var.style.width_saved = layout_var.style.width; }
+                layout_var.style.position = "absolute";
+                layout_var.style.top = "0px";
+                layout_var.style.bottom = "0px";
+                layout_var.style.left = "0px";
+                layout_var.style.right = "0px";
+                layout_var.style.height = "100%";
+                layout_var.style.width = "100%";
+ 
+                // arrange in front of menu
+                document.getElementById('layout').style.zIndex = "200000";
+
+                // force redraw all divs
+                $(window).resize();
+            }
+
+            // W2UI: normal size layout div 
+            function w2ui_layout_normal() {
+                if (document.getElementById('layout').style.height != "100%") { return; }
+
+                // NEED FIX: why doesn't hiding the buttons work???
+                //document.getElementById('w2ui_layout_normal_button').style.display = "none";
+                //document.getElementById('w2ui_layout_fullsize_button').style.display = null;
+
+                var window_inner_height = window.innerHeight;
+                //alert('in w2ui_layout_normal(), have window_inner_height = ' + window_inner_height);
+
+                var container_var = document.getElementById('container');
+                if (container_var.style.position_saved) { container_var.style.position = container_var.style.position_saved; container_var.style.position_saved = null; } 
+                else { container_var.style.position = null; }
+                if (container_var.style.top_saved) { container_var.style.top = container_var.style.top_saved; container_var.style.top_saved = null; }
+                else { container_var.style.top = null; }
+                if (container_var.style.bottom_saved) { container_var.style.bottom = container_var.style.bottom_saved; container_var.style.bottom_saved = null; }
+                else { container_var.style.bottom = null; }
+                if (container_var.style.left_saved) { container_var.style.left = container_var.style.left_saved; container_var.style.left_saved = null; }
+                else { container_var.style.left = null; }
+                if (container_var.style.right_saved) { container_var.style.right = container_var.style.right_saved; container_var.style.right_saved = null; }
+                else { container_var.style.right = null; }
+                if (container_var.style.height_saved) { container_var.style.height = container_var.style.height_saved; container_var.style.height_saved = null; }
+                else { container_var.style.height = null; }
+                if (container_var.style.width_saved) { container_var.style.width = container_var.style.width_saved; container_var.style.width_saved = null; }
+                else { container_var.style.width = null; }
+
+
+                var content_var = document.getElementById('content');
+                if (content_var.style.position_saved) { content_var.style.position = content_var.style.position_saved; content_var.style.position_saved = null; } 
+                else { content_var.style.position = null; }
+                if (content_var.style.top_saved) { content_var.style.top = content_var.style.top_saved; content_var.style.top_saved = null; }
+                else { content_var.style.top = null; }
+                if (content_var.style.bottom_saved) { content_var.style.bottom = content_var.style.bottom_saved; content_var.style.bottom_saved = null; }
+                else { content_var.style.bottom = null; }
+                if (content_var.style.left_saved) { content_var.style.left = content_var.style.left_saved; content_var.style.left_saved = null; }
+                else { content_var.style.left = null; }
+                if (content_var.style.right_saved) { content_var.style.right = content_var.style.right_saved; content_var.style.right_saved = null; }
+                else { content_var.style.right = null; }
+                if (content_var.style.height_saved) { content_var.style.height = content_var.style.height_saved; content_var.style.height_saved = null; }
+                else { content_var.style.height = null; }
+                if (content_var.style.width_saved) { content_var.style.width = content_var.style.width_saved; content_var.style.width_saved = null; }
+                else { content_var.style.width = null; }
+
+
+                var layout_var = document.getElementById('layout');
+                if (layout_var.style.position_saved) { layout_var.style.position = layout_var.style.position_saved; layout_var.style.position_saved = null; } 
+                else { layout_var.style.position = null; }
+                if (layout_var.style.top_saved) { layout_var.style.top = layout_var.style.top_saved; layout_var.style.top_saved = null; }
+                else { layout_var.style.top = null; }
+                if (layout_var.style.bottom_saved) { layout_var.style.bottom = layout_var.style.bottom_saved; layout_var.style.bottom_saved = null; }
+                else { layout_var.style.bottom = null; }
+                if (layout_var.style.left_saved) { layout_var.style.left = layout_var.style.left_saved; layout_var.style.left_saved = null; }
+                else { layout_var.style.left = null; }
+                if (layout_var.style.right_saved) { layout_var.style.right = layout_var.style.right_saved; layout_var.style.right_saved = null; }
+                else { layout_var.style.right = null; }
+                if (layout_var.style.height_saved) { layout_var.style.height = layout_var.style.height_saved; layout_var.style.height_saved = null; }
+                else { layout_var.style.height = (window_inner_height - 200) + "px"; }
+                if (layout_var.style.width_saved) { layout_var.style.width = layout_var.style.width_saved; layout_var.style.width_saved = null; }
+                else { layout_var.style.width = "100%"; }
+
+                // arrange behind menu
+                layout_var.style.zIndex = "100";
+
+                // force redraw all divs
+                $(window).resize();
+            }
+
+
         </script>
 
         <!-- ACE Editor: load ACE Editor & settings_menu Extension -->
@@ -55,7 +198,11 @@
         </style>
 
     </head>
-    <body>
+    <!-- <body> -->
+    <body onresize="body_resized()">
+
+
+
 
     <!-- AJAX & Apache2::FileManager: create div, default input value, will be overwritten by js_editor_file_manager_div_update() -->
     <div id="editor_file_manager_div" style="display: none;">[%- editor_file_manager.output %]</div>
@@ -70,9 +217,19 @@
         Type CTRL-m To Show IDE Editor Menu, ESC To Hide Menu
         <br>
 
+        <!-- NEED FIX: why doesn't hiding the buttons work???
+        <div id="w2ui_layout_fullsize_button"><button onclick="w2ui_layout_fullsize();">Full Size Editor</button></div>
+        <div id="w2ui_layout_normal_button" style="display: none;"><button onclick="w2ui_layout_normal()">Normal Size Editor</button></div>
+        -->
+        <button class="w2ui-btn" onclick="w2ui_layout_fullsize();">Full Size Editor</button>
+        <button class="w2ui-btn" onclick="w2ui_layout_normal()">Normal Size Editor</button>
+
+        <button class="w2ui-btn" onclick="w2ui['layout'].toggle('left', 0)">Toggle File Manager</button>
+
         <!-- RPerl Syntax Check button & soon-to-be-hidden textarea -->
         <form action="syntax_check" method="post" target="_blank">
-            <input type="submit" value="RPerl Syntax Check" id='syntax_check_submit'>
+            <!-- <input type="submit" value="RPerl Syntax Check" id='syntax_check_submit'> <!-- same as below, but w/out class attribute -->
+            <button class="w2ui-btn" id='syntax_check_submit' onclick="window.document.forms.namedItem('FileManager').submit();">RPerl Syntax Check</button>
             Select File Suffix:
             <input type="radio" name="file_suffix" value="pl" checked> Perl Program .pl File
             <input type="radio" name="file_suffix" value="pm"> Perl Module .pm File<br>
@@ -81,25 +238,19 @@
         </form>
     </div>
 
-
-
-
-
-
-
-
-
-
-
-
-
-
     <!-- W2UI: set up layout -->
     <div id="tab1_content_div" style="display: none;">Tab 1 Content</div>
     <div id="tab2_content_div" style="display: none;">Tab 2 Content</div>
     <div id="tab3_content_div" style="display: none;">Tab 3 Content</div>
 
-    <div id="layout" style="width: 100%; height: 400px;"></div>
+    <div id="layout" style="width: 100%; min-height: 300px; background-color: white;"></div>
+    <!-- <div id="layout" style="width: 100%; height: 300px;"></div> -->
+    <!-- <div id="layout" style="width: 80%; height: 80%;"></div> -->
+    <!-- <div id="layout" style="position: absolute; width: 100%; height: 80%;"></div> -->
+    <!-- <div id="layout" style="position: absolute; top: 200px; left: 10px; bottom: 100px; right: 10px;"></div> -->
+    <!-- <div id="layout" style="position: fixed; width: 100%; height: 400px;"></div> -->
+    <!-- <div id="layout" style="position: relative; width: 100%; height: 600px;"></div>  <!-- RELATIVE: does proper layout, does not support height % -->
+
 
     <script type="text/javascript">
     $(function () { 
@@ -107,7 +258,7 @@
         $('#layout').w2layout({
             name: 'layout',
             panels: [
-                { type: 'top', size: 100, resizable: true, style: pstyle, content: $('#editor_header_div').html() },
+                { type: 'top', size: 120, resizable: true, style: pstyle, content: $('#editor_header_div').html() },
                 { type: 'left', size: 200, resizable: true, style: pstyle, content: $('#editor_file_manager_div').html() },
                 { type: 'main', style: pstyle + 'border-top: 0px;', content: $('#tab1_content_div').html(),
 //                { type: 'main', style: pstyle + 'border-top: 0px;', content: $('#editor_ace_div').html(),
@@ -127,6 +278,11 @@
                 }
             ]
         });
+        var window_inner_height = window.innerHeight;
+        //alert('in layout setup, have window_inner_height = ' + window_inner_height);
+        document.getElementById('layout').style.height = (window_inner_height - 200) + "px";
+
+
     });
     </script>
 
@@ -138,7 +294,7 @@
 
 
     <!-- ACE Editor: create div -->
-    <div id="editor_ace_div"></div>
+    <div id="editor_ace_div" style="display: none;"></div>
 
     <script>
         // don't load code before editor: enable heredocs, so multi-line TT variables can be placed inside JS variables

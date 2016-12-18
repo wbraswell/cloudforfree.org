@@ -312,7 +312,9 @@ body {
 #container {
 /*	width:				980px; */
 /*	width:				1200px; */
-	width:				90%;
+/* WBRASWELL 20161218 2016.353: increase width of page body to utilize entire width */
+/*	width:				90%; */
+	width:				98%;
 	margin:				0 auto;
 }
 
@@ -383,7 +385,9 @@ ul,ol {
 /* =========== ( Header ) ========== */
 
 #header {
-	height:				160px;
+/* WBRASWELL 20161218 2016.353: decrease height of page logo & tag line header */
+/*	height:				160px; */
+	height:				100px;
 	width:				100%;
 }
 
@@ -417,9 +421,10 @@ ul,ol {
 }
 
 #logo {
-	width:				339px;
+/* WBRASWELL 20161218 2016.353: decrease height of page logo & tag line header */
+/*	width:				339px; */
 	height:				90px;
-	margin:				28px 0 0 0;
+/*	margin:				28px 0 0 0; */
 	float:				left;
 }
 
@@ -436,6 +441,9 @@ ul,ol {
 #menu {
 	background:		#666666;
 	height:			45px;
+/* WBRASWELL 20161218 2016.353: menu should be above everything else */
+	position:      relative;
+	z-index:       100000;
 }
 
 #menu a {
