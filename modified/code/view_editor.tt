@@ -9,17 +9,31 @@
 
     </body>
     <head>
-        <!-- AceEditor & W2UI: load JQuery -->
-        <script src="http://ajax.googleapis.com/ajax/libs/jquery/2.1.0/jquery.min.js"></script>
+        <!-- ACE Editor & W2UI: load JQuery -->
+        <!-- <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/2.1.0/jquery.min.js"></script> -->
+        <script type="text/javascript" src="/static/js/jquery_2_1_0.min.js"></script>
 
         <!-- W2UI: load JQuery & W2UI -->
-        <script type="text/javascript" src="http://rawgit.com/vitmalina/w2ui/master/dist/w2ui.min.js"></script>
-        <link rel="stylesheet" type="text/css" href="http://rawgit.com/vitmalina/w2ui/master/dist/w2ui.min.css" />
+        <!-- <script type="text/javascript" src="http://rawgit.com/vitmalina/w2ui/master/dist/w2ui.min.js"></script> -->
+        <script type="text/javascript" src="/static/js/w2ui_1_5.min.js"></script>
+        <!-- <link rel="stylesheet" type="text/css" href="http://rawgit.com/vitmalina/w2ui/master/dist/w2ui.min.css" /> -->
+        <link rel="stylesheet" type="text/css" href="/static/css/w2ui_1_5.min.css" />
 
         <!-- AJAX & Apache2::FileManager: header JavaScript code -->
         [%- editor_file_manager.output_js %]
 
         <script>
+            function display_menu_zindex() {
+                // display value of z-index
+                var menu_div = document.getElementById('menu');
+                //alert('have menu_div = ' + menu_div);
+                var menu_style = document.defaultView.getComputedStyle(menu_div, null);
+                //var menu_style = document.defaultView.getComputedStyle(menu, null);  // DEV NOTE: also works calling 'menu' directly instead of 'menu_div'???
+                //alert('have menu_style = ' + menu_style);
+                var menu_zindex = menu_style.getPropertyValue('z-index');
+                alert('have menu_zindex = ' + menu_zindex);
+                alert('have menu_zindex full = ' + document.defaultView.getComputedStyle(document.getElementById('menu'), null).getPropertyValue('z-index'));
+            }
             // AJAX & Apache2::FileManager: overwrite output div
             function js_editor_file_manager_div_update() {
                 var input1 = arguments[0].trim();
@@ -40,13 +54,16 @@
             }
 
             // W2UI: full size layout div 
+            function w2ui_layout_size_toggle() {
+                // do not re-run this if already in full size layout
+                if (document.getElementById('layout').style.height == "100%") { w2ui_layout_normal(); }
+                else { w2ui_layout_fullsize(); }
+            }
+
+            // W2UI: full size layout div 
             function w2ui_layout_fullsize() {
                 // do not re-run this if already in full size layout
                 if (document.getElementById('layout').style.height == "100%") { return; }
-
-                // NEED FIX: why doesn't hiding the buttons work???
-                //document.getElementById('w2ui_layout_fullsize_button').style.display = "none";
-                //document.getElementById('w2ui_layout_normal_button').style.display = null;
 
                 var container_var = document.getElementById('container');
                 if (container_var.style.position && (! container_var.style.position_saved)) { container_var.style.position_saved = container_var.style.position; }
@@ -107,10 +124,6 @@
             function w2ui_layout_normal() {
                 if (document.getElementById('layout').style.height != "100%") { return; }
 
-                // NEED FIX: why doesn't hiding the buttons work???
-                //document.getElementById('w2ui_layout_normal_button').style.display = "none";
-                //document.getElementById('w2ui_layout_fullsize_button').style.display = null;
-
                 var window_inner_height = window.innerHeight;
                 //alert('in w2ui_layout_normal(), have window_inner_height = ' + window_inner_height);
 
@@ -130,7 +143,6 @@
                 if (container_var.style.width_saved) { container_var.style.width = container_var.style.width_saved; container_var.style.width_saved = null; }
                 else { container_var.style.width = null; }
 
-
                 var content_var = document.getElementById('content');
                 if (content_var.style.position_saved) { content_var.style.position = content_var.style.position_saved; content_var.style.position_saved = null; } 
                 else { content_var.style.position = null; }
@@ -146,7 +158,6 @@
                 else { content_var.style.height = null; }
                 if (content_var.style.width_saved) { content_var.style.width = content_var.style.width_saved; content_var.style.width_saved = null; }
                 else { content_var.style.width = null; }
-
 
                 var layout_var = document.getElementById('layout');
                 if (layout_var.style.position_saved) { layout_var.style.position = layout_var.style.position_saved; layout_var.style.position_saved = null; } 
@@ -170,13 +181,11 @@
                 // force redraw all divs
                 $(window).resize();
             }
-
-
         </script>
 
-        <!-- ACE Editor: load ACE Editor & settings_menu Extension -->
-        <script src="/static/ace_editor/src-min-noconflict/ace.js" type="text/javascript" charset="utf-8"></script>
-        <script src="/static/ace_editor/src-min-noconflict/ext-settings_menu.js" type="text/javascript" charset="utf-8"></script>
+        <!-- ACE Editor: load with settings_menu extension -->
+        <script type="text/javascript" src="/static/ace_editor/src-min-noconflict/ace.js" charset="utf-8"></script>
+        <script type="text/javascript" src="/static/ace_editor/src-min-noconflict/ext-settings_menu.js" charset="utf-8"></script>
 
         <!-- ACE Editor: CSS styles -->
         <style type="text/css" media="screen">
@@ -197,12 +206,20 @@
             }
         </style>
 
+        <!-- Keyboard Shortcuts: load -->
+        <script type="text/javascript" src="/static/js/shortcut.js" charset="utf-8"></script>
+        <script>
+            shortcut.add("F6",function() { window.document.forms.namedItem('FileManager').submit(); });
+            shortcut.add("F7",function() { editor.showSettingsMenu(); });
+            shortcut.add("F8",function() { w2ui['layout'].toggle('left', 0); });
+            shortcut.add("F9",function() { w2ui['layout'].toggle('top', 0); });
+            shortcut.add("F10",function() { w2ui_layout_size_toggle(); });
+        </script> 
+
     </head>
-    <!-- <body> -->
+
+    <!-- W2UI: resize layout div on window resize -->
     <body onresize="body_resized()">
-
-
-
 
     <!-- AJAX & Apache2::FileManager: create div, default input value, will be overwritten by js_editor_file_manager_div_update() -->
     <div id="editor_file_manager_div" style="display: none;">[%- editor_file_manager.output %]</div>
@@ -211,31 +228,27 @@
     <div id="editor_header_div" style="display: none;">
         <b><u>IDE Code Editor</u></b><br>
 
-        <!-- text heading above Ace editor -->
-        Default Keybindings: vi
-        <br>
-        Type CTRL-m To Show IDE Editor Menu, ESC To Hide Menu
-        <br>
-
-        <!-- NEED FIX: why doesn't hiding the buttons work???
-        <div id="w2ui_layout_fullsize_button"><button onclick="w2ui_layout_fullsize();">Full Size Editor</button></div>
-        <div id="w2ui_layout_normal_button" style="display: none;"><button onclick="w2ui_layout_normal()">Normal Size Editor</button></div>
-        -->
-        <button class="w2ui-btn" onclick="w2ui_layout_fullsize();">Full Size Editor</button>
-        <button class="w2ui-btn" onclick="w2ui_layout_normal()">Normal Size Editor</button>
-
-        <button class="w2ui-btn" onclick="w2ui['layout'].toggle('left', 0)">Toggle File Manager</button>
+        <!-- text heading above ACE Editor -->
+        Keybindings:
+        <input type="radio" name="keybindings" value="" onclick="editor.setKeyboardHandler('ace/keyboard/vim');" checked="checked"/>Vim (default)
+        <input type="radio" name="keybindings" value="" onclick="editor.setKeyboardHandler('ace/keyboard/emacs');"/>Emacs
+        <input type="radio" name="keybindings" value="" onclick="editor.setKeyboardHandler('');"/>Normal
 
         <!-- RPerl Syntax Check button & soon-to-be-hidden textarea -->
         <form action="syntax_check" method="post" target="_blank">
             <!-- <input type="submit" value="RPerl Syntax Check" id='syntax_check_submit'> <!-- same as below, but w/out class attribute -->
-            <button class="w2ui-btn" id='syntax_check_submit' onclick="window.document.forms.namedItem('FileManager').submit();">RPerl Syntax Check</button>
+            <button class="w2ui-btn" id='syntax_check_submit' onclick="window.document.forms.namedItem('FileManager').submit();">RPerl Syntax Check (F6)</button>
             Select File Suffix:
             <input type="radio" name="file_suffix" value="pl" checked> Perl Program .pl File
             <input type="radio" name="file_suffix" value="pm"> Perl Module .pm File<br>
             <!-- purposefully empty textarea, to avoid any visible pixels before editor_ace_textarea_var.hide() occurs -->
             <textarea name="editor_ace_textarea"></textarea>
         </form>
+
+        <button class="w2ui-btn" onclick="editor.showSettingsMenu();">Editor Menu (F7)</button>
+        <button class="w2ui-btn" onclick="w2ui['layout'].toggle('left', 0);">File Manager (F8)</button>
+        <button class="w2ui-btn" onclick="w2ui['layout'].toggle('top', 0);">Toolbar (F9)</button>
+        <button class="w2ui-btn" onclick="w2ui_layout_size_toggle();">Full Size (F10)</button>
     </div>
 
     <!-- W2UI: set up layout -->
@@ -250,6 +263,16 @@
     <!-- <div id="layout" style="position: absolute; top: 200px; left: 10px; bottom: 100px; right: 10px;"></div> -->
     <!-- <div id="layout" style="position: fixed; width: 100%; height: 400px;"></div> -->
     <!-- <div id="layout" style="position: relative; width: 100%; height: 600px;"></div>  <!-- RELATIVE: does proper layout, does not support height % -->
+
+
+
+
+
+
+
+
+
+
 
 
     <script type="text/javascript">
@@ -278,11 +301,11 @@
                 }
             ]
         });
+
+        // set initial layout height
         var window_inner_height = window.innerHeight;
         //alert('in layout setup, have window_inner_height = ' + window_inner_height);
         document.getElementById('layout').style.height = (window_inner_height - 200) + "px";
-
-
     });
     </script>
 
@@ -314,7 +337,7 @@
 
 
 
-        // create Ace editor object & configure settings
+        // create ACE Editor object & configure settings
         var editor = ace.edit("editor_ace_div");
         //var editor = ace.edit(window.document.getElementById('editor_ace_div'));
         //alert('just created ace editor!');
@@ -333,7 +356,8 @@
         editor.setValue(code);
         editor.session.selection.clearSelection();
 
-        // set Ace editor key bindings for menu & vim commands
+        // set ACE Editor key bindings for menu & vim commands
+        /* disabled in favor of F7 via Keyboard Shortcuts
         editor.commands.addCommands([
             {
                 name: "showSettingsMenu",
@@ -342,9 +366,10 @@
                 readOnly: true
             }
         ]);
+        */
         editor.setKeyboardHandler("ace/keyboard/vim");
 
-        // set hidden textarea value to Ace editor value
+        // set hidden textarea value to ACE Editor value
         $('#syntax_check_submit').on('click', function() {
             editor_ace_textarea_var.val(editor.getSession().getValue());
         });

@@ -441,9 +441,9 @@ ul,ol {
 #menu {
 	background:		#666666;
 	height:			45px;
-/* WBRASWELL 20161218 2016.353: menu should be above everything else */
+/* WBRASWELL 20161218 2016.353: Shiny menu should be above everything else, except ACE Editor menu */
 	position:      relative;
-	z-index:       100000;
+	z-index:       9990;  /* highest possible value which is still behind ACE Editor menu */
 }
 
 #menu a {
