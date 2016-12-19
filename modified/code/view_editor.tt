@@ -23,22 +23,48 @@
         [%- editor_file_manager.output_js %]
 
         <script>
+            function full_screen() {
+                if ( document.querySelector('input[name="ace_keybindings"]:checked').id == 'ace_keybindings_vim' ) {
+                    alert('Please Press Physical F11 Key While In Vim Keybinding Mode');
+                    return;
+                }
+                var head_element = window.document.head;
+                var full_screen_method =
+                    head_element.requestFullScreen ||
+                    head_element.webkitRequestFullScreen ||
+                    head_element.mozRequestFullScreen ||
+                    head_element.msRequestFullScreen;
+                // modern browsers
+                if (full_screen_method) {
+                    full_screen_method.call(head_element);
+                } 
+                // old Internet Explorer
+                else if (typeof window.ActiveXObject !== "undefined") {
+                    var wscript_shell = new ActiveXObject("WScript.Shell");
+                    if (wscript_shell !== null) {
+                        wscript_shell.SendKeys("{F11}");
+                    }
+                }
+            }
+
+            // placeholder for code in case we need to read z-index
             function display_menu_zindex() {
                 // display value of z-index
-                var menu_div = document.getElementById('menu');
+                var menu_div = window.document.getElementById('menu');
                 //alert('have menu_div = ' + menu_div);
                 var menu_style = document.defaultView.getComputedStyle(menu_div, null);
                 //var menu_style = document.defaultView.getComputedStyle(menu, null);  // DEV NOTE: also works calling 'menu' directly instead of 'menu_div'???
                 //alert('have menu_style = ' + menu_style);
                 var menu_zindex = menu_style.getPropertyValue('z-index');
                 alert('have menu_zindex = ' + menu_zindex);
-                alert('have menu_zindex full = ' + document.defaultView.getComputedStyle(document.getElementById('menu'), null).getPropertyValue('z-index'));
+                alert('have menu_zindex full = ' + document.defaultView.getComputedStyle(window.document.getElementById('menu'), null).getPropertyValue('z-index'));
             }
+
             // AJAX & Apache2::FileManager: overwrite output div
             function js_editor_file_manager_div_update() {
                 var input1 = arguments[0].trim();
                 if (input1) {
-                    document.getElementById('editor_file_manager_div').innerHTML = input1;
+                    window.document.getElementById('editor_file_manager_div').innerHTML = input1;
                     $(function () { w2ui['layout'].content('left', $('#editor_file_manager_div').html()); });
                     //alert("in js_editor_file_manager_div_update()...");
                 }
@@ -48,24 +74,24 @@
             function body_resized() {
                 var window_inner_height = window.innerHeight;
                 //alert('in body_resize(), have window_inner_height = ' + window_inner_height);
-                if (document.getElementById('layout').style.height != "100%") {
-                    document.getElementById('layout').style.height = (window_inner_height - 200) + "px";
+                if (window.document.getElementById('layout').style.height != "100%") {
+                    window.document.getElementById('layout').style.height = (window_inner_height - 200) + "px";
                 }
             }
 
             // W2UI: full size layout div 
             function w2ui_layout_size_toggle() {
                 // do not re-run this if already in full size layout
-                if (document.getElementById('layout').style.height == "100%") { w2ui_layout_normal(); }
+                if (window.document.getElementById('layout').style.height == "100%") { w2ui_layout_normal(); }
                 else { w2ui_layout_fullsize(); }
             }
 
             // W2UI: full size layout div 
             function w2ui_layout_fullsize() {
                 // do not re-run this if already in full size layout
-                if (document.getElementById('layout').style.height == "100%") { return; }
+                if (window.document.getElementById('layout').style.height == "100%") { return; }
 
-                var container_var = document.getElementById('container');
+                var container_var = window.document.getElementById('container');
                 if (container_var.style.position && (! container_var.style.position_saved)) { container_var.style.position_saved = container_var.style.position; }
                 if (container_var.style.top && (! container_var.style.top_saved)) { container_var.style.top_saved = container_var.style.top; }
                 if (container_var.style.bottom && (! container_var.style.bottom_saved)) { container_var.style.bottom_saved = container_var.style.bottom; }
@@ -81,7 +107,7 @@
                 container_var.style.height = "100%";
                 container_var.style.width = "100%";
 
-                var content_var = document.getElementById('content');
+                var content_var = window.document.getElementById('content');
                 if (content_var.style.position && (! content_var.style.position_saved)) { content_var.style.position_saved = content_var.style.position; }
                 if (content_var.style.top && (! content_var.style.top_saved)) { content_var.style.top_saved = content_var.style.top; }
                 if (content_var.style.bottom && (! content_var.style.bottom_saved)) { content_var.style.bottom_saved = content_var.style.bottom; }
@@ -97,7 +123,7 @@
                 content_var.style.height = "100%";
                 content_var.style.width = "100%";
 
-                var layout_var = document.getElementById('layout');
+                var layout_var = window.document.getElementById('layout');
                 if (layout_var.style.position && (! layout_var.style.position_saved)) { layout_var.style.position_saved = layout_var.style.position; }
                 if (layout_var.style.top && (! layout_var.style.top_saved)) { layout_var.style.top_saved = layout_var.style.top; }
                 if (layout_var.style.bottom && (! layout_var.style.bottom_saved)) { layout_var.style.bottom_saved = layout_var.style.bottom; }
@@ -114,7 +140,7 @@
                 layout_var.style.width = "100%";
  
                 // arrange in front of menu
-                document.getElementById('layout').style.zIndex = "200000";
+                window.document.getElementById('layout').style.zIndex = "200000";
 
                 // force redraw all divs
                 $(window).resize();
@@ -122,12 +148,12 @@
 
             // W2UI: normal size layout div 
             function w2ui_layout_normal() {
-                if (document.getElementById('layout').style.height != "100%") { return; }
+                if (window.document.getElementById('layout').style.height != "100%") { return; }
 
                 var window_inner_height = window.innerHeight;
                 //alert('in w2ui_layout_normal(), have window_inner_height = ' + window_inner_height);
 
-                var container_var = document.getElementById('container');
+                var container_var = window.document.getElementById('container');
                 if (container_var.style.position_saved) { container_var.style.position = container_var.style.position_saved; container_var.style.position_saved = null; } 
                 else { container_var.style.position = null; }
                 if (container_var.style.top_saved) { container_var.style.top = container_var.style.top_saved; container_var.style.top_saved = null; }
@@ -143,7 +169,7 @@
                 if (container_var.style.width_saved) { container_var.style.width = container_var.style.width_saved; container_var.style.width_saved = null; }
                 else { container_var.style.width = null; }
 
-                var content_var = document.getElementById('content');
+                var content_var = window.document.getElementById('content');
                 if (content_var.style.position_saved) { content_var.style.position = content_var.style.position_saved; content_var.style.position_saved = null; } 
                 else { content_var.style.position = null; }
                 if (content_var.style.top_saved) { content_var.style.top = content_var.style.top_saved; content_var.style.top_saved = null; }
@@ -159,7 +185,7 @@
                 if (content_var.style.width_saved) { content_var.style.width = content_var.style.width_saved; content_var.style.width_saved = null; }
                 else { content_var.style.width = null; }
 
-                var layout_var = document.getElementById('layout');
+                var layout_var = window.document.getElementById('layout');
                 if (layout_var.style.position_saved) { layout_var.style.position = layout_var.style.position_saved; layout_var.style.position_saved = null; } 
                 else { layout_var.style.position = null; }
                 if (layout_var.style.top_saved) { layout_var.style.top = layout_var.style.top_saved; layout_var.style.top_saved = null; }
@@ -221,18 +247,15 @@
     <!-- W2UI: resize layout div on window resize -->
     <body onresize="body_resized()">
 
-    <!-- AJAX & Apache2::FileManager: create div, default input value, will be overwritten by js_editor_file_manager_div_update() -->
-    <div id="editor_file_manager_div" style="display: none;">[%- editor_file_manager.output %]</div>
-
     <!-- ACE Editor & Apache2::FileManager & Syntax Check: create div for page header -->
     <div id="editor_header_div" style="display: none;">
         <b><u>IDE Code Editor</u></b><br>
 
         <!-- text heading above ACE Editor -->
         Keybindings:
-        <input type="radio" name="keybindings" value="" onclick="editor.setKeyboardHandler('ace/keyboard/vim');" checked="checked"/>Vim (default)
-        <input type="radio" name="keybindings" value="" onclick="editor.setKeyboardHandler('ace/keyboard/emacs');"/>Emacs
-        <input type="radio" name="keybindings" value="" onclick="editor.setKeyboardHandler('');"/>Normal
+        <input type="radio" name="ace_keybindings" id="ace_keybindings_vim" onclick="editor.setKeyboardHandler('ace/keyboard/vim');" checked="checked"/>Vim (default)
+        <input type="radio" name="ace_keybindings" id="ace_keybindings_emacs" onclick="editor.setKeyboardHandler('ace/keyboard/emacs');"/>Emacs
+        <input type="radio" name="ace_keybindings" id="ace_keybindings_normal" onclick="editor.setKeyboardHandler('');"/>Normal
 
         <!-- RPerl Syntax Check button & soon-to-be-hidden textarea -->
         <form action="syntax_check" method="post" target="_blank">
@@ -249,144 +272,119 @@
         <button class="w2ui-btn" onclick="w2ui['layout'].toggle('left', 0);">File Manager (F8)</button>
         <button class="w2ui-btn" onclick="w2ui['layout'].toggle('top', 0);">Toolbar (F9)</button>
         <button class="w2ui-btn" onclick="w2ui_layout_size_toggle();">Full Size (F10)</button>
+        <button class="w2ui-btn" onclick="full_screen();">Full Screen (F11)</button>
     </div>
 
-    <!-- W2UI: set up layout -->
+    <!-- AJAX & Apache2::FileManager: create div, default input value, will be overwritten by js_editor_file_manager_div_update() -->
+    <div id="editor_file_manager_div" style="display: none;">[%- editor_file_manager.output %]</div>
+
+    <!-- W2UI: create divs -->
+    <div id="layout" style="width: 100%; min-height: 300px; background-color: white;"></div>
     <div id="tab1_content_div" style="display: none;">Tab 1 Content</div>
     <div id="tab2_content_div" style="display: none;">Tab 2 Content</div>
     <div id="tab3_content_div" style="display: none;">Tab 3 Content</div>
 
-    <div id="layout" style="width: 100%; min-height: 300px; background-color: white;"></div>
-    <!-- <div id="layout" style="width: 100%; height: 300px;"></div> -->
-    <!-- <div id="layout" style="width: 80%; height: 80%;"></div> -->
-    <!-- <div id="layout" style="position: absolute; width: 100%; height: 80%;"></div> -->
-    <!-- <div id="layout" style="position: absolute; top: 200px; left: 10px; bottom: 100px; right: 10px;"></div> -->
-    <!-- <div id="layout" style="position: fixed; width: 100%; height: 400px;"></div> -->
-    <!-- <div id="layout" style="position: relative; width: 100%; height: 600px;"></div>  <!-- RELATIVE: does proper layout, does not support height % -->
-
-
-
-
-
-
-
-
-
-
-
-
     <script type="text/javascript">
-    $(function () { 
-        var pstyle = 'border: 1px solid #dfdfdf; padding: 5px;';
-        $('#layout').w2layout({
-            name: 'layout',
-            panels: [
-                { type: 'top', size: 120, resizable: true, style: pstyle, content: $('#editor_header_div').html() },
-                { type: 'left', size: 200, resizable: true, style: pstyle, content: $('#editor_file_manager_div').html() },
-                { type: 'main', style: pstyle + 'border-top: 0px;', content: $('#tab1_content_div').html(),
-//                { type: 'main', style: pstyle + 'border-top: 0px;', content: $('#editor_ace_div').html(),
-//                { type: 'main', style: pstyle + 'border-top: 0px;', content: '<div id="editor_ace_div"></div>',
-                    tabs: {
-                        active: 'tab1',
-                        tabs: [
-                            { id: 'tab1', text: 'Tab 1 Title', content: $('#tab1_content_div').html() },
-//                            { id: 'tab1', text: 'Tab 1 Title', content: $('#editor_ace_div').html() },
-                            { id: 'tab2', text: 'Tab 2 Title', content: $('#tab2_content_div').html() },
-                            { id: 'tab3', text: 'Tab 3 Title', content: $('#tab3_content_div').html() }
-                        ],
-                        onClick: function (event) {
-                            this.owner.content('main', event.tab.content);
-                        }
-                    }
+        // W2UI: initialize layout
+        $(function () { 
+            var pstyle = 'border: 1px solid #dfdfdf; padding: 5px;';
+            $('#layout').w2layout({
+                name: 'layout',
+                panels: [
+                    { type: 'top', size: 120, resizable: true, style: pstyle, content: $('#editor_header_div').html() },
+                    { type: 'left', size: 200, resizable: true, style: pstyle, content: $('#editor_file_manager_div').html() },
+                    { type: 'main', style: pstyle + 'padding: 0px; border-top: 0px;', content: '\
+                        <style> .tab { width: 100%; height: 400px; display: none; padding: 0px; overflow: auto; } </style>\
+                        <div id="tab-example">\
+                            <div id="tabs" style="width: 100%; height: 29px;"></div>\
+                            <div id="tab1" class="tab"> First tab. </div>\
+                            <div id="tab2" class="tab"> Second tab, with some HTML in it. :) </div>\
+                            <div id="tab3" class="tab"> What did you expect, of course it is the third tab. </div>\
+                        </div>\
+                    '}
+                ]
+            });
+
+            // W2UI: set initial layout height
+            var window_inner_height = window.innerHeight;
+            //alert('in layout setup, have window_inner_height = ' + window_inner_height);
+            window.document.getElementById('layout').style.height = (window_inner_height - 200) + "px";
+
+
+            // START HERE: fix syntax check button & keybindings radio buttons
+            // START HERE: fix syntax check button & keybindings radio buttons
+            // START HERE: fix syntax check button & keybindings radio buttons
+
+
+
+            // ACE Editor: create, configure
+
+            // don't load code before editor: enable heredocs, so multi-line TT variables can be placed inside JS variables
+            function heredoc (f) { return f.toString().match(/\/\*\s*([\s\S]*?)\s*\*\//m)[1]; };
+
+            // create textarea object & hide
+            var editor_ace_textarea_var = $('textarea[name="editor_ace_textarea"]');
+            editor_ace_textarea_var.hide();
+
+            // create object
+            var editor = ace.edit(window.document.getElementById('tab1'));
+            //alert('have tab1 = ' + window.document.getElementById('tab1'));
+
+            // configure settings
+            ace.require('ace/ext/settings_menu').init(editor);
+            editor.setTheme("ace/theme/sqlserver");
+            editor.getSession().setMode("ace/mode/perl");
+            editor.getSession().setTabSize(4);
+            editor.getSession().setUseSoftTabs(true);
+            editor.setPrintMarginColumn(160);
+
+            // don't load code before editor: now load default source code input received from Code.pm, de-select-all
+            var file_input_default = heredoc(function(){/*
+            [%- file_input.default %]
+            */});
+            editor.setValue(file_input_default);
+            editor.session.selection.clearSelection();
+
+            // set ACE Editor key bindings for menu & vim commands
+            /* disabled in favor of F7 via Keyboard Shortcuts
+            editor.commands.addCommands([
+                {
+                    name: "showSettingsMenu",
+                    bindKey: {win: "Ctrl-m", mac: "Command-m"},
+                    exec: function(editor) { editor.showSettingsMenu(); },
+                    readOnly: true
                 }
-            ]
+            ]);
+            */
+            editor.setKeyboardHandler("ace/keyboard/vim");
+
+            // set hidden textarea value to ACE Editor value
+            $('#syntax_check_submit').on('click', function() {
+                editor_ace_textarea_var.val(editor.getSession().getValue());
+            });
         });
 
-        // set initial layout height
-        var window_inner_height = window.innerHeight;
-        //alert('in layout setup, have window_inner_height = ' + window_inner_height);
-        document.getElementById('layout').style.height = (window_inner_height - 200) + "px";
-    });
-    </script>
-
-    <br><br>
-
-
-
-
-
-
-    <!-- ACE Editor: create div -->
-    <div id="editor_ace_div" style="display: none;"></div>
-
-    <script>
-        // don't load code before editor: enable heredocs, so multi-line TT variables can be placed inside JS variables
-        function heredoc (f) { return f.toString().match(/\/\*\s*([\s\S]*?)\s*\*\//m)[1]; };
-
-        // create textarea object & hide
-        var editor_ace_textarea_var = $('textarea[name="editor_ace_textarea"]');
-        editor_ace_textarea_var.hide();
-
-
-
-
-// START HERE: get ace editor to go inside w2ui layout, fix syntax check button
-// START HERE: get ace editor to go inside w2ui layout, fix syntax check button
-// START HERE: get ace editor to go inside w2ui layout, fix syntax check button
-
-
-
-
-        // create ACE Editor object & configure settings
-        var editor = ace.edit("editor_ace_div");
-        //var editor = ace.edit(window.document.getElementById('editor_ace_div'));
-        //alert('just created ace editor!');
-
-        ace.require('ace/ext/settings_menu').init(editor);
-        editor.setTheme("ace/theme/sqlserver");
-        editor.getSession().setMode("ace/mode/perl");
-        editor.getSession().setTabSize(4);
-        editor.getSession().setUseSoftTabs(true);
-        editor.setPrintMarginColumn(160);
-
-        // don't load code before editor: now load default source code input received from Code.pm, de-select-all
-        var code = heredoc(function(){/*
-        [%- file_input.default %]
-        */});
-        editor.setValue(code);
-        editor.session.selection.clearSelection();
-
-        // set ACE Editor key bindings for menu & vim commands
-        /* disabled in favor of F7 via Keyboard Shortcuts
-        editor.commands.addCommands([
-            {
-                name: "showSettingsMenu",
-                bindKey: {win: "Ctrl-m", mac: "Command-m"},
-                exec: function(editor) { editor.showSettingsMenu(); },
-                readOnly: true
+        // W2UI: create nested tabs
+        var config = {
+            tabs: {
+                name: 'tabs',
+                active: 'tab1',
+                tabs: [
+                    { id: 'tab1', caption: 'Tab 1' },
+                    { id: 'tab2', caption: 'Tab 2' },
+                    { id: 'tab3', caption: 'Tab 3' },
+                ],
+                onClick: function (event) {
+                    $('#tab-example .tab').hide();
+                    $('#tab-example #' + event.target).show();
+                }
             }
-        ]);
-        */
-        editor.setKeyboardHandler("ace/keyboard/vim");
-
-        // set hidden textarea value to ACE Editor value
-        $('#syntax_check_submit').on('click', function() {
-            editor_ace_textarea_var.val(editor.getSession().getValue());
+        }
+        $(function () {
+            $('#tabs').w2tabs(config.tabs);
+            $('#tab1').show();
         });
+
     </script>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 [%- END %]
