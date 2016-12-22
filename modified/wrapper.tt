@@ -21,8 +21,8 @@
 		[%- END %]
 	[%- END %]
 	[%- END %]
-	
-<!-- WBRASWELL 20141114 2014.318: fix favicon link -->
+
+    [%# <!-- WBRASWELL 20141114 2014.318: fix favicon link --> %]
     <link rel="shortcut icon" href="/favicon.ico">
 </head>
 
@@ -51,7 +51,7 @@
 
 		[%- content %]
 
-<!-- WBRASWELL 20140922 2014.265: add montage image just above page footer on all pages -->
+        [%# <!-- WBRASWELL 20140922 2014.265: add montage image just above page footer on all pages --> %]
         <div id="footer_montage" align="center">
             <a href="/"><img src="/static/cms-uploads/images/footer_montage.png" alt="[% meta.title || 'footer_montage' %]"></a>
         </div>

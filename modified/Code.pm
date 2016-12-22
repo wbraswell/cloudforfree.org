@@ -7,7 +7,7 @@ package ShinyCMS::Controller::Code;
 use strict;
 use warnings;
 use RPerl::AfterSubclass;
-our $VERSION = 0.015_000;
+our $VERSION = 0.016_000;
 
 =head1 NAME
 
@@ -89,8 +89,6 @@ our hashref $KEY_CODES = {  # more listed here:  https://metacpan.org/pod/Term::
 
 
 
-
-
 =head1 METHODS
 
 =cut
@@ -142,27 +140,39 @@ sub editor_file_manager_input_ajax : Chained( 'base' ) : PathPart( 'editor_file_
        return; 
     }
 
+    # Apache2::FileManager: file locations
+    my $shiny_username = $c->user->{_user}->{_column_data}->{username};
+    my $document_root = '/home/wbraswell/public_html/cloudforfree.org-latest/root/user_files/' . $shiny_username . '/';
+    # TMP DEBUG
+    #$document_root .= 'github_repos/rperl-latest/';
+    $document_root .= 'github_repos/rperl-latest/lib/RPerl/Learning';
+
     # require parameters (???)
     my $parameters = $request->parameters();
     print {*STDERR} '<<< DEBUG >>>: in Code::editor_file_manager_input_ajax(), have $parameters = ', Dumper($parameters), "\n";
 
-=DISABLE do we need to check & accep params in this way?
-
-    if (not ((exists $parameters->{editor_file_manager_input_param}) and (defined $parameters->{editor_file_manager_input_param}))) {
-        croak("\n" . q{ERROR ECOEFMIAPA01, EDITOR FILE MANAGER INPUT AJAX, PARAMETERS: Missing HTML parameter 'editor_file_manager_input_param', should contain input for FOOOOO, croaking});
+    # accept input file parameter
+    if ((exists $parameters->{FILEMANAGER_curr_file}) and (defined $parameters->{FILEMANAGER_curr_file}) and ($parameters->{FILEMANAGER_curr_file} ne q{})) {
+        my $input_file = $parameters->{FILEMANAGER_curr_file};
+#        print {*STDERR} '<<< DEBUG >>>: in Code::editor_file_manager_input_ajax(), have $input_file = ', q{'}, $input_file, q{'}, "\n";
+        my $input_file_lines = q{};
+        open my $INPUT_FILEHANDLE, '<', ($document_root . $input_file) or do {
+            $c->stash->{editor_file_manager}->{output} = $OS_ERROR;
+            return;
+        };
+        while ( my $input_file_line = <$INPUT_FILEHANDLE> ) {
+            $input_file_lines .= $input_file_line;
+        }
+        close $INPUT_FILEHANDLE or do {
+            $c->stash->{editor_file_manager}->{output} = $OS_ERROR;
+            return;
+        };
+        $c->stash->{editor_file_manager}->{output} = $input_file_lines;
+        return;
     }
 
-    # accept input parameters
-    my $input = $parameters->{editor_file_manager_input_param};
-    print {*STDERR} '<<< DEBUG >>>: in Code::editor_file_manager_input_ajax(), have $input = ', q{'}, $input, q{'}, "\n";
-=cut
-
-    # Apache2::FileManager: variables
-    my $shiny_username = $c->user->{_user}->{_column_data}->{username};
-    my $document_root = '/home/wbraswell/public_html/cloudforfree.org-latest/root/user_files/' . $shiny_username . '/';
-    my $request_wrapped_psgi;
-
     # Apache2::FileManager: override $r with $request_wrapped_psgi, thereby wrapping $r
+    my $request_wrapped_psgi;
     undef *Apache2::FileManager::r;
     *Apache2::FileManager::r = sub { return $request_wrapped_psgi };
 
@@ -173,9 +183,10 @@ sub editor_file_manager_input_ajax : Chained( 'base' ) : PathPart( 'editor_file_
     # AJAX & Apache2::FileManager:
     # intercept calls to f.submit() for submitting the FileManager form data, which is used by all file & directory links plus most primary features;
     # replace with calls to editor_file_manager_input_ajax() for submitting the same FileManager form data via CGI::Ajax
-    my $ajax_call_string = q{editor_file_manager_input_ajax( ['FILEMANAGER_curr_file', 'FILEMANAGER_curr_dir', 'FILEMANAGER_cmd', 'FILEMANAGER_arg', 'FILEMANAGER_last_select_all'], [js_editor_file_manager_div_update] );};
+    my $ajax_call_string_filemanager = q{editor_file_manager_input_ajax( ['FILEMANAGER_curr_file', 'FILEMANAGER_curr_dir', 'FILEMANAGER_cmd', 'FILEMANAGER_arg', 'FILEMANAGER_last_select_all'], [js_editor_file_manager_div_update] );};
+    my $ajax_call_string_file_content = q{editor_file_manager_input_ajax( ['FILEMANAGER_curr_file', 'FILEMANAGER_curr_dir', 'FILEMANAGER_cmd', 'FILEMANAGER_arg', 'FILEMANAGER_last_select_all'], [js_editor_file_content_update] );};
 #    $ajax_call_string = q{alert('about to call editor_file_manager_input_ajax()...');} . "\n" . $ajax_call_string;
-    $handler_retval =~ s/f\.submit\(\);/$ajax_call_string/gxms;
+    $handler_retval =~ s/f\.submit\(\);/$ajax_call_string_filemanager/gxms;
 
     # AJAX & Apache2::FileManager: intercept calls to window.document.FileManager which does not work inside W2UI layout, 
     # replace with window.document.forms.namedItem("FileManager")
@@ -185,44 +196,104 @@ sub editor_file_manager_input_ajax : Chained( 'base' ) : PathPart( 'editor_file_
     #window.document.forms.namedItem("FileManager")
     $handler_retval =~ s/window\.document\.FileManager/window\.document\.forms\.namedItem\('FileManager'\)/gxms;
 
-
-
-    # START HERE: fix support for raw files below
-    # START HERE: fix support for raw files below
-    # START HERE: fix support for raw files below
-
-
-    # AJAX & Apache2::FileManager: intercept links to raw files, replace with AJAX code
-    # hardcoded example, intercepted
-    #<A HREF="/FOO?nossi=1"
-    #    TARGET=_blank>
-    # hardcoded example, replacement
-    #<A HREF=# onclick="
-    #        var f=window.document.FileManager;
-    #        f.FILEMANAGER_curr_file.value='FOO';
-    #        editor_file_manager_input_ajax( ['FILEMANAGER_curr_file', 'FILEMANAGER_curr_dir', 'FILEMANAGER_cmd', 'FILEMANAGER_arg', 'FILEMANAGER_last_select_all'], [js_editor_file_manager_div_update] );
-    #        return false;">
-    $handler_retval =~ s/<A\s+HREF="(.+)"[\s\n\r]*TARGET=_blank>/
-        <A HREF=\# onclick="
-            var f=window.document.FileManager; 
-            f.FILEMANAGER_curr_file.value='$1'; 
-            $ajax_call_string
-            return false;">
-        /gxms;
-
-    # AJAX & Apache2::FileManager: add FILEMANAGER_curr_file parameter
-    # hardcoded example, find
-    #    <INPUT TYPE=HIDDEN NAME=FILEMANAGER_curr_dir
-    # hardcoded example, prepend
-    #    <INPUT TYPE=HIDDEN NAME=FILEMANAGER_curr_file VALUE=''>
+    # AJAX & Apache2::FileManager: links to raw files; cut-and-paste action toolbar; discard footer; 
+        # add FILEMANAGER_curr_file parameter; disable help; simplify header
     my $handler_retval_tmp = q{};
-    foreach my $handler_retval_line (split /\n/, $handler_retval) {
+    my integer $action_toolbar_found = 0;
+    my string $action_toolbar_cut = q{};
+    my string_arrayref $handler_retval_lines = [(split /\n/, $handler_retval)];
+    for (my integer $i = 0; $i < ((scalar @{$handler_retval_lines}) - 1); $i++)  {
+        my $handler_retval_line = $handler_retval_lines->[$i];
+        my $handler_retval_line_next = $handler_retval_lines->[$i + 1];
+
+        # AJAX & Apache2::FileManager: intercept links to raw files, replace with AJAX code
+        # hardcoded example, intercepted
+        #<A HREF="/PATH/TO/FOOBAR?nossi=1"
+        #    TARGET=_blank><FONT COLOR=BLACK>FOOBAR</FONT>
+        # hardcoded example, replacement
+        #<A HREF=# onclick="
+        #        var f=window.document.forms.namedItem('FileManager');
+        #        f.FILEMANAGER_curr_file.value='FOO';
+        #        editor_file_manager_input_ajax( ['FILEMANAGER_curr_file', 'FILEMANAGER_curr_dir', 'FILEMANAGER_cmd', 'FILEMANAGER_arg', 'FILEMANAGER_last_select_all'], [js_editor_file_content_update] );
+        #        f.FILEMANAGER_curr_file.value='';
+        #        return false;">
+        #        <FONT COLOR=BLACK>FOOBAR</FONT>
+        if (((substr $handler_retval_line, 0, 23 ) eq '              <A HREF="') and 
+            ((substr $handler_retval_line, -9, 9 ) eq '?nossi=1"')) {
+                my $path = $handler_retval_line;
+                substr $path, 0, 23, q{};  # trim leading HTML
+                substr $path, -9, 9, q{};  # trim trailing HTML
+                my $filename = $handler_retval_line_next;
+                substr $filename, 0, 49, q{};  # trim leading HTML
+                substr $filename, -7, 7, q{};  # trim trailing HTML
+                $handler_retval_tmp .=<<"EOL";
+        <A HREF=# onclick="
+            var f=window.document.forms.namedItem('FileManager');
+            f.FILEMANAGER_curr_file.value='$path';
+            $ajax_call_string_file_content
+            f.FILEMANAGER_curr_file.value='';
+            return false;">
+            <FONT COLOR=BLACK>$filename</FONT>
+EOL
+            $i++; # discard following line which has been replaced in heredoc above:    TARGET=_blank><FONT COLOR=BLACK>FOOBAR</FONT>
+            next;
+        }
+
+        if ($handler_retval_line_next eq '    function display_help () {') {
+            $i += 39;  # disable help link code
+            next;
+        }
+        if ($handler_retval_line_next eq '            <FONT SIZE=+2 COLOR=#3a3a3a>') {
+            $i += 3;  # discard huge 'cloudforfree.org - file manager' in header
+            $i += 6;  # disable help link
+            $handler_retval_tmp .= '          <td><b><u>File Manager</u></b></td>' . "\n";
+            next;
+        }
+        if ($handler_retval_line_next eq '    <!-- Actions Tool bar -->') {
+            # second line of action toolbar
+            #$action_toolbar_cut .= $handler_retval_line . "\n";  # discard unneeded '<TR><TD>'
+            $action_toolbar_cut .= $handler_retval_line_next . "\n";
+            $action_toolbar_found = 1;
+            $i++;
+            $i += 3;  # discard unneeded '<TABLE CELLPADDING=0 CELLSPACING=0 BORDER=0><TR ALIGN=CENTER>'
+            next;
+        }
+        if ($action_toolbar_found) {
+            if ($handler_retval_line eq '        ><FONT COLOR=WHITE><B>upload</B></FONT></A></TD></TR></TABLE></TD></TR>') {
+                # last line of action toolbar
+                #substr $handler_retval_line, -10, 10, q{};  # discard unneeded '</TD></TR>'
+                substr $handler_retval_line, -18, 18, q{};  # discard unneeded '</TABLE></TD></TR>'
+                $action_toolbar_found = 0;
+            }
+            # last or inner line of action toolbar
+            $action_toolbar_cut .= $handler_retval_line . "\n";
+            next;
+        }
+        if ($handler_retval_line eq '      <!-- Footer -->') {
+            # replace footer with action toolbar & closing HTML, exit loop
+            $action_toolbar_cut =~ s/&nbsp;/ /gxms;
+            $action_toolbar_cut =~ s/<TD>//gxms;
+            $action_toolbar_cut =~ s/<\/TD>//gxms;
+            $action_toolbar_cut =~ s/<TD\ ALIGN\=CENTER>//gxms;
+            $action_toolbar_cut =~ s/<TR>//gxms;
+            $action_toolbar_cut =~ s/<\/TR>//gxms;
+            $handler_retval_tmp .= $action_toolbar_cut . "\n";
+            $handler_retval_tmp .= '    </FORM>' . "\n" . '    </HTML>' . "\n";
+            last;
+        }
+
+        # hardcoded example, find:    <INPUT TYPE=HIDDEN NAME=FILEMANAGER_curr_dir
+        # hardcoded example, prepend: <INPUT TYPE=HIDDEN NAME=FILEMANAGER_curr_file VALUE=''>
         if ($handler_retval_line eq '    <INPUT TYPE=HIDDEN NAME=FILEMANAGER_curr_dir') {
             $handler_retval_tmp .= q{    <INPUT TYPE=HIDDEN NAME=FILEMANAGER_curr_file VALUE=''>} . "\n";
         }
         $handler_retval_tmp .= $handler_retval_line . "\n";
     }
     $handler_retval = $handler_retval_tmp;
+
+    # save space for slimmer sidebar
+    $handler_retval =~ s/last\ modified/date/gxms;
+    $handler_retval =~ s/new\ directory/new&nbsp;directory/gxms;
 
     # AJAX: create objects
     my CGI $cgi = CGI->new();
@@ -237,6 +308,11 @@ sub editor_file_manager_input_ajax : Chained( 'base' ) : PathPart( 'editor_file_
     }
     # subsequent calls from user clicking on links, yes parameters, do not include AJAX javascript from build_html()
     $c->stash->{editor_file_manager}->{output} = $handler_retval;
+
+    # DEBUG OUTPUT
+#    open(my $fh, '>', '/tmp/handler_retval.out');
+#    print $fh $handler_retval;
+#    close $fh;
 }
 
 
@@ -408,14 +484,10 @@ sub syntax_check : Chained( 'base' ) : PathPart( 'syntax_check' ) {
     if ($input_source_code eq q{}) 
         { croak("\n" . q{ERROR ECOSCPA01, SYNTAX CHECK, PARAMETERS: Empty HTML parameter 'input_source_code', should contain source code to be syntax checked, croaking}); }
 
-    if (not ((exists $parameters->{file_suffix}) and (defined $parameters->{file_suffix}))) 
-        { croak("\n" . q{ERROR ECOSCPA02, SYNTAX CHECK, PARAMETERS: Missing HTML parameter 'file_suffix', should contain temporary file suffix, croaking}); }
-    my string $file_suffix = $parameters->{file_suffix};
-    print {*STDERR} '<<< DEBUG >>>: in Code::syntax_check(), have $file_suffix = ', $input_source_code, "\n";
-    if ($file_suffix eq q{}) 
-        { croak("\n" . q{ERROR ECOSCPA03, SYNTAX CHECK, PARAMETERS: Empty HTML parameter 'file_suffix', should contain temporary file suffix, croaking}); }
-
     # create temporary file
+    my string $file_suffix;
+    if ((substr $input_source_code, 0, 15) eq '#!/usr/bin/perl') { $file_suffix = 'pl'; }
+    else                                                         { $file_suffix = 'pm'; }
     my filehandleref $FILE_HANDLE_REFERENCE_TMP;
     my string $file_name_reference_tmp;
     ( $FILE_HANDLE_REFERENCE_TMP, $file_name_reference_tmp ) = tempfile( 'rperl_tempfileXXXX', SUFFIX => q{.} . $file_suffix, UNLINK => 1, TMPDIR => 1 );

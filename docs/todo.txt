@@ -1,5 +1,4 @@
-fix new user account registration problem, "no sender"
-
-fix new comment in forum problem, "no sender" as well?!?
-
-fix contact us e-mails not being delivered
+code, editor, F7 editor menu invisible when in F10 full window mode
+new user account registration problem, "no sender"
+new comment in forum problem, "no sender" as well?!?
+contact us e-mails not being delivered

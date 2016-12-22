@@ -10,19 +10,36 @@
     </body>
     <head>
         <!-- ACE Editor & W2UI: load JQuery -->
-        <!-- <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/2.1.0/jquery.min.js"></script> -->
-        <script type="text/javascript" src="/static/js/jquery_2_1_0.min.js"></script>
+        <!-- <script type='text/javascript' src='http://ajax.googleapis.com/ajax/libs/jquery/2.1.0/jquery.min.js'></script> -->
+        <script type='text/javascript' src='/static/js/jquery_2_1_0.min.js'></script>
 
         <!-- W2UI: load JQuery & W2UI -->
-        <!-- <script type="text/javascript" src="http://rawgit.com/vitmalina/w2ui/master/dist/w2ui.min.js"></script> -->
-        <script type="text/javascript" src="/static/js/w2ui_1_5.min.js"></script>
-        <!-- <link rel="stylesheet" type="text/css" href="http://rawgit.com/vitmalina/w2ui/master/dist/w2ui.min.css" /> -->
-        <link rel="stylesheet" type="text/css" href="/static/css/w2ui_1_5.min.css" />
+        <!-- <script type='text/javascript' src='http://rawgit.com/vitmalina/w2ui/master/dist/w2ui.min.js'></script> -->
+        <script type='text/javascript' src='/static/js/w2ui_1_5.min.js'></script>
+        <!-- <link rel='stylesheet' type='text/css' href='http://rawgit.com/vitmalina/w2ui/master/dist/w2ui.min.css' /> -->
+        <link rel='stylesheet' type='text/css' href='/static/css/w2ui_1_5.min.css' />
 
         <!-- AJAX & Apache2::FileManager: header JavaScript code -->
         [%- editor_file_manager.output_js %]
 
         <script>
+            // AJAX & Apache2::FileManager: overwrite filemanager div
+            function js_editor_file_manager_div_update() {
+                var input1 = arguments[0].trim();
+                if (input1) {
+                    window.document.getElementById('editor_file_manager_div').innerHTML = input1;
+                }
+            }
+            // AJAX & Apache2::FileManager & ACE Editor: load file content into editor
+            function js_editor_file_content_update() {
+                var input1 = arguments[0].trim();
+                if (input1) {
+                    editor.setValue(input1);
+                    editor.session.selection.clearSelection();
+                }
+            }
+
+            // software-induced full screen mode, exits via esc instead of f11, thus can't be used in vi keybinding mode 
             function full_screen() {
                 if ( document.querySelector('input[name="ace_keybindings"]:checked').id == 'ace_keybindings_vim' ) {
                     alert('Please Press Physical F11 Key While In Vim Keybinding Mode');
@@ -39,14 +56,15 @@
                     full_screen_method.call(head_element);
                 } 
                 // old Internet Explorer
-                else if (typeof window.ActiveXObject !== "undefined") {
-                    var wscript_shell = new ActiveXObject("WScript.Shell");
+                else if (typeof window.ActiveXObject !== 'undefined') {
+                    var wscript_shell = new ActiveXObject('WScript.Shell');
                     if (wscript_shell !== null) {
-                        wscript_shell.SendKeys("{F11}");
+                        wscript_shell.SendKeys('{F11}');
                     }
                 }
             }
 
+/*
             // placeholder for code in case we need to read z-index
             function display_menu_zindex() {
                 // display value of z-index
@@ -59,37 +77,47 @@
                 alert('have menu_zindex = ' + menu_zindex);
                 alert('have menu_zindex full = ' + document.defaultView.getComputedStyle(window.document.getElementById('menu'), null).getPropertyValue('z-index'));
             }
-
-            // AJAX & Apache2::FileManager: overwrite output div
-            function js_editor_file_manager_div_update() {
-                var input1 = arguments[0].trim();
-                if (input1) {
-                    window.document.getElementById('editor_file_manager_div').innerHTML = input1;
-                    $(function () { w2ui['layout'].content('left', $('#editor_file_manager_div').html()); });
-                    //alert("in js_editor_file_manager_div_update()...");
-                }
-            }
+*/
 
             // W2UI: resize layout div on window resize
             function body_resized() {
+                var shiny_header_footer_height = 200;
                 var window_inner_height = window.innerHeight;
-                //alert('in body_resize(), have window_inner_height = ' + window_inner_height);
-                if (window.document.getElementById('layout').style.height != "100%") {
-                    window.document.getElementById('layout').style.height = (window_inner_height - 200) + "px";
+                //alert('in layout setup, have window_inner_height = ' + window_inner_height);
+                if (window.document.getElementById('layout_div').style.height != '100%') {
+                    window.document.getElementById('layout_div').style.height = (window_inner_height - shiny_header_footer_height) + 'px';
                 }
+                var layout_top_height = w2ui['layout'].get('top').size;
+                var tabs_div_height = parseInt(window.document.getElementById('tabs_div').style.height, 10);
+                var editor_height = window_inner_height - (shiny_header_footer_height + layout_top_height + tabs_div_height + 2);
+                alert('have editor_height = ' + editor_height);
+                window.document.getElementById('tabs_parent_div').style.height = '100%';
+                //window.document.getElementById('tabs_parent_div').style.height = editor_height + 'px';
+                //window.document.getElementById('tab1_div').style.height = editor_height + 'px';
+                //window.document.getElementById('tab1_div').style.height = '100%';
+                window.document.getElementById('tab1_div').style.height = 'calc(100% - ' + window.document.getElementById('tabs_div').style.height + ')';
+
+
+                // START HERE: get ace_content div to resize correctly, read from file manager, write to file manager
+                // START HERE: get ace_content div to resize correctly, read from file manager, write to file manager
+                // START HERE: get ace_content div to resize correctly, read from file manager, write to file manager
+
+                window.document.getElementById('ace_content').style.height = '100%';
+
+                //$('#editor').css('height', editor_height + 'px');
+                editor.resize();
             }
 
-            // W2UI: full size layout div 
+            // W2UI: switch between normal & full window layout
             function w2ui_layout_size_toggle() {
-                // do not re-run this if already in full size layout
-                if (window.document.getElementById('layout').style.height == "100%") { w2ui_layout_normal(); }
-                else { w2ui_layout_fullsize(); }
+                if (window.document.getElementById('layout_div').style.height == '100%') { w2ui_layout_normal(); }
+                else { w2ui_layout_fullwindow(); }
             }
 
-            // W2UI: full size layout div 
-            function w2ui_layout_fullsize() {
-                // do not re-run this if already in full size layout
-                if (window.document.getElementById('layout').style.height == "100%") { return; }
+            // W2UI: full window layout div 
+            function w2ui_layout_fullwindow() {
+                // do not re-run this if already in full window layout
+                if (window.document.getElementById('layout_div').style.height == '100%') { return; }
 
                 var container_var = window.document.getElementById('container');
                 if (container_var.style.position && (! container_var.style.position_saved)) { container_var.style.position_saved = container_var.style.position; }
@@ -99,13 +127,13 @@
                 if (container_var.style.right && (! container_var.style.right_saved)) { container_var.style.right_saved = container_var.style.right; }
                 if (container_var.style.height && (! container_var.style.height_saved)) { container_var.style.height_saved = container_var.style.height; }
                 if (container_var.style.width && (! container_var.style.width_saved)) { container_var.style.width_saved = container_var.style.width; }
-                container_var.style.position = "absolute";
-                container_var.style.top = "0px";
-                container_var.style.bottom = "0px";
-                container_var.style.left = "0px";
-                container_var.style.right = "0px";
-                container_var.style.height = "100%";
-                container_var.style.width = "100%";
+                container_var.style.position = 'absolute';
+                container_var.style.top = '0px';
+                container_var.style.bottom = '0px';
+                container_var.style.left = '0px';
+                container_var.style.right = '0px';
+                container_var.style.height = '100%';
+                container_var.style.width = '100%';
 
                 var content_var = window.document.getElementById('content');
                 if (content_var.style.position && (! content_var.style.position_saved)) { content_var.style.position_saved = content_var.style.position; }
@@ -115,15 +143,15 @@
                 if (content_var.style.right && (! content_var.style.right_saved)) { content_var.style.right_saved = content_var.style.right; }
                 if (content_var.style.height && (! content_var.style.height_saved)) { content_var.style.height_saved = content_var.style.height; }
                 if (content_var.style.width && (! content_var.style.width_saved)) { content_var.style.width_saved = content_var.style.width; }
-                content_var.style.position = "absolute";
-                content_var.style.top = "0px";
-                content_var.style.bottom = "0px";
-                content_var.style.left = "0px";
-                content_var.style.right = "0px";
-                content_var.style.height = "100%";
-                content_var.style.width = "100%";
+                content_var.style.position = 'absolute';
+                content_var.style.top = '0px';
+                content_var.style.bottom = '0px';
+                content_var.style.left = '0px';
+                content_var.style.right = '0px';
+                content_var.style.height = '100%';
+                content_var.style.width = '100%';
 
-                var layout_var = window.document.getElementById('layout');
+                var layout_var = window.document.getElementById('layout_div');
                 if (layout_var.style.position && (! layout_var.style.position_saved)) { layout_var.style.position_saved = layout_var.style.position; }
                 if (layout_var.style.top && (! layout_var.style.top_saved)) { layout_var.style.top_saved = layout_var.style.top; }
                 if (layout_var.style.bottom && (! layout_var.style.bottom_saved)) { layout_var.style.bottom_saved = layout_var.style.bottom; }
@@ -131,16 +159,16 @@
                 if (layout_var.style.right && (! layout_var.style.right_saved)) { layout_var.style.right_saved = layout_var.style.right; }
                 if (layout_var.style.height && (! layout_var.style.height_saved)) { layout_var.style.height_saved = layout_var.style.height; }
                 if (layout_var.style.width && (! layout_var.style.width_saved)) { layout_var.style.width_saved = layout_var.style.width; }
-                layout_var.style.position = "absolute";
-                layout_var.style.top = "0px";
-                layout_var.style.bottom = "0px";
-                layout_var.style.left = "0px";
-                layout_var.style.right = "0px";
-                layout_var.style.height = "100%";
-                layout_var.style.width = "100%";
+                layout_var.style.position = 'absolute';
+                layout_var.style.top = '0px';
+                layout_var.style.bottom = '0px';
+                layout_var.style.left = '0px';
+                layout_var.style.right = '0px';
+                layout_var.style.height = '100%';
+                layout_var.style.width = '100%';
  
                 // arrange in front of menu
-                window.document.getElementById('layout').style.zIndex = "200000";
+                window.document.getElementById('layout_div').style.zIndex = '200000';
 
                 // force redraw all divs
                 $(window).resize();
@@ -148,7 +176,7 @@
 
             // W2UI: normal size layout div 
             function w2ui_layout_normal() {
-                if (window.document.getElementById('layout').style.height != "100%") { return; }
+                if (window.document.getElementById('layout_div').style.height != '100%') { return; }
 
                 var window_inner_height = window.innerHeight;
                 //alert('in w2ui_layout_normal(), have window_inner_height = ' + window_inner_height);
@@ -185,7 +213,7 @@
                 if (content_var.style.width_saved) { content_var.style.width = content_var.style.width_saved; content_var.style.width_saved = null; }
                 else { content_var.style.width = null; }
 
-                var layout_var = window.document.getElementById('layout');
+                var layout_var = window.document.getElementById('layout_div');
                 if (layout_var.style.position_saved) { layout_var.style.position = layout_var.style.position_saved; layout_var.style.position_saved = null; } 
                 else { layout_var.style.position = null; }
                 if (layout_var.style.top_saved) { layout_var.style.top = layout_var.style.top_saved; layout_var.style.top_saved = null; }
@@ -197,12 +225,12 @@
                 if (layout_var.style.right_saved) { layout_var.style.right = layout_var.style.right_saved; layout_var.style.right_saved = null; }
                 else { layout_var.style.right = null; }
                 if (layout_var.style.height_saved) { layout_var.style.height = layout_var.style.height_saved; layout_var.style.height_saved = null; }
-                else { layout_var.style.height = (window_inner_height - 200) + "px"; }
+                else { layout_var.style.height = (window_inner_height - 200) + 'px'; }
                 if (layout_var.style.width_saved) { layout_var.style.width = layout_var.style.width_saved; layout_var.style.width_saved = null; }
-                else { layout_var.style.width = "100%"; }
+                else { layout_var.style.width = '100%'; }
 
                 // arrange behind menu
-                layout_var.style.zIndex = "100";
+                layout_var.style.zIndex = '100';
 
                 // force redraw all divs
                 $(window).resize();
@@ -210,21 +238,23 @@
         </script>
 
         <!-- ACE Editor: load with settings_menu extension -->
-        <script type="text/javascript" src="/static/ace_editor/src-min-noconflict/ace.js" charset="utf-8"></script>
-        <script type="text/javascript" src="/static/ace_editor/src-min-noconflict/ext-settings_menu.js" charset="utf-8"></script>
+        <script type='text/javascript' src='/static/ace_editor/src-min-noconflict/ace.js' charset='utf-8'></script>
+        <script type='text/javascript' src='/static/ace_editor/src-min-noconflict/ext-settings_menu.js' charset='utf-8'></script>
 
         <!-- ACE Editor: CSS styles -->
-        <style type="text/css" media="screen">
-            #editor_ace_div { 
+        <style type='text/css' media='screen'>
+            #editor { 
                 margin: 0px;
                 width: 100%;
-                height: 500px;
+                height: 100%;
+                <!-- width: auto;
+                height: auto; -->
                 border-style: solid;
                 border-width: 3px;
                 border-color: rgb(235,235,235);  <!-- grey to match the gutter -->
             }
             editor_ace_textarea_var {
-                display: block;  <!-- if set to "none", will not allow keyboard input -->
+                display: block;  <!-- if set to 'none', will not allow keyboard input -->
                 margin: 0px;
                 width: 1px;
                 height: 1px;
@@ -233,89 +263,87 @@
         </style>
 
         <!-- Keyboard Shortcuts: load -->
-        <script type="text/javascript" src="/static/js/shortcut.js" charset="utf-8"></script>
-        <script>
-            shortcut.add("F6",function() { window.document.forms.namedItem('FileManager').submit(); });
-            shortcut.add("F7",function() { editor.showSettingsMenu(); });
-            shortcut.add("F8",function() { w2ui['layout'].toggle('left', 0); });
-            shortcut.add("F9",function() { w2ui['layout'].toggle('top', 0); });
-            shortcut.add("F10",function() { w2ui_layout_size_toggle(); });
-        </script> 
-
+        <script type='text/javascript' src='/static/js/shortcut.js' charset='utf-8'></script>
     </head>
 
     <!-- W2UI: resize layout div on window resize -->
-    <body onresize="body_resized()">
+    <body onresize='body_resized()'>
 
-    <!-- ACE Editor & Apache2::FileManager & Syntax Check: create div for page header -->
-    <div id="editor_header_div" style="display: none;">
-        <b><u>IDE Code Editor</u></b><br>
+    <!-- Apache2::FileManager: create tmp div, load initial code outside of <script> section due to complex characters -->
+    <div id='editor_file_manager_tmp_div' style='display: none;'>[%- editor_file_manager.output %]</div>
 
-        <!-- text heading above ACE Editor -->
-        Keybindings:
-        <input type="radio" name="ace_keybindings" id="ace_keybindings_vim" onclick="editor.setKeyboardHandler('ace/keyboard/vim');" checked="checked"/>Vim (default)
-        <input type="radio" name="ace_keybindings" id="ace_keybindings_emacs" onclick="editor.setKeyboardHandler('ace/keyboard/emacs');"/>Emacs
-        <input type="radio" name="ace_keybindings" id="ace_keybindings_normal" onclick="editor.setKeyboardHandler('');"/>Normal
+    <!-- W2UI: create div -->
+    <div id='layout_div' style='width: 100%; min-height: 300px; background-color: white;'></div>
 
-        <!-- RPerl Syntax Check button & soon-to-be-hidden textarea -->
-        <form action="syntax_check" method="post" target="_blank">
-            <!-- <input type="submit" value="RPerl Syntax Check" id='syntax_check_submit'> <!-- same as below, but w/out class attribute -->
-            <button class="w2ui-btn" id='syntax_check_submit' onclick="window.document.forms.namedItem('FileManager').submit();">RPerl Syntax Check (F6)</button>
-            Select File Suffix:
-            <input type="radio" name="file_suffix" value="pl" checked> Perl Program .pl File
-            <input type="radio" name="file_suffix" value="pm"> Perl Module .pm File<br>
-            <!-- purposefully empty textarea, to avoid any visible pixels before editor_ace_textarea_var.hide() occurs -->
-            <textarea name="editor_ace_textarea"></textarea>
-        </form>
-
-        <button class="w2ui-btn" onclick="editor.showSettingsMenu();">Editor Menu (F7)</button>
-        <button class="w2ui-btn" onclick="w2ui['layout'].toggle('left', 0);">File Manager (F8)</button>
-        <button class="w2ui-btn" onclick="w2ui['layout'].toggle('top', 0);">Toolbar (F9)</button>
-        <button class="w2ui-btn" onclick="w2ui_layout_size_toggle();">Full Size (F10)</button>
-        <button class="w2ui-btn" onclick="full_screen();">Full Screen (F11)</button>
-    </div>
-
-    <!-- AJAX & Apache2::FileManager: create div, default input value, will be overwritten by js_editor_file_manager_div_update() -->
-    <div id="editor_file_manager_div" style="display: none;">[%- editor_file_manager.output %]</div>
-
-    <!-- W2UI: create divs -->
-    <div id="layout" style="width: 100%; min-height: 300px; background-color: white;"></div>
-    <div id="tab1_content_div" style="display: none;">Tab 1 Content</div>
-    <div id="tab2_content_div" style="display: none;">Tab 2 Content</div>
-    <div id="tab3_content_div" style="display: none;">Tab 3 Content</div>
-
-    <script type="text/javascript">
-        // W2UI: initialize layout
+    <script type='text/javascript'>
+        // W2UI: create layout
         $(function () { 
+            // ONLY RUN ONCE
+            //if (typeof script_ran != 'undefined') { return; } else { script_ran = 1; }
+            //alert('starting script');
+
             var pstyle = 'border: 1px solid #dfdfdf; padding: 5px;';
-            $('#layout').w2layout({
+            $('#layout_div').w2layout({
                 name: 'layout',
                 panels: [
-                    { type: 'top', size: 120, resizable: true, style: pstyle, content: $('#editor_header_div').html() },
-                    { type: 'left', size: 200, resizable: true, style: pstyle, content: $('#editor_file_manager_div').html() },
-                    { type: 'main', style: pstyle + 'padding: 0px; border-top: 0px;', content: '\
-                        <style> .tab { width: 100%; height: 400px; display: none; padding: 0px; overflow: auto; } </style>\
-                        <div id="tab-example">\
-                            <div id="tabs" style="width: 100%; height: 29px;"></div>\
-                            <div id="tab1" class="tab"> First tab. </div>\
-                            <div id="tab2" class="tab"> Second tab, with some HTML in it. :) </div>\
-                            <div id="tab3" class="tab"> What did you expect, of course it is the third tab. </div>\
+                    { type: 'top', size: 40, resizable: true, style: pstyle, content: "\
+                        <!-- ACE Editor & Apache2::FileManager & Syntax Check: create div for page header -->\
+                        <div id='editor_header_div'>\
+                            <b><u>IDE Code Editor</u></b>\
+                            &nbsp;&nbsp;\
+                            Keybindings:\
+                            <label><input type='radio' name='ace_keybindings'\
+                                onclick='editor.setKeyboardHandler(\"ace/keyboard/vim\");' checked='checked'/>Vim (default)</label>\
+                            <label><input type='radio' name='ace_keybindings' onclick='editor.setKeyboardHandler(\"ace/keyboard/emacs\");'/>Emacs</label>\
+                            <label><input type='radio' name='ace_keybindings' onclick='editor.setKeyboardHandler(\"\");'/>Normal</label>\
+                            &nbsp;&nbsp;\
+                            <!-- RPerl Syntax Check button & soon-to-be-hidden textarea -->\
+                            <form name='syntax_check' action='syntax_check' method='post' target='_blank' style='display: inline;'>\
+                                <button class='w2ui-btn' id='syntax_check_submit' onclick='window.document.forms.namedItem(\"syntax_check\").submit();'>\
+                                    Syntax Check (F6)</button>\
+                                <!-- purposefully empty textarea, to avoid any visible pixels before editor_ace_textarea_var.hide() occurs -->\
+                                <textarea name='editor_ace_textarea'></textarea>\
+                            </form>\
+                            <button class='w2ui-btn' onclick='editor.showSettingsMenu();'>Editor Menu (F7)</button>\
+                            <button class='w2ui-btn' onclick='w2ui[\"layout\"].toggle(\"left\", 0);'>File Manager (F8)</button>\
+                            <button class='w2ui-btn' onclick='w2ui[\"layout\"].toggle(\"top\", 0);'>This Toolbar (F9)</button>\
+                            <button class='w2ui-btn' onclick='w2ui_layout_size_toggle();'>Full Window (F10)</button>\
+                            <button class='w2ui-btn' onclick='full_screen();'>Full Screen (F11)</button>\
                         </div>\
-                    '}
+                    "},
+                    { type: 'left', size: 210, resizable: true, style: pstyle, content: "\
+                        <!-- AJAX & Apache2::FileManager: create div, default input value, will be overwritten by js_editor_file_manager_div_update() -->\
+                        <div id='editor_file_manager_div'></div>\
+                    "},
+                    { type: 'main', style: pstyle + 'padding: 0px; border-top: 0px;', content: "\
+                        <style> .tab_class { width: 100%; min-height: 150px; display: none; padding: 0px; overflow: auto; } </style>\
+                        <div id='tabs_parent_div'>\
+                            <div id='tabs_div' style='width: 100%; height: 29px;'></div>\
+                            <div id='tab1_div' class='tab_class'>FOO TAB 1</div>\
+                            <div id='tab2_div' class='tab_class'>BAR TAB 2 (non-alcoholic, of course!)</div>\
+                            <div id='tab3_div' class='tab_class'>BAT TAB 3</div>\
+                        </div>\
+                    "}
                 ]
             });
 
-            // W2UI: set initial layout height
+            // W2UI: set initial layout & editor heights
+            var shiny_header_footer_height = 200;
             var window_inner_height = window.innerHeight;
             //alert('in layout setup, have window_inner_height = ' + window_inner_height);
-            window.document.getElementById('layout').style.height = (window_inner_height - 200) + "px";
+            window.document.getElementById('layout_div').style.height = (window_inner_height - shiny_header_footer_height) + 'px';
+            var layout_top_height = w2ui['layout'].get('top').size;
+            var tabs_div_height = parseInt(window.document.getElementById('tabs_div').style.height, 10);
+            var editor_height = window_inner_height - (shiny_header_footer_height + layout_top_height + tabs_div_height + 2);
+            alert('have editor_height = ' + editor_height);
+            window.document.getElementById('tabs_parent_div').style.height = '100%';
+            //window.document.getElementById('tabs_parent_div').style.height = editor_height + 'px';
+            //window.document.getElementById('tab1_div').style.height = editor_height + 'px';
+            //window.document.getElementById('tab1_div').style.height = '100%';
+            window.document.getElementById('tab1_div').style.height = 'calc(100% - ' + window.document.getElementById('tabs_div').style.height + ')';
 
-
-            // START HERE: fix syntax check button & keybindings radio buttons
-            // START HERE: fix syntax check button & keybindings radio buttons
-            // START HERE: fix syntax check button & keybindings radio buttons
-
-
+            // Apache2::FileManager: set content
+            window.document.getElementById('editor_file_manager_div').innerHTML = window.document.getElementById('editor_file_manager_tmp_div').innerHTML;
 
             // ACE Editor: create, configure
 
@@ -327,16 +355,28 @@
             editor_ace_textarea_var.hide();
 
             // create object
-            var editor = ace.edit(window.document.getElementById('tab1'));
-            //alert('have tab1 = ' + window.document.getElementById('tab1'));
+            //var editor = ace.edit(window.document.getElementById('tab1_div'));  // local scope
+            editor = ace.edit(window.document.getElementById('tab1_div'));  // global scope, can be accessed by keybindings radio buttons in layout top frame
+            //alert('have tab1_div = ' + window.document.getElementById('tab1_div'));
 
             // configure settings
             ace.require('ace/ext/settings_menu').init(editor);
-            editor.setTheme("ace/theme/sqlserver");
-            editor.getSession().setMode("ace/mode/perl");
+            editor.setTheme('ace/theme/sqlserver');
+            editor.getSession().setMode('ace/mode/perl');
             editor.getSession().setTabSize(4);
             editor.getSession().setUseSoftTabs(true);
             editor.setPrintMarginColumn(160);
+
+            // disable message: Automatically scrolling cursor into view after selection change this will be disabled in the next version
+            editor.$blockScrolling = Infinity;
+
+
+
+
+            editor.setAutoScrollEditorIntoView(true);
+
+
+
 
             // don't load code before editor: now load default source code input received from Code.pm, de-select-all
             var file_input_default = heredoc(function(){/*
@@ -349,42 +389,50 @@
             /* disabled in favor of F7 via Keyboard Shortcuts
             editor.commands.addCommands([
                 {
-                    name: "showSettingsMenu",
-                    bindKey: {win: "Ctrl-m", mac: "Command-m"},
+                    name: 'showSettingsMenu',
+                    bindKey: {win: 'Ctrl-m', mac: 'Command-m'},
                     exec: function(editor) { editor.showSettingsMenu(); },
                     readOnly: true
                 }
             ]);
             */
-            editor.setKeyboardHandler("ace/keyboard/vim");
+            editor.setKeyboardHandler('ace/keyboard/vim');
 
             // set hidden textarea value to ACE Editor value
             $('#syntax_check_submit').on('click', function() {
                 editor_ace_textarea_var.val(editor.getSession().getValue());
             });
+
+        // W2UI: create layout, done
         });
 
         // W2UI: create nested tabs
         var config = {
             tabs: {
-                name: 'tabs',
-                active: 'tab1',
+                name: 'tabs_w2ui',
+                active: 'tab1_div',
                 tabs: [
-                    { id: 'tab1', caption: 'Tab 1' },
-                    { id: 'tab2', caption: 'Tab 2' },
-                    { id: 'tab3', caption: 'Tab 3' },
+                    { id: 'tab1_div', caption: 'Tab 1' },
+                    { id: 'tab2_div', caption: 'Tab 2' },
+                    { id: 'tab3_div', caption: 'Tab 3' },
                 ],
                 onClick: function (event) {
-                    $('#tab-example .tab').hide();
-                    $('#tab-example #' + event.target).show();
+                    $('#tabs_parent_div .tab_class').hide();
+                    $('#tabs_parent_div #' + event.target).show();
                 }
             }
         }
         $(function () {
-            $('#tabs').w2tabs(config.tabs);
-            $('#tab1').show();
+            $('#tabs_div').w2tabs(config.tabs);
+            $('#tab1_div').show();
         });
 
+        <!-- Keyboard Shortcuts: create -->
+        shortcut.add('F6',function() { window.document.forms.namedItem('syntax_check').submit(); });
+        shortcut.add('F7',function() { editor.showSettingsMenu(); });
+        shortcut.add('F8',function() { w2ui['layout'].toggle('left', 0); });
+        shortcut.add('F9',function() { w2ui['layout'].toggle('top', 0); });
+        shortcut.add('F10',function() { w2ui_layout_size_toggle(); });
     </script>
 
 [%- END %]

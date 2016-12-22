@@ -1,14 +1,14 @@
 <div id="footer">
-	
-    <!-- WBRASWELL 20140927 2014.270: Remove license, attribution links, and validation buttons from footer -->
+
+    [%# <!-- WBRASWELL 20140927 2014.270: Remove license, attribution links, and validation buttons from footer --> %]	
 	<div id="footer-left">	
 		<p>
 			[%- IF c.user_exists %]
 			You are logged in as <a href="[% c.uri_for( '/user' ) %]">[% ( c.user.display_name || c.user.username ) | html %]</a>. <a href="[% c.uri_for( '/user', 'edit' ) %]">Click here</a> to edit your profile, or here to <a href="[% c.uri_for( '/user', 'logout' ) %]">logout</a>.
 			[%- ELSE %]
 
-<!-- WBRASWELL 20161105 2016.310: Disable new account registration -->
-<!--        <a href="[% c.uri_for( '/user', 'login' ) %]">Login</a> or <a href="[% c.uri_for( '/user', 'register' ) %]">Register A New Account.</a></li>  -->
+[%# <!-- WBRASWELL 20161105 2016.310: Disable new account registration --> %]
+[%# <!--        <a href="[% c.uri_for( '/user', 'login' ) %]">Login</a> or <a href="[% c.uri_for( '/user', 'register' ) %]">Register A New Account.</a></li>  --> %]
 			<a href="[% c.uri_for( '/user', 'login' ) %]">Login</a></li>
 
 			[%- END %]
@@ -18,14 +18,14 @@
 			<a href="[% c.uri_for( '/sitemap' ) %]">Sitemap</a>
 			
 			&nbsp;
-			
-<!-- WBRASWELL 20161105 2016.310: Disable low-graphics mode -->
+
+[%# <!-- WBRASWELL 20161105 2016.310: Disable low-graphics mode --> %]
 		[%- IF meta.mobile_override_on 
 			OR ( meta.mobile_device AND NOT meta.mobile_override_off ) %]
-<!--        Switch to <a href="/mobile-override/off">full site</a>.  -->
+
+[%# <!--        Switch to <a href="/mobile-override/off">full site</a>.  --> %]
 		[%- ELSE %]
-<!--        Switch to <a href="/mobile-override/on">low-graphics</a> version.  -->
-			
+[%# <!--        Switch to <a href="/mobile-override/on">low-graphics</a> version.  --> %]
 			&nbsp;
 			
 			Font Size: 
