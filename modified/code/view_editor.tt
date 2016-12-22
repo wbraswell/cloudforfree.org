@@ -29,13 +29,31 @@
                 if (input1) {
                     window.document.getElementById('editor_file_manager_div').innerHTML = input1;
                 }
+                else {
+                    alert('ERROR ECOFMDI00, FILE MANAGER DISPLAY: No File Manager HTML received from server.');
+                }
             }
-            // AJAX & Apache2::FileManager & ACE Editor: load file content into editor
+
+            // AJAX & Apache2::FileManager & ACE Editor: load file content into editor from input AKA open AKA read
             function js_editor_file_content_update() {
                 var input1 = arguments[0].trim();
                 if (input1) {
                     editor.setValue(input1);
                     editor.session.selection.clearSelection();
+                }
+                else {
+                    alert('ERROR ECOFMOP00, FILE MANAGER OPEN: No input file contents received from server.');
+                }
+            }
+
+            // AJAX & Apache2::FileManager & ACE Editor: report on file success of output AKA save AKA write
+            function js_editor_file_save_report() {
+                var input1 = arguments[0].trim();
+                if (input1) {
+                    alert(input1);
+                }
+                else {
+                    alert('ERROR ECOFMSA00, FILE MANAGER SAVE: No output file status report received from server.');
                 }
             }
 
@@ -373,7 +391,15 @@
 
 
 
-            editor.setAutoScrollEditorIntoView(true);
+
+            // START HERE: fix content area scaling problem
+            // START HERE: fix content area scaling problem
+            // START HERE: fix content area scaling problem
+
+            editor.setAutoScrollEditorIntoView(true);  // IS THIS NEEDED for scaling???
+
+
+
 
 
 
@@ -398,7 +424,80 @@
             */
             editor.setKeyboardHandler('ace/keyboard/vim');
 
-            // set hidden textarea value to ACE Editor value
+
+
+
+
+
+
+            
+            // save file
+            editor.commands.addCommand({
+              name: 'saveFile',
+              bindKey: {
+                win: 'Ctrl-S', mac: 'Command-S',
+                sender: 'editor|cli'
+              },
+              exec: function (env, args, request) {
+                //alert('SAVE FILE TRIGGER: args.input = ' + args.input + ', args.commandName = ' + args.commandName + ', args.argString = ' + args.argString);
+            
+                var f=window.document.forms.namedItem('FileManager');
+            
+                if (args.argString) {
+                    // SECURITY: do not allow paths or double-dots in filename, client-side check
+                    var arg_string = args.argString.substring(1);
+                    alert("HAVE arg_string = '" + arg_string + "'");
+                    var non_filename_regex = /[^a-zA-Z0-9_.]/g;
+                    var multidot_regex = /[.][.]+/g;
+                    if (non_filename_regex.test(arg_string) || multidot_regex.test(arg_string)) {
+                        alert('ERROR: Unsupported character detected in file name ' + "'" + arg_string + "'" + ', please use only letters, numbers, underscores, and single dots.');
+                        return;
+                    }
+                    else {
+                        f.FILEMANAGER_curr_file.value = arg_string;
+                        alert('GOOD: Supported file name, from arg_string, have f.FILEMANAGER_curr_file.value = ' + "'" + f.FILEMANAGER_curr_file.value + "'" + '.');
+                    }
+                }
+                else {
+                    f.FILEMANAGER_curr_file.value = 'FOOOOO NEED REAL FILENAME';
+                    alert('GOOD: Supported file name, existing, have f.FILEMANAGER_curr_file.value = ' + "'" + f.FILEMANAGER_curr_file.value + "'" + '.');
+                }
+            
+                f.FILEMANAGER_cmd.value = 'save';
+                editor_ace_textarea_var.val(editor.getSession().getValue());
+                editor_file_manager_input_ajax( ['FILEMANAGER_curr_file', 'FILEMANAGER_curr_dir', 'FILEMANAGER_cmd', 'FILEMANAGER_arg', 'FILEMANAGER_last_select_all', 'editor_ace_textarea'], [js_editor_file_save_report] );
+            
+                //console.log('SAVE FILE TRIGGER: env = ', env, ', args = ', args, ', request = ', request);
+              }
+            });
+            
+            // enable vim :w and :write commands
+            ace.config.loadModule('ace/keyboard/vim', function(m) {
+                var VimApi = ace.require('ace/keyboard/vim').CodeMirror.Vim;
+                VimApi.defineEx('write', 'w', function(cm, input) {
+                    cm.ace.execCommand('saveFile', input);
+                })
+            });
+
+
+
+
+
+
+// START HERE: open file in new tab, set tab title to filename, save full file path to reuse for save command w/out filename, save current dir to reuse for save command w/ filename, check why is '^M' at the end output file, change output file owner to not be root.root
+// START HERE: open file in new tab, set tab title to filename, save full file path to reuse for save command w/out filename, save current dir to reuse for save command w/ filename, check why is '^M' at the end output file, change output file owner to not be root.root
+// START HERE: open file in new tab, set tab title to filename, save full file path to reuse for save command w/out filename, save current dir to reuse for save command w/ filename, check why is '^M' at the end output file, change output file owner to not be root.root
+
+
+
+
+
+
+
+
+
+
+            // Syntax Check: set hidden textarea value to ACE Editor value
             $('#syntax_check_submit').on('click', function() {
                 editor_ace_textarea_var.val(editor.getSession().getValue());
             });

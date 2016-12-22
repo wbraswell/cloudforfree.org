@@ -7,7 +7,7 @@ package ShinyCMS::Controller::Code;
 use strict;
 use warnings;
 use RPerl::AfterSubclass;
-our $VERSION = 0.016_000;
+our $VERSION = 0.017_000;
 
 =head1 NAME
 
@@ -89,6 +89,7 @@ our hashref $KEY_CODES = {  # more listed here:  https://metacpan.org/pod/Term::
 
 
 
+
 =head1 METHODS
 
 =cut
@@ -145,31 +146,80 @@ sub editor_file_manager_input_ajax : Chained( 'base' ) : PathPart( 'editor_file_
     my $document_root = '/home/wbraswell/public_html/cloudforfree.org-latest/root/user_files/' . $shiny_username . '/';
     # TMP DEBUG
     #$document_root .= 'github_repos/rperl-latest/';
-    $document_root .= 'github_repos/rperl-latest/lib/RPerl/Learning';
+    $document_root .= 'github_repos/rperl-latest/lib/RPerl/Learning/';
 
-    # require parameters (???)
+    # accept parameters
     my $parameters = $request->parameters();
     print {*STDERR} '<<< DEBUG >>>: in Code::editor_file_manager_input_ajax(), have $parameters = ', Dumper($parameters), "\n";
 
-    # accept input file parameter
+    # process input or output file parameter(s), return
     if ((exists $parameters->{FILEMANAGER_curr_file}) and (defined $parameters->{FILEMANAGER_curr_file}) and ($parameters->{FILEMANAGER_curr_file} ne q{})) {
-        my $input_file = $parameters->{FILEMANAGER_curr_file};
-#        print {*STDERR} '<<< DEBUG >>>: in Code::editor_file_manager_input_ajax(), have $input_file = ', q{'}, $input_file, q{'}, "\n";
-        my $input_file_lines = q{};
-        open my $INPUT_FILEHANDLE, '<', ($document_root . $input_file) or do {
-            $c->stash->{editor_file_manager}->{output} = $OS_ERROR;
+        my $filename = $parameters->{FILEMANAGER_curr_file};
+#        print {*STDERR} '<<< DEBUG >>>: in Code::editor_file_manager_input_ajax(), have $filename = ', q{'}, $filename, q{'}, "\n";
+
+        # SECURITY: do not allow paths or double-dots in filename, server-side check
+        if (($filename =~ m/[^a-zA-Z0-9_.]/gxms) or ($filename =~ m/[.][.]+/gxms)) {
+            $c->stash->{editor_file_manager}->{output} =
+                'ERROR: Unsupported character detected in file name ' . q{'} . $filename . q{'} . 
+                ', please use only letters, numbers, underscores, and single dots.';
             return;
-        };
-        while ( my $input_file_line = <$INPUT_FILEHANDLE> ) {
-            $input_file_lines .= $input_file_line;
         }
-        close $INPUT_FILEHANDLE or do {
-            $c->stash->{editor_file_manager}->{output} = $OS_ERROR;
+
+        # accept output file parameter(s) (AKA save AKA write), return file write success
+        if ((exists $parameters->{FILEMANAGER_cmd}) and (defined $parameters->{FILEMANAGER_cmd}) and ($parameters->{FILEMANAGER_cmd} ne q{})) {
+            if ($parameters->{FILEMANAGER_cmd} eq 'save') {
+                if (not ((exists $parameters->{editor_ace_textarea}) and (defined $parameters->{editor_ace_textarea}))) 
+                    { croak("\n" . q{ERROR ECOFMCSPA00, FILE MANAGER COMMAND SAVE, PARAMETERS: Missing HTML parameter 'editor_ace_textarea', should contain source code to be saved, croaking}); }
+                my string $output_source_code = $parameters->{editor_ace_textarea};
+                print {*STDERR} '<<< DEBUG >>>: in Code::syntax_check(), have $output_source_code = ', "\n", $output_source_code, "\n\n";
+                if ($output_source_code eq q{}) 
+                    { croak("\n" . q{ERROR ECOFMCSPA01, FILE MANAGER COMMAND SAVE, PARAMETERS: Empty HTML parameter 'input_source_code', should contain source code to be saved, croaking}); }
+
+                # NEED ANSWER: is this correct here?!?
+                # append newline to avoid "ERROR ECOPAPC13, RPERL PARSER, PERL CRITIC VIOLATION: RPerl source code input file '/tmp/rperl_tempfileFOO.pl' does not end with newline character or line of all-whitespace characters, dying
+                # append return character to avoid "ERROR ECOPAPC02, RPERL PARSER, PERL CRITIC VIOLATION: Perl::Critic::Policy::CodeLayout::RequireConsistentNewlines"
+                $output_source_code .= "\r\n";
+
+                (open my filehandleref $SAVE_FILEHANDLE, '>', ($document_root . $filename)) or do {
+                    $c->stash->{editor_file_manager}->{output} = $OS_ERROR;
+                    return;
+                };
+                (print {$SAVE_FILEHANDLE} $output_source_code) or do {
+                    $c->stash->{editor_file_manager}->{output} = $OS_ERROR;
+                    return;
+                };
+                (close $SAVE_FILEHANDLE) or do {
+                    $c->stash->{editor_file_manager}->{output} = $OS_ERROR;
+                    return;
+                };
+                $c->stash->{editor_file_manager}->{output} = 'SUCCESS: Source code saved in file name ' . q{'} . $filename . q{'} . '.';
+                return;
+            }
+            else {
+                $c->stash->{editor_file_manager}->{output} = 'ERROR: Unrecognized File Manager command ' . q{'} . $parameters->{FILEMANAGER_cmd} . q{'};
+                return;
+            }
+        }
+        else {
+            # accept input file parameter (AKA open AKA read), return contents of file to editor
+            my $input_file_lines = q{};
+            (open my filehandleref $INPUT_FILEHANDLE, '<', ($document_root . $filename)) or do {
+                $c->stash->{editor_file_manager}->{output} = $OS_ERROR;
+                return;
+            };
+            while ( my $input_file_line = <$INPUT_FILEHANDLE> ) {
+                $input_file_lines .= $input_file_line;
+            }
+            (close $INPUT_FILEHANDLE) or do {
+                $c->stash->{editor_file_manager}->{output} = $OS_ERROR;
+                return;
+            };
+            $c->stash->{editor_file_manager}->{output} = $input_file_lines;
             return;
-        };
-        $c->stash->{editor_file_manager}->{output} = $input_file_lines;
-        return;
+        }
     }
+    
+    # NOT input or output file parameters(s), create Apache2::FileManager object, generate, return
 
     # Apache2::FileManager: override $r with $request_wrapped_psgi, thereby wrapping $r
     my $request_wrapped_psgi;
@@ -311,7 +361,7 @@ EOL
 
     # DEBUG OUTPUT
 #    open(my $fh, '>', '/tmp/handler_retval.out');
-#    print $fh $handler_retval;
+#    print {$fh} $handler_retval;
 #    close $fh;
 }
 
@@ -477,16 +527,17 @@ sub syntax_check : Chained( 'base' ) : PathPart( 'syntax_check' ) {
     my $parameters = $request->parameters();
     if (not ((exists $parameters->{editor_ace_textarea}) and (defined $parameters->{editor_ace_textarea}))) 
         { croak("\n" . q{ERROR ECOSCPA00, SYNTAX CHECK, PARAMETERS: Missing HTML parameter 'editor_ace_textarea', should contain source code to be syntax checked, croaking}); }
+    my string $output_source_code = $parameters->{editor_ace_textarea};
+    print {*STDERR} '<<< DEBUG >>>: in Code::syntax_check(), have $output_source_code = ', "\n", $output_source_code, "\n\n";
+    if ($output_source_code eq q{}) 
+        { croak("\n" . q{ERROR ECOSCPA01, SYNTAX CHECK, PARAMETERS: Empty HTML parameter 'input_source_code', should contain source code to be syntax checked, croaking}); }
     # append newline to avoid "ERROR ECOPAPC13, RPERL PARSER, PERL CRITIC VIOLATION: RPerl source code input file '/tmp/rperl_tempfileFOO.pl' does not end with newline character or line of all-whitespace characters, dying
     # append return character to avoid "ERROR ECOPAPC02, RPERL PARSER, PERL CRITIC VIOLATION: Perl::Critic::Policy::CodeLayout::RequireConsistentNewlines"
-    my string $input_source_code = $parameters->{editor_ace_textarea} . "\r\n";
-    print {*STDERR} '<<< DEBUG >>>: in Code::syntax_check(), have $input_source_code = ', "\n", $input_source_code, "\n\n";
-    if ($input_source_code eq q{}) 
-        { croak("\n" . q{ERROR ECOSCPA01, SYNTAX CHECK, PARAMETERS: Empty HTML parameter 'input_source_code', should contain source code to be syntax checked, croaking}); }
+    $output_source_code .= "\r\n";
 
     # create temporary file
     my string $file_suffix;
-    if ((substr $input_source_code, 0, 15) eq '#!/usr/bin/perl') { $file_suffix = 'pl'; }
+    if ((substr $output_source_code, 0, 15) eq '#!/usr/bin/perl') { $file_suffix = 'pl'; }
     else                                                         { $file_suffix = 'pm'; }
     my filehandleref $FILE_HANDLE_REFERENCE_TMP;
     my string $file_name_reference_tmp;
@@ -494,7 +545,7 @@ sub syntax_check : Chained( 'base' ) : PathPart( 'syntax_check' ) {
     print {*STDERR} '<<< DEBUG >>>: in Code::syntax_check(), have $file_name_reference_tmp = ', q{'}, $file_name_reference_tmp, q{'}, "\n" ;
  
     # save source code into temporary file
-    print {$FILE_HANDLE_REFERENCE_TMP} $input_source_code
+    print {$FILE_HANDLE_REFERENCE_TMP} $output_source_code
         or croak("\nERROR ECOSCFI00, SYNTAX CHECK, FILE SYSTEM: Attempting to save new file '$file_name_reference_tmp', cannot write to file,\ncroaking: $OS_ERROR");
     close $FILE_HANDLE_REFERENCE_TMP 
         or croak("\nERROR ECOSCFI01, SYNTAX CHECK, FILE SYSTEM: Attempting to save new file '$file_name_reference_tmp', cannot close file,\ncroaking: $OS_ERROR");
