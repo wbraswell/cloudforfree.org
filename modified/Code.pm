@@ -7,7 +7,7 @@ package ShinyCMS::Controller::Code;
 use strict;
 use warnings;
 use RPerl::AfterSubclass;
-our $VERSION = 0.017_000;
+our $VERSION = 0.018_000;
 
 =head1 NAME
 
@@ -89,7 +89,6 @@ our hashref $KEY_CODES = {  # more listed here:  https://metacpan.org/pod/Term::
 
 
 
-
 =head1 METHODS
 
 =cut
@@ -102,10 +101,14 @@ Set up path and stash some useful info.
 
 sub base : Chained( '/base' ) : PathPart( 'code' ) : CaptureArgs( 0 ) {
     my ( $self, $c ) = @ARG;
-    
+#    print {*STDOUT} '<<< DEBUG >>>: in Code::base(), received $self = ', "\n", Dumper($self), "\n\n";
+#    print {*STDOUT} '<<< DEBUG >>>: in Code::base(), received $c = ', "\n", Dumper($c), "\n\n";
+    print {*STDOUT} '<<< DEBUG >>>: in Code::base()', "\n";
+
+
     # Stash the upload_dir setting
     $c->stash->{ upload_dir } = $c->config->{ upload_dir };
-    
+
     # Stash the name of the controller
     $c->stash->{ controller } = 'Code';
 }
@@ -118,8 +121,8 @@ Display the IDE code editor.
 
 sub editor_file_manager_input_ajax : Chained( 'base' ) : PathPart( 'editor_file_manager_input_ajax' ) {
     my ( $self, $c ) = @ARG;
-#    print {*STDERR} '<<< DEBUG >>>: in Code::editor_file_manager_input_ajax(), received $self = ', "\n", Dumper($self), "\n\n";
-#    print {*STDERR} '<<< DEBUG >>>: in Code::editor_file_manager_input_ajax(), received $c = ', "\n", Dumper($c), "\n\n";
+#    print {*STDOUT} '<<< DEBUG >>>: in Code::editor_file_manager_input_ajax(), received $self = ', "\n", Dumper($self), "\n\n";
+#    print {*STDOUT} '<<< DEBUG >>>: in Code::editor_file_manager_input_ajax(), received $c = ', "\n", Dumper($c), "\n\n";
 
     my $request = $c->request();
 
@@ -150,18 +153,18 @@ sub editor_file_manager_input_ajax : Chained( 'base' ) : PathPart( 'editor_file_
 
     # accept parameters
     my $parameters = $request->parameters();
-    print {*STDERR} '<<< DEBUG >>>: in Code::editor_file_manager_input_ajax(), have $parameters = ', Dumper($parameters), "\n";
+    print {*STDOUT} '<<< DEBUG >>>: in Code::editor_file_manager_input_ajax(), have $parameters = ', Dumper($parameters), "\n";
 
     # process input or output file parameter(s), return
     if ((exists $parameters->{FILEMANAGER_curr_file}) and (defined $parameters->{FILEMANAGER_curr_file}) and ($parameters->{FILEMANAGER_curr_file} ne q{})) {
         my $filename = $parameters->{FILEMANAGER_curr_file};
-#        print {*STDERR} '<<< DEBUG >>>: in Code::editor_file_manager_input_ajax(), have $filename = ', q{'}, $filename, q{'}, "\n";
+#        print {*STDOUT} '<<< DEBUG >>>: in Code::editor_file_manager_input_ajax(), have $filename = ', q{'}, $filename, q{'}, "\n";
 
-        # SECURITY: do not allow paths or double-dots in filename, server-side check
-        if (($filename =~ m/[^a-zA-Z0-9_.]/gxms) or ($filename =~ m/[.][.]+/gxms)) {
+        # SECURITY: do not allow double-dots in filename, server-side check
+        if (($filename =~ m/[^a-zA-Z0-9-_.\/]/gxms) or ($filename =~ m/[.][.]+/gxms)) {
             $c->stash->{editor_file_manager}->{output} =
                 'ERROR: Unsupported character detected in file name ' . q{'} . $filename . q{'} . 
-                ', please use only letters, numbers, underscores, and single dots.';
+                ', please use only letters, numbers, hyphens, underscores, forward slashes, and single dots.';
             return;
         }
 
@@ -171,7 +174,7 @@ sub editor_file_manager_input_ajax : Chained( 'base' ) : PathPart( 'editor_file_
                 if (not ((exists $parameters->{editor_ace_textarea}) and (defined $parameters->{editor_ace_textarea}))) 
                     { croak("\n" . q{ERROR ECOFMCSPA00, FILE MANAGER COMMAND SAVE, PARAMETERS: Missing HTML parameter 'editor_ace_textarea', should contain source code to be saved, croaking}); }
                 my string $output_source_code = $parameters->{editor_ace_textarea};
-                print {*STDERR} '<<< DEBUG >>>: in Code::syntax_check(), have $output_source_code = ', "\n", $output_source_code, "\n\n";
+                print {*STDOUT} '<<< DEBUG >>>: in Code::syntax_check(), have $output_source_code = ', "\n", $output_source_code, "\n\n";
                 if ($output_source_code eq q{}) 
                     { croak("\n" . q{ERROR ECOFMCSPA01, FILE MANAGER COMMAND SAVE, PARAMETERS: Empty HTML parameter 'input_source_code', should contain source code to be saved, croaking}); }
 
@@ -368,15 +371,15 @@ EOL
 
 sub view_editor : Chained( 'base' ) : PathPart( 'editor' ) {
     my ( $self, $c ) = @ARG;
-#    print {*STDERR} '<<< DEBUG >>>: in Code::view_editor(), received $self = ', "\n", Dumper($self), "\n\n";
-#    print {*STDERR} '<<< DEBUG >>>: in Code::view_editor(), received $c = ', "\n", Dumper($c), "\n\n";
+#    print {*STDOUT} '<<< DEBUG >>>: in Code::view_editor(), received $self = ', "\n", Dumper($self), "\n\n";
+#    print {*STDOUT} '<<< DEBUG >>>: in Code::view_editor(), received $c = ', "\n", Dumper($c), "\n\n";
 
     my $request = $c->request();
     # NEED ANSWER: are we going to accept input parameters on this page?
 #    my $parameters = $request->parameters();
 #    if ((exists $parameters->{editor_ace_textarea}) and (defined $parameters->{editor_ace_textarea})) {
 #        my $editor_ace_textarea = $parameters->{editor_ace_textarea};
-#        print {*STDERR} '<<< DEBUG >>>: in Code::view_editor(), have parameter $editor_ace_textarea = ', "\n", Dumper($editor_ace_textarea), "\n\n";
+#        print {*STDOUT} '<<< DEBUG >>>: in Code::view_editor(), have parameter $editor_ace_textarea = ', "\n", Dumper($editor_ace_textarea), "\n\n";
 #    }
 
     # create default file manager
@@ -428,8 +431,8 @@ Display the GitHub repos manager.
 
 sub view_repos : Chained( 'base' ) : PathPart( 'repos' ) {
     my ( $self, $c ) = @ARG;
-#    print {*STDERR} '<<< DEBUG >>>: in Code::view_repos(), received $self = ', "\n", Dumper($self), "\n\n";
-#    print {*STDERR} '<<< DEBUG >>>: in Code::view_repos(), received $c = ', "\n", Dumper($c), "\n\n";
+#    print {*STDOUT} '<<< DEBUG >>>: in Code::view_repos(), received $self = ', "\n", Dumper($self), "\n\n";
+#    print {*STDOUT} '<<< DEBUG >>>: in Code::view_repos(), received $c = ', "\n", Dumper($c), "\n\n";
 
     $c->stash->{ template } = 'code/view_repos.tt';
     $c->stash->{ repos } = { };
@@ -456,12 +459,12 @@ Display the job queue.
 
 sub view_queue : Chained( 'base' ) : PathPart( 'queue' ) {
     my ( $self, $c ) = @ARG;
-#    print {*STDERR} '<<< DEBUG >>>: in Code::view_queue(), received $self = ', "\n", Dumper($self), "\n\n";
-#    print {*STDERR} '<<< DEBUG >>>: in Code::view_queue(), received $c = ', "\n", Dumper($c), "\n\n";
+#    print {*STDOUT} '<<< DEBUG >>>: in Code::view_queue(), received $self = ', "\n", Dumper($self), "\n\n";
+#    print {*STDOUT} '<<< DEBUG >>>: in Code::view_queue(), received $c = ', "\n", Dumper($c), "\n\n";
 
     my $request = $c->request();
-#    print {*STDERR} '<<< DEBUG >>>: in Code::view_queue(), have $request->param() = ', "\n", Dumper($request->param()), "\n\n";
-#    print {*STDERR} '<<< DEBUG >>>: in Code::view_queue(), have $request->parameters() = ', "\n", Dumper($request->parameters()), "\n\n";
+#    print {*STDOUT} '<<< DEBUG >>>: in Code::view_queue(), have $request->param() = ', "\n", Dumper($request->param()), "\n\n";
+#    print {*STDOUT} '<<< DEBUG >>>: in Code::view_queue(), have $request->parameters() = ', "\n", Dumper($request->parameters()), "\n\n";
 
     $c->stash->{template} = 'code/view_queue.tt';
     $c->stash->{queue} = {};
@@ -499,12 +502,12 @@ Check the RPerl syntax of input source code.
 
 sub syntax_check : Chained( 'base' ) : PathPart( 'syntax_check' ) {
     my ( $self, $c ) = @ARG;
-#    print {*STDERR} '<<< DEBUG >>>: in Code::syntax_check(), received $self = ', "\n", Dumper($self), "\n\n";
-#    print {*STDERR} '<<< DEBUG >>>: in Code::syntax_check(), received $c = ', "\n", Dumper($c), "\n\n";
+#    print {*STDOUT} '<<< DEBUG >>>: in Code::syntax_check(), received $self = ', "\n", Dumper($self), "\n\n";
+#    print {*STDOUT} '<<< DEBUG >>>: in Code::syntax_check(), received $c = ', "\n", Dumper($c), "\n\n";
 
     my $request = $c->request();
-#    print {*STDERR} '<<< DEBUG >>>: in Code::syntax_check(), have $request->param() = ', "\n", Dumper($request->param()), "\n\n";
-#    print {*STDERR} '<<< DEBUG >>>: in Code::syntax_check(), have $request->parameters() = ', "\n", Dumper($request->parameters()), "\n\n";
+#    print {*STDOUT} '<<< DEBUG >>>: in Code::syntax_check(), have $request->param() = ', "\n", Dumper($request->param()), "\n\n";
+#    print {*STDOUT} '<<< DEBUG >>>: in Code::syntax_check(), have $request->parameters() = ', "\n", Dumper($request->parameters()), "\n\n";
 
     # set up stash
     $c->stash->{template} = 'code/view_syntax_check.tt';
@@ -528,7 +531,7 @@ sub syntax_check : Chained( 'base' ) : PathPart( 'syntax_check' ) {
     if (not ((exists $parameters->{editor_ace_textarea}) and (defined $parameters->{editor_ace_textarea}))) 
         { croak("\n" . q{ERROR ECOSCPA00, SYNTAX CHECK, PARAMETERS: Missing HTML parameter 'editor_ace_textarea', should contain source code to be syntax checked, croaking}); }
     my string $output_source_code = $parameters->{editor_ace_textarea};
-    print {*STDERR} '<<< DEBUG >>>: in Code::syntax_check(), have $output_source_code = ', "\n", $output_source_code, "\n\n";
+    print {*STDOUT} '<<< DEBUG >>>: in Code::syntax_check(), have $output_source_code = ', "\n", $output_source_code, "\n\n";
     if ($output_source_code eq q{}) 
         { croak("\n" . q{ERROR ECOSCPA01, SYNTAX CHECK, PARAMETERS: Empty HTML parameter 'input_source_code', should contain source code to be syntax checked, croaking}); }
     # append newline to avoid "ERROR ECOPAPC13, RPERL PARSER, PERL CRITIC VIOLATION: RPerl source code input file '/tmp/rperl_tempfileFOO.pl' does not end with newline character or line of all-whitespace characters, dying
@@ -542,7 +545,7 @@ sub syntax_check : Chained( 'base' ) : PathPart( 'syntax_check' ) {
     my filehandleref $FILE_HANDLE_REFERENCE_TMP;
     my string $file_name_reference_tmp;
     ( $FILE_HANDLE_REFERENCE_TMP, $file_name_reference_tmp ) = tempfile( 'rperl_tempfileXXXX', SUFFIX => q{.} . $file_suffix, UNLINK => 1, TMPDIR => 1 );
-    print {*STDERR} '<<< DEBUG >>>: in Code::syntax_check(), have $file_name_reference_tmp = ', q{'}, $file_name_reference_tmp, q{'}, "\n" ;
+    print {*STDOUT} '<<< DEBUG >>>: in Code::syntax_check(), have $file_name_reference_tmp = ', q{'}, $file_name_reference_tmp, q{'}, "\n" ;
  
     # save source code into temporary file
     print {$FILE_HANDLE_REFERENCE_TMP} $output_source_code
@@ -554,34 +557,34 @@ sub syntax_check : Chained( 'base' ) : PathPart( 'syntax_check' ) {
     my string $syntax_check_command = 'rperl --Verbose --Debug --Warnings --mode ops=PERL --mode types=PERL --mode compile=GENERATE --mode parallel=OFF --mode execute=OFF ' . $file_name_reference_tmp;
 #    my string $syntax_check_command = 'rperl -V -D -W -t -nop -noe ' . $file_name_reference_tmp;  # short-hand
 
-    print {*STDERR} '<<< DEBUG >>>: in Code::syntax_check(), have $syntax_check_command = ', $syntax_check_command, "\n";
+    print {*STDOUT} '<<< DEBUG >>>: in Code::syntax_check(), have $syntax_check_command = ', $syntax_check_command, "\n";
 
     my string $stdout_stderr = q{};
 
-    print {*STDERR} '<<< DEBUG >>>: in Code::syntax_check(), START running $syntax_check_command = ', $syntax_check_command, "\n";
+    print {*STDOUT} '<<< DEBUG >>>: in Code::syntax_check(), START running $syntax_check_command = ', $syntax_check_command, "\n";
 
     # run syntax check command
     run3( $syntax_check_command, \undef, \$stdout_stderr, \$stdout_stderr );
 
-    print {*STDERR} '<<< DEBUG >>>: in Code::syntax_check(), FINISH running $syntax_check_command = ', $syntax_check_command, "\n";
+    print {*STDOUT} '<<< DEBUG >>>: in Code::syntax_check(), FINISH running $syntax_check_command = ', $syntax_check_command, "\n";
 
     my $syntax_check_exit_status = $CHILD_ERROR >> 8;
 
-    print {*STDERR} '<<< DEBUG >>>: in Code::syntax_check(), have $CHILD_ERROR = ', $CHILD_ERROR, "\n" ;
-    print {*STDERR} '<<< DEBUG >>>: in Code::syntax_check(), have $syntax_check_exit_status = ', $syntax_check_exit_status, "\n" ;
+    print {*STDOUT} '<<< DEBUG >>>: in Code::syntax_check(), have $CHILD_ERROR = ', $CHILD_ERROR, "\n" ;
+    print {*STDOUT} '<<< DEBUG >>>: in Code::syntax_check(), have $syntax_check_exit_status = ', $syntax_check_exit_status, "\n" ;
 
     my boolean $stdout_stderr_content = ( ( defined $stdout_stderr ) and ( $stdout_stderr =~ m/[^\s]+/g ) );
 
     # stash syntax check command output
     if ( $stdout_stderr_content ) {
-        print {*STDERR} "\n", '<<< DEBUG >>>: in Code::syntax_check(), have [[[ SYNTAX CHECK COMMAND STDOUT & STDERR ]]]', "\n\n", $stdout_stderr, "\n" ;
+        print {*STDOUT} "\n", '<<< DEBUG >>>: in Code::syntax_check(), have [[[ SYNTAX CHECK COMMAND STDOUT & STDERR ]]]', "\n\n", $stdout_stderr, "\n" ;
         $c->stash->{syntax_check}->{stdout_stderr} = $stdout_stderr;
     }
 
     if ($syntax_check_exit_status) {               # UNIX process exit status (AKA return code) not 0, error
     # syntax errors cause error exit status, but we don't want to actually croak
 #        if ( not $stdout_stderr_content ) {
-#            print {*STDERR}  "\n", '[[[ SYNTAX CHECK COMMAND STDOUT & STDERR ARE BOTH EMPTY ]]]', "\n\n" ;
+#            print {*STDOUT}  "\n", '[[[ SYNTAX CHECK COMMAND STDOUT & STDERR ARE BOTH EMPTY ]]]', "\n\n" ;
 #        }
 #        croak 'ERROR ECOSCES, SYNTAX CHECK, COMMAND: RPerl compiler returned error exit status,', "\n"
 #           , 'please run again with `rperl -D` command or RPERL_DEBUG=1 environmental variable for error messages if none appear above,', "\n"
@@ -602,8 +605,8 @@ Run the RPerl command.
 
 sub run_command_input_ajax : Chained( 'base' ) : PathPart( 'run_command_input_ajax' ) {
     my ( $self, $c ) = @ARG;
-#    print {*STDERR} '<<< DEBUG >>>: in Code::run_command_input_ajax(), received $self = ', "\n", Dumper($self), "\n\n";
-#    print {*STDERR} '<<< DEBUG >>>: in Code::run_command_input_ajax(), received $c = ', "\n", Dumper($c), "\n\n";
+#    print {*STDOUT} '<<< DEBUG >>>: in Code::run_command_input_ajax(), received $self = ', "\n", Dumper($self), "\n\n";
+#    print {*STDOUT} '<<< DEBUG >>>: in Code::run_command_input_ajax(), received $c = ', "\n", Dumper($c), "\n\n";
 
     # set up stash
     $c->stash->{template} = 'code/view_run_command_input_ajax.tt';
@@ -636,28 +639,28 @@ sub run_command_input_ajax : Chained( 'base' ) : PathPart( 'run_command_input_aj
     # accept pid & input parameters
     my $pid = $parameters->{run_command_pid};
     my $input = $parameters->{run_command_input_param};
-    print {*STDERR} '<<< DEBUG >>>: in Code::run_command_input_ajax(), have $pid = ', $pid, "\n";
-    print {*STDERR} '<<< DEBUG >>>: in Code::run_command_input_ajax(), have $input = ', q{'}, $input, q{'}, "\n";
+    print {*STDOUT} '<<< DEBUG >>>: in Code::run_command_input_ajax(), have $pid = ', $pid, "\n";
+    print {*STDOUT} '<<< DEBUG >>>: in Code::run_command_input_ajax(), have $input = ', q{'}, $input, q{'}, "\n";
 
     # load this PID's I/O stream handles from shared global $JOBS package (class) variable
-#    print {*STDERR} '<<< DEBUG >>>: in Code::run_command_input_ajax(), have $Code::JOBS = ', "\n", Dumper($Code::JOBS), "\n\n";
+#    print {*STDOUT} '<<< DEBUG >>>: in Code::run_command_input_ajax(), have $Code::JOBS = ', "\n", Dumper($Code::JOBS), "\n\n";
     my filehandleref $COMMAND_IN = $Code::JOBS->{$pid}->{IN};
     my filehandleref $COMMAND_OUT = $Code::JOBS->{$pid}->{OUT};
     my filehandleref $COMMAND_ERR = $Code::JOBS->{$pid}->{ERR};
 
     # setup selector to collect available output
-#    print {*STDERR} '<<< DEBUG >>>: in Code::run_command_input_ajax(), begin selector setup', "\n";
+#    print {*STDOUT} '<<< DEBUG >>>: in Code::run_command_input_ajax(), begin selector setup', "\n";
 #    my IO::Select $selector = IO::Select->new();
 #    $selector->add(*{$COMMAND_OUT}, *{$COMMAND_ERR});
-#    print {*STDERR} '<<< DEBUG >>>: in Code::run_command_input_ajax(), end selector setup', "\n";
+#    print {*STDOUT} '<<< DEBUG >>>: in Code::run_command_input_ajax(), end selector setup', "\n";
 
     # read available output before input has been provided
-#    print {*STDERR} '<<< DEBUG >>>: in Code::run_command_input_ajax(), begin pre-input collection of output', "\n";
+#    print {*STDOUT} '<<< DEBUG >>>: in Code::run_command_input_ajax(), begin pre-input collection of output', "\n";
 #    while (my @readable_filehandles = $selector->can_read(1)) {
 ##    my @readable_filehandles = $selector->can_read(0.1);
-#        print {*STDERR} '<<< DEBUG >>>: in Code::run_command_input_ajax(), have @readable_filehandles = ', "\n", Dumper(\@readable_filehandles), "\n\n";
+#        print {*STDOUT} '<<< DEBUG >>>: in Code::run_command_input_ajax(), have @readable_filehandles = ', "\n", Dumper(\@readable_filehandles), "\n\n";
 #        foreach my filehandleref $readable_filehandle (@readable_filehandles) {
-#            print {*STDERR} '<<< DEBUG >>>: in Code::run_command_input_ajax(), have $readable_filehandle = ', Dumper($readable_filehandle), "\n";
+#            print {*STDOUT} '<<< DEBUG >>>: in Code::run_command_input_ajax(), have $readable_filehandle = ', Dumper($readable_filehandle), "\n";
 #            if (fileno($readable_filehandle) == fileno(*{$COMMAND_ERR})) 
 #                { $stdout_stderr .= scalar <$COMMAND_ERR>; }
 #            else
@@ -665,7 +668,7 @@ sub run_command_input_ajax : Chained( 'base' ) : PathPart( 'run_command_input_aj
 #            if (eof($readable_filehandle)) { $selector->remove($readable_filehandle); }
 #        }
 #    }
-#    print {*STDERR} '<<< DEBUG >>>: in Code::run_command_input_ajax(), end pre-input collection of output', "\n";
+#    print {*STDOUT} '<<< DEBUG >>>: in Code::run_command_input_ajax(), end pre-input collection of output', "\n";
 
 
 
@@ -673,16 +676,16 @@ sub run_command_input_ajax : Chained( 'base' ) : PathPart( 'run_command_input_aj
 
 
 
-    print {*STDERR} '<<< DEBUG >>>: in Code::run_command_input_ajax(), begin selector setup', "\n";
+    print {*STDOUT} '<<< DEBUG >>>: in Code::run_command_input_ajax(), begin selector setup', "\n";
     my $selector = IO::Select->new();
     $selector->add($COMMAND_OUT);
     $selector->add($COMMAND_ERR);
-    print {*STDERR} '<<< DEBUG >>>: in Code::run_command_input_ajax(), end selector setup', "\n";
+    print {*STDOUT} '<<< DEBUG >>>: in Code::run_command_input_ajax(), end selector setup', "\n";
 
-    print {*STDERR} '<<< DEBUG >>>: in Code::run_command_input_ajax(), begin pre-input collection of output', "\n";
+    print {*STDOUT} '<<< DEBUG >>>: in Code::run_command_input_ajax(), begin pre-input collection of output', "\n";
     my string $stdout_stderr_tmp = q{};
     while (my @readable_filehandles = $selector->can_read(0.1)) {
-        print {*STDERR} '<<< DEBUG >>>: in Code::run_command_input_ajax(), have @readable_filehandles = ', "\n", Dumper(\@readable_filehandles);
+        print {*STDOUT} '<<< DEBUG >>>: in Code::run_command_input_ajax(), have @readable_filehandles = ', "\n", Dumper(\@readable_filehandles);
         foreach my $readable_filehandle (@readable_filehandles) {
             if ($readable_filehandle == $COMMAND_OUT) {
                 my $bytes_read = sysread($readable_filehandle, $stdout_stderr_tmp, 1024);
@@ -716,7 +719,7 @@ sub run_command_input_ajax : Chained( 'base' ) : PathPart( 'run_command_input_aj
             }
         }
     }
-    print {*STDERR} '<<< DEBUG >>>: in Code::run_command_input_ajax(), end pre-input collection of output', "\n";
+    print {*STDOUT} '<<< DEBUG >>>: in Code::run_command_input_ajax(), end pre-input collection of output', "\n";
 
 
 
@@ -748,16 +751,16 @@ sub run_command_input_ajax : Chained( 'base' ) : PathPart( 'run_command_input_aj
     }
 
     # actually print input value to input filehandle
-#    print {*STDERR} '<<< DEBUG >>>: in Code::run_command_input_ajax(), begin input print', "\n";
+#    print {*STDOUT} '<<< DEBUG >>>: in Code::run_command_input_ajax(), begin input print', "\n";
 #    print $COMMAND_IN $input;
-#    print {*STDERR} '<<< DEBUG >>>: in Code::run_command_input_ajax(), end input print', "\n";
+#    print {*STDOUT} '<<< DEBUG >>>: in Code::run_command_input_ajax(), end input print', "\n";
 
-    print {*STDERR} '<<< DEBUG >>>: in Code::run_command_input_ajax(), begin input syswrite', "\n";
+    print {*STDOUT} '<<< DEBUG >>>: in Code::run_command_input_ajax(), begin input syswrite', "\n";
     syswrite $COMMAND_IN, $input;
-    print {*STDERR} '<<< DEBUG >>>: in Code::run_command_input_ajax(), end input syswrite', "\n";
+    print {*STDOUT} '<<< DEBUG >>>: in Code::run_command_input_ajax(), end input syswrite', "\n";
 
     # read available output after input has been provided
-#    print {*STDERR} '<<< DEBUG >>>: in Code::run_command_input_ajax(), begin post-input collection of output', "\n";
+#    print {*STDOUT} '<<< DEBUG >>>: in Code::run_command_input_ajax(), begin post-input collection of output', "\n";
 #    $selector->remove(*{$COMMAND_OUT}, *{$COMMAND_ERR});
 #    $selector->add(*{$COMMAND_OUT}, *{$COMMAND_ERR});
 #    while (my @readable_filehandles = $selector->can_read(1)) {
@@ -770,21 +773,21 @@ sub run_command_input_ajax : Chained( 'base' ) : PathPart( 'run_command_input_aj
 #            if (eof($readable_filehandle)) { $selector->remove($readable_filehandle); }
 #        }
 #    }
-#    print {*STDERR} '<<< DEBUG >>>: in Code::run_command_input_ajax(), end post-input collection of output', "\n";
+#    print {*STDOUT} '<<< DEBUG >>>: in Code::run_command_input_ajax(), end post-input collection of output', "\n";
 
-    print {*STDERR} '<<< DEBUG >>>: in Code::run_command_input_ajax(), about to return $stdout_stderr = ', $stdout_stderr, "\n";
+    print {*STDOUT} '<<< DEBUG >>>: in Code::run_command_input_ajax(), about to return $stdout_stderr = ', $stdout_stderr, "\n";
     $c->stash->{run_command_input_ajax}->{output} = $stdout_stderr;
 }
 
 
 sub run_command : Chained( 'base' ) : PathPart( 'run_command' ) {
     my ( $self, $c ) = @ARG;
-#    print {*STDERR} '<<< DEBUG >>>: in Code::run_command(), received $self = ', "\n", Dumper($self), "\n\n";
-#    print {*STDERR} '<<< DEBUG >>>: in Code::run_command(), received $c = ', "\n", Dumper($c), "\n\n";
+#    print {*STDOUT} '<<< DEBUG >>>: in Code::run_command(), received $self = ', "\n", Dumper($self), "\n\n";
+#    print {*STDOUT} '<<< DEBUG >>>: in Code::run_command(), received $c = ', "\n", Dumper($c), "\n\n";
 
     my $request = $c->request();
-#    print {*STDERR} '<<< DEBUG >>>: in Code::run_command(), have $request->param() = ', "\n", Dumper($request->param()), "\n\n";
-#    print {*STDERR} '<<< DEBUG >>>: in Code::run_command(), have $request->parameters() = ', "\n", Dumper($request->parameters()), "\n\n";
+#    print {*STDOUT} '<<< DEBUG >>>: in Code::run_command(), have $request->param() = ', "\n", Dumper($request->param()), "\n\n";
+#    print {*STDOUT} '<<< DEBUG >>>: in Code::run_command(), have $request->parameters() = ', "\n", Dumper($request->parameters()), "\n\n";
 
     # set up stash
     $c->stash->{template} = 'code/view_run_command.tt';
@@ -803,11 +806,11 @@ sub run_command : Chained( 'base' ) : PathPart( 'run_command' ) {
 
     # accept command parameter
     my $command = $parameters->{command};
-    print {*STDERR} '<<< DEBUG >>>: in Code::run_command(), have $command = ', $command, "\n";
+    print {*STDOUT} '<<< DEBUG >>>: in Code::run_command(), have $command = ', $command, "\n";
 
     # SECURITY: disallow multiple commands, only allow 1 RPerl command!
     if ($command =~ m/[;|><]/) {
-        print {*STDERR}  '<<< DEBUG >>>: SECURITY: in Code::run_command(), intercepted command with forbidden control character', "\n";
+        print {*STDOUT}  '<<< DEBUG >>>: SECURITY: in Code::run_command(), intercepted command with forbidden control character', "\n";
         $c->stash->{run_command}->{stdout_stderr} = 'ERROR: Command with forbidden control character ; or | or < or >';
         return;
     }
@@ -823,7 +826,7 @@ sub run_command : Chained( 'base' ) : PathPart( 'run_command' ) {
 #    $command = q{su www-data -c "PATH=$PATH; set | grep TERM; unbuffer -p } . $command . q{"};
     $command = q{su www-data -c "PATH=$PATH; unbuffer -p } . $command . q{"};
 
-    print {*STDERR} '<<< DEBUG >>>: in Code::run_command(), START running $command = ', $command, "\n";
+    print {*STDOUT} '<<< DEBUG >>>: in Code::run_command(), START running $command = ', $command, "\n";
 
     my string $stdout_stderr = q{};
     my filehandleref $COMMAND_IN;
@@ -840,7 +843,7 @@ sub run_command : Chained( 'base' ) : PathPart( 'run_command' ) {
     # handle child process exiting
 #    $SIG{CHLD} = sub {
 #        if (waitpid($pid, 0) > 0) {
-#            print {*STDERR} 'CHILD PROCESS: exit status ', $CHILD_ERROR, ' on PID ', $pid, "\n";
+#            print {*STDOUT} 'CHILD PROCESS: exit status ', $CHILD_ERROR, ' on PID ', $pid, "\n";
 #            close($Code::JOBS->{$pid}->{IN});
 #            close($Code::JOBS->{$pid}->{OUT});
 #            close($Code::JOBS->{$pid}->{ERR});
@@ -875,18 +878,18 @@ sub run_command : Chained( 'base' ) : PathPart( 'run_command' ) {
 
 
 
-#    print {*STDERR} '<<< DEBUG >>>: in Code::run_command(), FINISH running $command = ', $command, "\n";
+#    print {*STDOUT} '<<< DEBUG >>>: in Code::run_command(), FINISH running $command = ', $command, "\n";
 
 #    my $new_job_exit_status = $CHILD_ERROR >> 8;
 
-#    print {*STDERR} '<<< DEBUG >>>: in Code::run_command(), have $CHILD_ERROR = ', $CHILD_ERROR, "\n" ;
-#    print {*STDERR} '<<< DEBUG >>>: in Code::run_command(), have $new_job_exit_status = ', $new_job_exit_status, "\n" ;
+#    print {*STDOUT} '<<< DEBUG >>>: in Code::run_command(), have $CHILD_ERROR = ', $CHILD_ERROR, "\n" ;
+#    print {*STDOUT} '<<< DEBUG >>>: in Code::run_command(), have $new_job_exit_status = ', $new_job_exit_status, "\n" ;
 
     my boolean $stdout_stderr_content = ( ( defined $stdout_stderr ) and ( $stdout_stderr =~ m/[^\s]+/g ) );
 
     # stash command output
     if ( $stdout_stderr_content ) {
-        print {*STDERR} "\n", '<<< DEBUG >>>: in Code::run_command(), have [[[ NEW JOB COMMAND STDOUT & STDERR ]]]', "\n\n", $stdout_stderr, "\n" ;
+        print {*STDOUT} "\n", '<<< DEBUG >>>: in Code::run_command(), have [[[ NEW JOB COMMAND STDOUT & STDERR ]]]', "\n\n", $stdout_stderr, "\n" ;
         $c->stash->{run_command}->{stdout_stderr} = $stdout_stderr;
     }
 
@@ -972,7 +975,7 @@ EOHTML
 
     # AJAX: build & stash
     my string $output_ajax = $cgi_ajax->build_html($cgi, $run_command_output_ajax_html);
-#    print {*STDERR} '<<< DEBUG >>>: in Code::run_command(), have $output_ajax = ', "\n", $output_ajax, "\n\n";
+#    print {*STDOUT} '<<< DEBUG >>>: in Code::run_command(), have $output_ajax = ', "\n", $output_ajax, "\n\n";
     $c->stash->{run_command}->{output_ajax} = $output_ajax;
 
 

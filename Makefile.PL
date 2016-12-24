@@ -41,19 +41,22 @@ requires (
 	'File::Pid'                                  => '0',
 	'HTML::TreeBuilder'                          => '0',
 
-    # WBRASWELL 20161126 2016.331
-    # enable AJAX terminal emulation
+    # WBRASWELL 20161222 2016.357
+    # Auth0
+    'Plack::Middleware::DoormanAuth0'            => '0.10',
+    # AJAX
     'CGI::Ajax'                                  => '0.707',
+    # terminal emulation
     'Term::VT102::Boundless'                     => '0.04',
     'Term::VT102::Incremental'                   => '0.05',
-    # enable temp build files
+    # temp build files
     'File::Temp'                                 => '0.2304',
-    # enable file manager
-#    'Archive::Any'                               => '0.03',
-#    'CGI::Cookie'                                => '1.20',
-#    'File::NCopy'                                => '0.32',
-#    'File::Remove'                               => '0.20',
-#    'Apache2::FileManager'                       => '0',
+    # A2::FM file manager
+    'Archive::Any'                               => '0.03',
+    'CGI::Cookie'                                => '1.20',
+    'File::NCopy'                                => '0.32',
+    'File::Remove'                               => '0.20',
+#    'Apache2::FileManager'                       => '0.30',
 );
 
 recommends (

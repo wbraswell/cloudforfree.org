@@ -8,7 +8,7 @@
 			[%- ELSE %]
 
 [%# <!-- WBRASWELL 20161105 2016.310: Disable new account registration --> %]
-[%# <!--        <a href="[% c.uri_for( '/user', 'login' ) %]">Login</a> or <a href="[% c.uri_for( '/user', 'register' ) %]">Register A New Account.</a></li>  --> %]
+[%# <!--        <a href="[%# c.uri_for( '/user', 'login' ) % ]">Login</a> or <a href="[%# c.uri_for( '/user', 'register' ) % ]">Register A New Account.</a></li>  --> %]
 			<a href="[% c.uri_for( '/user', 'login' ) %]">Login</a></li>
 
 			[%- END %]

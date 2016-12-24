@@ -108,7 +108,7 @@
                 var layout_top_height = w2ui['layout'].get('top').size;
                 var tabs_div_height = parseInt(window.document.getElementById('tabs_div').style.height, 10);
                 var editor_height = window_inner_height - (shiny_header_footer_height + layout_top_height + tabs_div_height + 2);
-                alert('have editor_height = ' + editor_height);
+                //alert('have editor_height = ' + editor_height);
                 window.document.getElementById('tabs_parent_div').style.height = '100%';
                 //window.document.getElementById('tabs_parent_div').style.height = editor_height + 'px';
                 //window.document.getElementById('tab1_div').style.height = editor_height + 'px';
@@ -353,7 +353,7 @@
             var layout_top_height = w2ui['layout'].get('top').size;
             var tabs_div_height = parseInt(window.document.getElementById('tabs_div').style.height, 10);
             var editor_height = window_inner_height - (shiny_header_footer_height + layout_top_height + tabs_div_height + 2);
-            alert('have editor_height = ' + editor_height);
+            //alert('have editor_height = ' + editor_height);
             window.document.getElementById('tabs_parent_div').style.height = '100%';
             //window.document.getElementById('tabs_parent_div').style.height = editor_height + 'px';
             //window.document.getElementById('tab1_div').style.height = editor_height + 'px';
@@ -444,13 +444,13 @@
                 var f=window.document.forms.namedItem('FileManager');
             
                 if (args.argString) {
-                    // SECURITY: do not allow paths or double-dots in filename, client-side check
+                    // SECURITY: do not allow double-dots in filename, client-side check
                     var arg_string = args.argString.substring(1);
                     alert("HAVE arg_string = '" + arg_string + "'");
-                    var non_filename_regex = /[^a-zA-Z0-9_.]/g;
+                    var non_filename_regex = /[^a-zA-Z0-9-_.\/]/g;
                     var multidot_regex = /[.][.]+/g;
                     if (non_filename_regex.test(arg_string) || multidot_regex.test(arg_string)) {
-                        alert('ERROR: Unsupported character detected in file name ' + "'" + arg_string + "'" + ', please use only letters, numbers, underscores, and single dots.');
+                        alert('ERROR: Unsupported character detected in file name ' + "'" + arg_string + "'" + ', please use only letters, numbers, hyphens, underscores, forward slashes, and single dots.');
                         return;
                     }
                     else {
@@ -484,9 +484,9 @@
 
 
 
-// START HERE: open file in new tab, set tab title to filename, save full file path to reuse for save command w/out filename, save current dir to reuse for save command w/ filename, check why is '^M' at the end output file, change output file owner to not be root.root
-// START HERE: open file in new tab, set tab title to filename, save full file path to reuse for save command w/out filename, save current dir to reuse for save command w/ filename, check why is '^M' at the end output file, change output file owner to not be root.root
-// START HERE: open file in new tab, set tab title to filename, save full file path to reuse for save command w/out filename, save current dir to reuse for save command w/ filename, check why is '^M' at the end output file, change output file owner to not be root.root
+// START HERE: open file in new tab, set tab title to filename, save full file path to reuse for save command w/out filename, save current dir to reuse for save command w/ filename, check if "\r\n" causes '^M' at the end output file, change output file owner to not be root.root, refresh filemanager after save
+// START HERE: open file in new tab, set tab title to filename, save full file path to reuse for save command w/out filename, save current dir to reuse for save command w/ filename, check if "\r\n" causes '^M' at the end output file, change output file owner to not be root.root, refresh filemanager after save
+// START HERE: open file in new tab, set tab title to filename, save full file path to reuse for save command w/out filename, save current dir to reuse for save command w/ filename, check if "\r\n" causes '^M' at the end output file, change output file owner to not be root.root, refresh filemanager after save
 
 
 
