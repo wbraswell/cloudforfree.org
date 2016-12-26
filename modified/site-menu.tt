@@ -78,9 +78,7 @@
     	</ul>
     	</div>
     </li>
-
 </ul>
-
 
 <form id="search_form" action="/search" method="post">
     <p>
@@ -88,6 +86,26 @@
     	<input type="image" src="/static/images/search.png" class="search" value="" />
     </p>
 </form>
+
+[%# WBRASWELL 20161225 2016.360: Enable DoormanAuth0 %]
+
+<div style="float: right; padding: 10px; padding-right: 40px;">
+<ul class='topmenu'>
+    <li>
+        [%- IF c.user_exists %]
+        <form action='/user/logout' method='POST'>
+            <a href="[% c.uri_for( '/user' ) %]">[% ( c.user.display_name || c.user.username ) | html %]</a><a href="[% c.uri_for( '/user', 'edit' ) %]"> (edit)</a>
+            <input type='submit' value='Log Out'/>
+        </form>
+        [%- ELSE %]
+        <form action='/user/login' method='POST'>
+            <input type='submit' value='Log In'/>
+        </form>
+        [%- END %]
+    </li>
+</ul>
+</div>
+
 <div class="clearfix"></div>
 
 </div>

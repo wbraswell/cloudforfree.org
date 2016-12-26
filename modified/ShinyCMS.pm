@@ -54,6 +54,18 @@ $VERSION = eval $VERSION;
 print {*STDERR} '<<< DEBUG >>>: in ShinyCMS.pm, about to call config()', "\n";
 
 __PACKAGE__->config(
+    # Auth0: enable PSGI middleware
+    'psgi_middleware', [
+#        'Debug',  # SECURITY: publicly displays client secret!!!
+        'Session::Cookie' => { secret => 'fake_secret' },
+        'DoormanAuth0' => {
+            root_url => 'http://cloudforfree.org',
+            scope => 'users',
+            auth0_domain => 'cloudforfree.auth0.com',
+            auth0_client_secret => 'REDACTED',
+            auth0_client_id     => 'JMwBFCjaelke73mE5HvLq7oTPOOQby9V'
+        }
+    ],
 	name => 'ShinyCMS',
 	# Configure DB sessions
 	'Plugin::Session' => {
@@ -69,7 +81,9 @@ __PACKAGE__->config(
 	    default => {
 		    class           => 'SimpleDB',
 		    user_model      => 'DB::User',
-		    password_type   => 'self_check',
+            # NEED FIX SECURITY, CORRELATION #cff01: re-enable non-plaintext passwords in DB so that admin password is not stored unencrypted in DB
+            # SECURITY & DoormanAuth0: comment following line to enable empty plaintext Shiny DB passwords
+#		    password_type   => 'self_check',
 		    use_userdata_from_session => 1,
 	    },
     },
@@ -78,17 +92,6 @@ __PACKAGE__->config(
 			'General' => { -InterPolateVars => 1 },
 		},
 	},
-	# Auth0: enable PSGI middleware
-	'psgi_middleware', [
-    	'Session::Cookie' => { secret => 'fake_secret' },
-        'DoormanAuth0' => {
-            root_url => 'cloudforfree.org/auth0cb',
-            scope => 'users',
-            auth0_domain => 'cloudforfree.auth0.com',
-            auth0_client_secret => 'REDACTED',
-            auth0_client_id     => 'JMwBFCjaelke73mE5HvLq7oTPOOQby9V'
-        }
-    ]
 );
 
 

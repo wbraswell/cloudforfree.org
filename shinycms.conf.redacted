@@ -100,7 +100,8 @@ recaptcha_private_key 6Led1LwSAAAAAI9EMK3XSFUuXHd29drsJD-Ha68P
 
 <Controller::User>
 	# Allow users to create accounts?
-	allow_registration    Yes
+    # SECURITY & Doorman::Auth0: only allow GitHub & Auth0 authenticated sessions register
+	allow_registration    No
 	# Default to allowing comments on profiles or not (Yes/No)
 	comments_default    No
 	# Maximum file size for user profile pics, in bytes

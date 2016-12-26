@@ -759,6 +759,9 @@ sub login : Chained( 'base' ) : PathPart( 'login' ) : Args( 0 ) {
 	my $username = $c->request->param( 'username' ) || undef;
 	my $password = $c->request->param( 'password' ) || undef;
 	
+	# SECURITY & DoormanAuth0: this is important that it will not accept plaintext blank passwords (empty password form value),
+	# or else it could allow everyone to login to the Shiny accounts created via GitHub Auth0,
+	# which is should be every account except 'admin'
 	# If the username and password values were found in form
 	if ( $username && $password ) {
 		# Check the account is active

@@ -1,3 +1,5 @@
+NEED FIX SECURITY, CORRELATION #cff01: re-enable non-plaintext passwords in DB so that admin password is not stored unencrypted in DB
+
 code, editor, F7 editor menu invisible when in F10 full window mode
 new user account registration problem, "no sender"
 new comment in forum problem, "no sender" as well?!?
