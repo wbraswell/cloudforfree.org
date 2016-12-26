@@ -2,6 +2,10 @@ package ShinyCMS;
 
 print {*STDERR} '<<< DEBUG >>>: top of ShinyCMS.pm', "\n";
 
+# NEED FIX, CORRELATION #cff02: remove hard-coded absolute paths
+our $GITHUB_REPOS_DIR = '/home/wbraswell/github_repos/';
+our $ROOT_DIR = $GITHUB_REPOS_DIR . 'cloudforfree.org-latest/';
+
 #print {*STDERR} '<<< DEBUG >>>: in ShinyCMS.pm, about to use ShinyCMS_dependencies', "\n";
 #use ShinyCMS_dependencies;
 
@@ -81,9 +85,8 @@ __PACKAGE__->config(
 	    default => {
 		    class           => 'SimpleDB',
 		    user_model      => 'DB::User',
-            # NEED FIX SECURITY, CORRELATION #cff01: re-enable non-plaintext passwords in DB so that admin password is not stored unencrypted in DB
             # SECURITY & DoormanAuth0: comment following line to enable empty plaintext Shiny DB passwords
-#		    password_type   => 'self_check',
+		    password_type   => 'self_check',
 		    use_userdata_from_session => 1,
 	    },
     },

@@ -7,7 +7,7 @@ package ShinyCMS::Controller::Auth0;
 use strict;
 use warnings;
 use RPerl::AfterSubclass;
-our $VERSION = 0.002_000;
+our $VERSION = 0.003_000;
 
 =head1 NAME
 
@@ -36,6 +36,7 @@ BEGIN { extends 'ShinyCMS::Controller'; }
 # [[[ INCLUDES ]]]
 use Plack::Request;
 use RPerl::Config;
+use Lingua::EN::NameParse qw(clean case_surname);
 
 # [[[ CONSTANTS ]]]
 has posts_per_page => (
@@ -68,6 +69,59 @@ sub base : Chained( '/base' ) : PathPart( 'users' ) : CaptureArgs( 0 ) {
     $c->stash->{ controller } = 'Auth0';
 }
 
+
+
+
+
+sub do_login {
+    (my $c, my $shiny_username) = @ARG;
+
+    # SECURITY: Attempt to authenticate the Shiny session WITH BLANK ENCRYPTED PASSWORD
+    # this seems to be okay FOR NOW because the remaining /admin login form does not accept blank password fields, and that's a server-side check
+    if ( $c->authenticate({ username => $shiny_username, password => q{} }) ) {
+        print {*STDERR} '<<< DEBUG >>>: in Auth0::do_login(), SUCCESS authenticating Shiny session, have $c->sessionid = ', Dumper($c->sessionid), "\n";
+        # If successful, look for a basket on their old session and claim it
+        my $basket = $c->model('DB::Basket')->search(
+            {
+                session => 'session:' . $c->sessionid,
+                user    => undef,
+            },
+            {
+                order_by => { -desc => 'created' },
+                rows     => 1,
+            }
+        )->single;
+        $basket->update({
+            session => undef,
+            user    => $c->user->id,
+        }) if $basket and not $c->user->basket;
+              
+        # Log the IP address
+        $c->user->user_ip_addresses->create({
+            ip_address => $c->request->address,
+        });
+                
+        # Then change their session ID to frustrate session hijackers
+        # TODO: This breaks my logins - am I using it incorrectly?
+        #$c->change_session_id;
+                
+        # Then bounce them back to the referring page or their profile
+        if ( $c->request->param('redirect') 
+                and $c->request->param('redirect') !~ m{user/login} ) {
+            $c->response->redirect( $c->request->param( 'redirect' ) );
+        }
+        else {
+            $c->response->redirect( $c->uri_for( '/user', $shiny_username ) );
+        }
+        return;
+    }
+    else {
+        print {*STDERR} '<<< DEBUG >>>: in Auth0::do_login(), FAILURE authenticating Shiny session', "\n";
+        $c->stash->{ error_msg } = "ERROR: Can't authenticate Shiny session.";
+    }
+}
+
+
 =head2 users_sign_in_auth0
 
 Display the users/sign_in/auth0 AKA login AKA callback page.
@@ -78,26 +132,26 @@ sub users_sign_in_auth0 : Chained( 'base' ) : PathPart( 'sign_in/auth0' ) {
     my ( $self, $c ) = @ARG;
 #    print {*STDERR} '<<< DEBUG >>>: in Auth0::users_sign_in_auth0(), received $self = ', "\n", Dumper($self), "\n\n";
 #    print {*STDERR} '<<< DEBUG >>>: in Auth0::users_sign_in_auth0(), received $c = ', "\n", Dumper($c), "\n\n";
-    print {*STDERR} '<<< DEBUG >>>: in Auth0::users_sign_in_auth0()', "\n";
+    print {*STDERR} '<<< DEBUG >>>: in Auth0::users_sign_in_auth0(), top of subroutine', "\n";
 
     # set up stash
     $c->stash->{template} = 'auth0/sign_in.tt';
     $c->stash->{auth0_sign_in} = {};
     $c->stash->{auth0_sign_in}->{output} = q{};
 
-=DISABLE
-    # require user to be logged in
-    if ((not defined $c->user) or
-        (not exists  $c->user->{_user}) or
-        (not defined $c->user->{_user}) or
-        (not exists  $c->user->{_user}->{_column_data}) or
-        (not defined $c->user->{_user}->{_column_data}) or
-        (not exists  $c->user->{_user}->{_column_data}->{username}) or
-        (not defined $c->user->{_user}->{_column_data}->{username})) {
-       return; 
-    }
-    my $shiny_username = $c->user->{_user}->{_column_data}->{username};
-=cut
+    # TEMPORARY CODE: reset Shiny admin password, DOES NOT WORK CORRECTLY???
+#    my $shiny_admin_user = $c->model( 'DB::User' )->find({ id => 1 });
+#    $shiny_admin_user->update({ password => 'abc123', forgot_password => 0, });
+
+    # TEMPORARY CODE: reset all Shiny users to BLANK ENCRYPTED PASSWORD
+#    foreach my $i (1 .. 23) {
+#        print {*STDERR} '<<< DEBUG >>>: in Auth0::users_sign_in_auth0(), TMP DEBUG LOOP, have $i = ', $i, "\n";
+#        my $shiny_user_tmp = $c->model( 'DB::User' )->find({ id => $i });
+#        my $shiny_user_tmp_data = $shiny_user_tmp->{_column_data};
+#        print {*STDERR} '<<< DEBUG >>>: in Auth0::users_sign_in_auth0(), have PRE-RESET $shiny_user_tmp_data = ', Dumper($shiny_user_tmp_data), "\n";
+#        $shiny_user_tmp->update({ password => q{}, forgot_password => 0, });
+#        print {*STDERR} '<<< DEBUG >>>: in Auth0::users_sign_in_auth0(), have POST-RESET $shiny_user_tmp_data = ', Dumper($shiny_user_tmp_data), "\n";
+#    }
 
     # get request & env
     my $request = $c->request();
@@ -108,16 +162,18 @@ sub users_sign_in_auth0 : Chained( 'base' ) : PathPart( 'sign_in/auth0' ) {
     # accept parameters
     my $parameters = $request->parameters();
 #    print {*STDERR} '<<< DEBUG >>>: in Auth0::users_sign_in_auth0(), have $parameters = ', Dumper($parameters), "\n";
-    my $parameter_code = $parameters->{code};
-    print {*STDERR} '<<< DEBUG >>>: in Auth0::users_sign_in_auth0(), have $parameter_code = ', $parameter_code, "\n";
+
+    # NEED ANSWER: is the Auth0 code not needed here?
+#    my $parameter_code = $parameters->{code};
+#    print {*STDERR} '<<< DEBUG >>>: in Auth0::users_sign_in_auth0(), have $parameter_code = ', $parameter_code, "\n";
 
     # Retrive the Plack::Middleware::DoormanAuth0 object
     my $doorman = $env->{'doorman.users.auth0'};
 #    print {*STDERR} '<<< DEBUG >>>: in Auth0::users_sign_in_auth0(), have $doorman = ', Dumper($doorman), "\n";
 
     # Check sign-in status
-    print {*STDERR} '<<< DEBUG >>>: in Auth0::users_sign_in_auth0(), about to call $doorman->is_sign_in...', "\n";
-    if ($doorman->is_sign_in) {
+    my $doorman_is_signed_in = $doorman->is_sign_in;
+    if ($doorman_is_signed_in) {
         my string $doorman_email = $doorman->auth0_email;
 #        $c->stash->{auth0_sign_in}->{output} .= 'SUCCESS! You are authenticated as: ' . $doorman_email;  # the won't see this due to fast redirect
 
@@ -139,111 +195,126 @@ sub users_sign_in_auth0 : Chained( 'base' ) : PathPart( 'sign_in/auth0' ) {
             my $shiny_user_data = $shiny_user->{_column_data};
             print {*STDERR} '<<< DEBUG >>>: in Auth0::users_sign_in_auth0(), have $shiny_user_data = ', Dumper($shiny_user_data), "\n";
             my string $shiny_username = $shiny_user_data->{username};
-
-            # NEED FIX SECURITY, CORRELATION #cff01: re-enable non-plaintext passwords in DB so that admin password is not stored unencrypted in DB
-            # SECURITY: Attempt to authenticate the Shiny session WITH BLANK PLAINTEXT PASSWORD
-            # this seems to be okay FOR NOW because the remaining /admin login form does not accept blank password fields, and that's a server-side check
-            if ( $c->authenticate({ username => $shiny_username, password => q{} }) ) {
-                print {*STDERR} '<<< DEBUG >>>: in Auth0::users_sign_in_auth0(), SUCCESS authenticating Shiny session, have $c->sessionid = ', Dumper($c->sessionid), "\n";
-                # If successful, look for a basket on their old session and claim it
-                my $basket = $c->model('DB::Basket')->search(
-                    {
-                        session => 'session:' . $c->sessionid,
-                        user    => undef,
-                    },
-                    {
-                        order_by => { -desc => 'created' },
-                        rows     => 1,
-                    }
-                )->single;
-                $basket->update({
-                    session => undef,
-                    user    => $c->user->id,
-                }) if $basket and not $c->user->basket;
-                
-                # Log the IP address
-                $c->user->user_ip_addresses->create({
-                    ip_address => $c->request->address,
-                });
-                
-                # Then change their session ID to frustrate session hijackers
-                # TODO: This breaks my logins - am I using it incorrectly?
-                #$c->change_session_id;
-                
-                # Then bounce them back to the referring page or their profile
-                if ( $c->request->param('redirect') 
-                        and $c->request->param('redirect') !~ m{user/login} ) {
-                    $c->response->redirect( $c->request->param( 'redirect' ) );
-                }
-                else {
-                    $c->response->redirect( $c->uri_for( '/user', $shiny_username ) );
-                }
-                return;
-            }
-            else {
-                print {*STDERR} '<<< DEBUG >>>: in Auth0::users_sign_in_auth0(), FAILURE authenticating Shiny session', "\n";
-                $c->stash->{ error_msg } = "ERROR: Can't authenticate Shiny session.";
-            }
+            do_login($c, $shiny_username);
         }
         # new Shiny account, use DoormanAuth0 user to create/register new Shiny user
         else
         {
             print {*STDERR} '<<< DEBUG >>>: in Auth0::users_sign_in_auth0(), FIRST TIME LOGIN, REGISTERING NEW SHINY ACCOUNT', "\n";
-            print {*STDOUT} '<<< DEBUG >>>: in Auth0::users_sign_in_auth0(), CHECK THIS!!!! have $doorman_user_data->{given_name} = ', $doorman_user_data->{given_name}, "\n";
-            print {*STDOUT} '<<< DEBUG >>>: in Auth0::users_sign_in_auth0(), CHECK THIS!!!! have $doorman_user_data->{family_name} = ', $doorman_user_data->{family_name}, "\n";
-
-
-
-
-
-# THEN START HERE: check proper accessing of doorman first & last name above, then if set use as defaults for form text inputs below
-# THEN START HERE: check proper accessing of doorman first & last name above, then if set use as defaults for form text inputs below
-# THEN START HERE: check proper accessing of doorman first & last name above, then if set use as defaults for form text inputs below
-
-
-
 
             # check if the Doorman::Auth0 given_name is provided
             my string $doorman_given_name = q{};
             if ((exists $doorman_user_data->{given_name}) and 
                 (defined $doorman_user_data->{given_name}) and 
                 ($doorman_user_data->{given_name} ne q{})) {
-                my string $doorman_given_name = $doorman_user_data->{given_name};
+                $doorman_given_name = $doorman_user_data->{given_name};
+                print {*STDERR} '<<< DEBUG >>>: in Auth0::users_sign_in_auth0(), have $doorman_user_data->{given_name} = ', $doorman_user_data->{given_name}, "\n";
 
                 # check if the Doorman::Auth0 given_name is valid
-                if ( $doorman_given_name =~ m/\a-zA-Z/ ) {
+                if ( $doorman_given_name =~ m/[^a-zA-Z]/g ) {
                     # don't give an error, simply don't use
                     $doorman_given_name = q{};
-#                    $c->flash->{ error_msg } = 'ERROR: Can not utilize GitHub given_name to create non-conflicting username, GitHub given_name may only contain letters; ' . q{'} . $doorman_given_name . q{'};
-#                    $c->response->redirect( $c->uri_for( '/users', 'sign_in/auth0' ) );
-#                    $c->detach;
                 }
             }
+            else { print {*STDERR} '<<< DEBUG >>>: in Auth0::users_sign_in_auth0(), DO NOT have $doorman_user_data->{given_name}', "\n"; }
 
             # check if the Doorman::Auth0 family_name is provided
             my string $doorman_family_name = q{};
             if ((exists $doorman_user_data->{family_name}) and 
                 (defined $doorman_user_data->{family_name}) and 
                 ($doorman_user_data->{family_name} ne q{})) {
-                my string $doorman_family_name = $doorman_user_data->{family_name};
+                $doorman_family_name = $doorman_user_data->{family_name};
+                print {*STDERR} '<<< DEBUG >>>: in Auth0::users_sign_in_auth0(), have $doorman_user_data->{family_name} = ', $doorman_user_data->{family_name}, "\n";
 
                 # check if the Doorman::Auth0 family_name is valid
-                if ( $doorman_family_name =~ m/\a-zA-Z/ ) {
+                if ( $doorman_family_name =~ m/[^a-zA-Z]/g ) {
                     # don't give an error, simply don't use
                     $doorman_family_name = q{};
-#                    $c->flash->{ error_msg } = 'ERROR: Can not utilize GitHub family_name to create non-conflicting username, GitHub family_name may only contain letters; ' . q{'} . $doorman_family_name . q{'};
-#                    $c->response->redirect( $c->uri_for( '/users', 'sign_in/auth0' ) );
-#                    $c->detach;
                 }
+            }
+            else { print {*STDERR} '<<< DEBUG >>>: in Auth0::users_sign_in_auth0(), DO NOT have $doorman_user_data->{family_name}', "\n"; }
+
+            # check if the Doorman::Auth0 name is provided
+            my string $doorman_name = q{};
+            if ((exists $doorman_user_data->{name}) and 
+                (defined $doorman_user_data->{name}) and 
+                ($doorman_user_data->{name} ne q{})) {
+                $doorman_name = $doorman_user_data->{name};
+                print {*STDERR} '<<< DEBUG >>>: in Auth0::users_sign_in_auth0(), have $doorman_user_data->{name} = ', $doorman_user_data->{name}, "\n";
+
+                # DO NOT check if the Doorman::Auth0 name is valid, leave it to name parser below
+#                if ( $doorman_name =~ m/[^a-zA-Z]/g ) {
+#                    # don't give an error, simply don't use
+#                    $doorman_name = q{};
+#                }
+            }
+            else { print {*STDERR} '<<< DEBUG >>>: in Auth0::users_sign_in_auth0(), DO NOT have $doorman_user_data->{name}', "\n"; }
+
+            # parse Doorman::Auth0 name if provided
+            my string $doorman_name_parsed_given_name = q{};
+            my string $doorman_name_parsed_surname = q{};
+            my %name_parser_args =
+            (
+                auto_clean      => 1,
+                lc_prefix       => 1,
+                initials        => 3,
+                allow_reversed  => 0,
+                joint_names     => 0,
+                extended_titles => 0
+            );
+            my $name_parser = Lingua::EN::NameParse->new(%name_parser_args);
+            my $name_parser_error = $name_parser->parse($doorman_name);
+            if ( $name_parser_error )
+            {
+                print {*STDERR} '<<< DEBUG >>>: in Auth0::users_sign_in_auth0(), ERROR PARSING NAME, have $doorman_name = ', $doorman_name, ', have $name_parser_error = ', Dumper($name_parser_error), "\n";
+            }
+            else {
+                print {*STDERR} '<<< DEBUG >>>: in Auth0::users_sign_in_auth0(), SUCCESS PARSING NAME, have $doorman_name = ', $doorman_name, ', have $name_parser->report = ', $name_parser->report, "\n";
+                my %name_components = $name_parser->components;
+                $doorman_name_parsed_given_name = $name_components{given_name_1};
+                $doorman_name_parsed_surname = $name_components{surname_1};
+                print {*STDERR} '<<< DEBUG >>>: in Auth0::users_sign_in_auth0(), SUCCESS PARSING NAME, have $doorman_name_parsed_given_name = ', $doorman_name_parsed_given_name, ', have $doorman_name_parsed_surname = ', $doorman_name_parsed_surname, "\n";
+            }
+            if (($doorman_given_name eq q{}) or ($doorman_family_name eq q{})) {
+                if (($doorman_name_parsed_given_name ne q{}) and ($doorman_name_parsed_surname ne q{})) {
+                    $doorman_given_name = $doorman_name_parsed_given_name;
+                    $doorman_family_name = $doorman_name_parsed_surname;
+                }
+            }
+
+            # check if the Doorman::Auth0 picture is provided
+            my string $doorman_picture = q{};
+            if ((exists $doorman_user_data->{picture}) and 
+                (defined $doorman_user_data->{picture}) and 
+                ($doorman_user_data->{picture} ne q{})) {
+                $doorman_picture = $doorman_user_data->{picture};
+
+                # check if the Doorman::Auth0 picture is valid
+                if ( $doorman_picture !~ m/^https:\/\/avatars\d*\.githubusercontent\.com/g ) {
+                    # don't give an error, simply don't use
+                    $doorman_picture = q{};
+                    print {*STDERR} '<<< DEBUG >>>: in Auth0::users_sign_in_auth0(), INVALID GITHUB PICTURE URL $doorman_picture = ', $doorman_picture, "\n";
+                }
+                else {
+                    print {*STDERR} '<<< DEBUG >>>: in Auth0::users_sign_in_auth0(), VALID GITHUB PICTURE URL $doorman_picture = ', $doorman_picture, "\n";
+                }
+            }
+            my string $doorman_picture_html = q{};
+            if ($doorman_picture ne q{}) {
+                $doorman_picture_html = 
+                    q{<img class='outlined' align='left' width='30%' height='30%' style='margin-right: 20px' src='} . 
+                    $doorman_picture . q{'><br>};
             }
 
             # HTML form to input/confirm the user's first & last names
             $c->stash->{auth0_sign_in}->{output} .=<<"EOL";
-Please provide your real, legal first (given) and last (family) names, using only normal letters a-z and A-Z.<br>
-Please do NOT use nicknames, special characters, commas, periods, etc.<br><br>
+Please provide your real, legal first (given) and last (family) names, using only normal English letters a-z and A-Z.<br>
+Please do NOT use middle names, nicknames, special characters, commas, periods, etc.<br><br>
 <form action='/users/sign_in/auth0' method='POST'>
+    $doorman_picture_html
     <span style="color: red">(*)</span> Real First Name: <input type='text' name='first_name' value='$doorman_given_name'><br>
-    <span style="color: red">(*)</span> Real Last Name: <input type='text' name='last_name' value='$doorman_family_name'><br>
+    <span style="color: red">(*)</span> Real Last  Name: <input type='text' name='last_name' value='$doorman_family_name'><br>
+    <span style="color: red">(*)</span> Real Location:   <input type='text' name='location'> (City, State, Country)<br>
     <input type="submit" value="Submit">
 </form>
 EOL
@@ -254,11 +325,9 @@ EOL
                 (defined $parameters->{first_name}) and
                 ($parameters->{first_name}) ne q{}) {
                 $first_name = $parameters->{first_name};
-                print {*STDOUT} '<<< DEBUG >>>: in Auth0::users_sign_in_auth0(), have parameter $first_name = ', $first_name, "\n";
+                print {*STDERR} '<<< DEBUG >>>: in Auth0::users_sign_in_auth0(), have parameter $first_name = ', $first_name, "\n";
                 if ( $first_name =~ m/[^a-zA-Z]/g ) {
                     $c->flash->{ error_msg } = 'First names may only contain letters.';
-#                    $c->response->redirect( $c->uri_for( '/users', 'sign_in/auth0' ) );
-#                    $c->detach;
                     return;
                 }
             }
@@ -269,20 +338,29 @@ EOL
                 (defined $parameters->{last_name}) and
                 ($parameters->{last_name}) ne q{}) {
                 $last_name = $parameters->{last_name};
-                print {*STDOUT} '<<< DEBUG >>>: in Auth0::users_sign_in_auth0(), have parameter $last_name = ', $last_name, "\n";
+                print {*STDERR} '<<< DEBUG >>>: in Auth0::users_sign_in_auth0(), have parameter $last_name = ', $last_name, "\n";
                 if ( $last_name =~ m/[^a-zA-Z]/g ) {
                     $c->flash->{ error_msg } = 'Last names may only contain letters.';
-#                    $c->response->redirect( $c->uri_for( '/users', 'sign_in/auth0' ) );
-#                    $c->detach;
                     return;
                 }
             }
 
-            # require both first & last name parameter
-            if (($first_name eq q{}) or ($last_name eq q{})) {
-                $c->flash->{ error_msg } = 'Both first and last name are required fields.';
-#                $c->response->redirect( $c->uri_for( '/users', 'sign_in/auth0' ) );
-#                $c->detach;
+            # get & validate location parameter
+            my string $location = q{};
+            if ((exists $parameters->{location}) and 
+                (defined $parameters->{location}) and
+                ($parameters->{location}) ne q{}) {
+                $location = $parameters->{location};
+                print {*STDERR} '<<< DEBUG >>>: in Auth0::users_sign_in_auth0(), have parameter $location = ', $location, "\n";
+                if ( $location =~ m/[^a-zA-Z0-9,.\- ]/g ) {
+                    $c->flash->{ error_msg } = 'Locations may only contain letters, numbers, commas, periods, hyphens, and spaces.';
+                    return;
+                }
+            }
+
+            # require both first name & last name & location parameters
+            if (($first_name eq q{}) or ($last_name eq q{}) or ($location eq q{})) {
+                $c->flash->{ error_msg } = 'First name and last name and location are required fields.';
                 return;
             }
 
@@ -290,7 +368,7 @@ EOL
             my string $shiny_username = substr $first_name, 0, 1;
             $shiny_username .= $last_name;
             $shiny_username = lc $shiny_username;
-            print {*STDOUT} '<<< DEBUG >>>: in Auth0::users_sign_in_auth0(), have try #1 $shiny_username = ', $shiny_username, "\n";
+            print {*STDERR} '<<< DEBUG >>>: in Auth0::users_sign_in_auth0(), have try #1 $shiny_username = ', $shiny_username, "\n";
 
             # check if the Shiny username is available, try #1
             my $user_exists = $c->model( 'DB::User' )->find({ username => $shiny_username });
@@ -301,27 +379,23 @@ EOL
                 if ((exists $doorman_user_data->{nickname}) and 
                     (defined $doorman_user_data->{nickname}) and 
                     ($doorman_user_data->{nickname} ne q{})) {
-                    my string $doorman_nickname = $doorman_user_data->{nickname};
+                    $doorman_nickname = $doorman_user_data->{nickname};
 
                     # check if the Doorman::Auth0 nickname is valid
-                    if ( $doorman_nickname =~ m/\W/ ) {
+                    if ( $doorman_nickname =~ m/\W/g ) {
                         $c->flash->{ error_msg } = 'ERROR: Can not utilize GitHub nickname to create non-conflicting username, GitHub nickname may only contain letters, numbers and underscores; ' . q{'} . $doorman_nickname . q{'};
-#                        $c->response->redirect( $c->uri_for( '/users', 'sign_in/auth0' ) );
-#                        $c->detach;
                         return;
                     }
                 }
                 else {
                     $c->flash->{ error_msg } = 'ERROR: Can not utilize GitHub nickname to create non-conflicting username, GitHub nickname not provided.';
-#                    $c->response->redirect( $c->uri_for( '/users', 'sign_in/auth0' ) );
-#                    $c->detach;
                     return;
                 }
 
                 my $shiny_username_try1 = $shiny_username;
                 $shiny_username .= '_' . $doorman_nickname;
                 $shiny_username = lc $shiny_username;
-                print {*STDOUT} '<<< DEBUG >>>: in Auth0::users_sign_in_auth0(), have try #2 $shiny_username = ', $shiny_username, "\n";
+                print {*STDERR} '<<< DEBUG >>>: in Auth0::users_sign_in_auth0(), have try #2 $shiny_username = ', $shiny_username, "\n";
 
                 # check if the Shiny username is available, try #2
                 $user_exists = $c->model( 'DB::User' )->find({ username => $shiny_username });
@@ -329,17 +403,13 @@ EOL
                     # username try #2 not available, username already taken
                     $c->flash->{ error_msg } = 'ERROR: Can not create usernames ' . q{'} . $shiny_username_try1 . q{'} . ' or ' . 
                         q{'} . $shiny_username . q{'} . ', usernames already in use.';
-#                    $c->response->redirect( $c->uri_for( '/users', 'sign_in/auth0' ) );
-#                    $c->detach;
                     return;
                 }
             }
 
             # check if the Shiny username is valid
-            if ( $shiny_username =~ m/\W/ ) {
+            if ( $shiny_username =~ m/\W/g ) {
                 $c->flash->{ error_msg } = 'ERROR: Username may only contain letters, numbers and underscores; ' . q{'} . $shiny_username . q{'};
-#                $c->response->redirect( $c->uri_for( '/users', 'sign_in/auth0' ) );
-#                $c->detach;
                 return;
             }
 
@@ -351,22 +421,127 @@ EOL
             );
             if ( not $doorman_email_valid ) {
                 $c->flash->{ error_msg } = 'ERROR: You must set a valid email address in GitHub; ' . q{'} . $doorman_email . q{'};
-#                $c->response->redirect( $c->uri_for( '/users', 'sign_in/auth0' ) );
-#                $c->detach;
                 return;
             }
 
-            # NEED FIX SECURITY, CORRELATION #cff01: re-enable non-plaintext passwords in DB so that admin password is not stored unencrypted in DB
-            # SECURITY: create Shiny user WITH BLANK PLAINTEXT PASSWORD
+            # shared variables for running commands below
+            my string $command;
+            my string $command_retval;
+
+            # SECURITY NEED FIX, CORRELATION #cff03: files are all owned by root user (?) and www-data group, need change to real *nix users & file ownership???
+            # NEED UPGRADE: change below commands to pure-Perl versions, no backticks
+
+            # copy GitHub profile pic as Shiny profile pic
+            # create user profile pic directory, download GitHub profile pic
+            my string $shiny_profile_pic = q{};
+            if ($doorman_picture ne q{}) {
+                $shiny_profile_pic = $shiny_username . '_profile_github.jpg';
+                my string $shiny_user_profile_pics_dir = $ShinyCMS::ROOT_DIR . 'root/static/cms-uploads/user-profile-pics/' . $shiny_username . '/';
+
+                $command = 'mkdir -p ' . $shiny_user_profile_pics_dir;
+                print {*STDERR} '<<< DEBUG >>>: in Auth0::users_sign_in_auth0(), about to run $command = ', $command, "\n";
+                $command_retval = `$command 2>&1;`;
+                print {*STDERR} '<<< DEBUG >>>: in Auth0::users_sign_in_auth0(), have $CHILD_ERROR = ', $CHILD_ERROR, ', $command_retval = ', $command_retval, "\n";
+                if ($CHILD_ERROR) { $c->stash->{auth0_sign_in}->{output} = 'ERROR: Failed to copy GitHub profile picture; ' . $command_retval; return; }
+
+                $command = 'wget ' . $doorman_picture . ' -O ' . $shiny_user_profile_pics_dir . $shiny_profile_pic;
+                print {*STDERR} '<<< DEBUG >>>: in Auth0::users_sign_in_auth0(), about to run $command = ', $command, "\n";
+                $command_retval = `$command 2>&1;`;
+                print {*STDERR} '<<< DEBUG >>>: in Auth0::users_sign_in_auth0(), have $CHILD_ERROR = ', $CHILD_ERROR, ', $command_retval = ', $command_retval, "\n";
+                if ($CHILD_ERROR) { $c->stash->{auth0_sign_in}->{output} = 'ERROR: Failed to copy GitHub profile picture; ' . $command_retval; return; }
+
+                $command = 'chgrp -R www-data ' . $shiny_user_profile_pics_dir;
+                print {*STDERR} '<<< DEBUG >>>: in Auth0::users_sign_in_auth0(), about to run $command = ', $command, "\n";
+                $command_retval = `$command 2>&1;`;
+                print {*STDERR} '<<< DEBUG >>>: in Auth0::users_sign_in_auth0(), have $CHILD_ERROR = ', $CHILD_ERROR, ', $command_retval = ', $command_retval, "\n";
+                if ($CHILD_ERROR) { $c->stash->{auth0_sign_in}->{output} = 'ERROR: Failed to copy GitHub profile picture; ' . $command_retval; return; }
+
+                $command = 'chmod -R g+rwX ' . $shiny_user_profile_pics_dir;
+                print {*STDERR} '<<< DEBUG >>>: in Auth0::users_sign_in_auth0(), about to run $command = ', $command, "\n";
+                $command_retval = `$command 2>&1;`;
+                print {*STDERR} '<<< DEBUG >>>: in Auth0::users_sign_in_auth0(), have $CHILD_ERROR = ', $CHILD_ERROR, ', $command_retval = ', $command_retval, "\n";
+                if ($CHILD_ERROR) { $c->stash->{auth0_sign_in}->{output} = 'ERROR: Failed to copy GitHub profile picture; ' . $command_retval; return; }
+            }
+
+            # SECURITY NEED FIX, CORRELATION #cff03: files are all owned by root user (?) and www-data group, need change to real *nix users & file ownership???
+
+            # create user files directory, give them their own copy of Learning RPerl exercises
+            my string $shiny_user_files_dir = $ShinyCMS::ROOT_DIR . 'root/user_files/' . $shiny_username . '/';
+            my string $learning_rperl_dir = $ShinyCMS::GITHUB_REPOS_DIR . 'rperl-latest/lib/RPerl/Learning/';
+
+            $command = 'mkdir -p ' . $shiny_user_files_dir;
+            print {*STDERR} '<<< DEBUG >>>: in Auth0::users_sign_in_auth0(), about to run $command = ', $command, "\n";
+            $command_retval = `$command 2>&1;`;
+            print {*STDERR} '<<< DEBUG >>>: in Auth0::users_sign_in_auth0(), have $CHILD_ERROR = ', $CHILD_ERROR, ', $command_retval = ', $command_retval, "\n";
+            if ($CHILD_ERROR) { $c->stash->{auth0_sign_in}->{output} = 'ERROR: Failed to copy Learning RPerl source code files; ' . $command_retval; return; }
+
+            $command = 'cp -a ' . $learning_rperl_dir . ' ' . $shiny_user_files_dir . 'LearningRPerl';
+            print {*STDERR} '<<< DEBUG >>>: in Auth0::users_sign_in_auth0(), about to run $command = ', $command, "\n";
+            $command_retval = `$command 2>&1;`;
+            print {*STDERR} '<<< DEBUG >>>: in Auth0::users_sign_in_auth0(), have $CHILD_ERROR = ', $CHILD_ERROR, ', $command_retval = ', $command_retval, "\n";
+            if ($CHILD_ERROR) { $c->stash->{auth0_sign_in}->{output} = 'ERROR: Failed to copy Learning RPerl source code files; ' . $command_retval; return; }
+
+            $command = 'chgrp -R www-data ' . $shiny_user_files_dir;
+            print {*STDERR} '<<< DEBUG >>>: in Auth0::users_sign_in_auth0(), about to run $command = ', $command, "\n";
+            $command_retval = `$command 2>&1;`;
+            print {*STDERR} '<<< DEBUG >>>: in Auth0::users_sign_in_auth0(), have $CHILD_ERROR = ', $CHILD_ERROR, ', $command_retval = ', $command_retval, "\n";
+            if ($CHILD_ERROR) { $c->stash->{auth0_sign_in}->{output} = 'ERROR: Failed to copy Learning RPerl source code files; ' . $command_retval; return; }
+
+            $command = 'chmod -R g+rwX ' . $shiny_user_files_dir;
+            print {*STDERR} '<<< DEBUG >>>: in Auth0::users_sign_in_auth0(), about to run $command = ', $command, "\n";
+            $command_retval = `$command 2>&1;`;
+            print {*STDERR} '<<< DEBUG >>>: in Auth0::users_sign_in_auth0(), have $CHILD_ERROR = ', $CHILD_ERROR, ', $command_retval = ', $command_retval, "\n";
+            if ($CHILD_ERROR) { $c->stash->{auth0_sign_in}->{output} = 'ERROR: Failed to copy Learning RPerl source code files; ' . $command_retval; return; }
+
+            print {*STDERR} '<<< DEBUG >>>: in Auth0::users_sign_in_auth0(), before DB create(), have $doorman_email = ', $doorman_email, "\n";
+            print {*STDERR} '<<< DEBUG >>>: in Auth0::users_sign_in_auth0(), before DB create(), have $shiny_username = ', $shiny_username, "\n";
+            print {*STDERR} '<<< DEBUG >>>: in Auth0::users_sign_in_auth0(), before DB create(), have $first_name = ', $first_name, "\n";
+            print {*STDERR} '<<< DEBUG >>>: in Auth0::users_sign_in_auth0(), before DB create(), have $last_name = ', $last_name, "\n";
+            print {*STDERR} '<<< DEBUG >>>: in Auth0::users_sign_in_auth0(), before DB create(), have $shiny_profile_pic = ', $shiny_profile_pic, "\n";
+            print {*STDERR} '<<< DEBUG >>>: in Auth0::users_sign_in_auth0(), about to call DB create() for new Shiny user...', "\n";
+
+            # SECURITY: create Shiny user with BLANK ENCRYPTED PASSWORD
 
             # create the now-validated user, variable $shiny_user already created but undef
-            # use auto-generate Shiny username, BLANK PLAINTEXT PASSWORD, Doorman::Auth0 e-mail, and immediately active status 
+            # use auto-generate Shiny username, BLANK ENCRYPTED PASSWORD, Doorman::Auth0 e-mail, and immediately active status 
             $shiny_user = $c->model( 'DB::User' )->create({
-                username => $shiny_username,
-                password => '',
                 email    => $doorman_email,
+                username => $shiny_username,
+                password => q{},
+                firstname => $first_name,
+                surname => $last_name,
+                location => $location,
+                display_name => $first_name . ' ' . $last_name,
+                profile_pic => $shiny_profile_pic,
                 active   => 1,
             });
+
+            print {*STDERR} '<<< DEBUG >>>: in Auth0::users_sign_in_auth0(), returned from DB create()', "\n";
+
+            # log in new Shiny user
+            do_login($c, $shiny_username);
+
+
+
+# START HERE: fix terminal newline-on-enter, terminal timing loop & no spacebar needed, name tab based on file name, alert before overwriting file
+# START HERE: fix terminal newline-on-enter, terminal timing loop & no spacebar needed, name tab based on file name, alert before overwriting file
+# START HERE: fix terminal newline-on-enter, terminal timing loop & no spacebar needed, name tab based on file name, alert before overwriting file
+
+# NEXT START HERE: fix file save & add button & CTRL-S, run command options, A2::FM fix new file, A2::FM disable edit file, F2, F4
+# NEXT START HERE: fix file save & add button & CTRL-S, run command options, A2::FM fix new file, A2::FM disable edit file, F2, F4
+# NEXT START HERE: fix file save & add button & CTRL-S, run command options, A2::FM fix new file, A2::FM disable edit file, F2, F4
+
+
+
+
+
+
+
+
+
+
+
+
 
 =DISABLE_NEW_ACCOUNT_CONFIRMATION_EMAIL
 
@@ -407,7 +582,7 @@ EOT
     else {
         $c->stash->{auth0_sign_in}->{output} .= 'WARNING: Failed to log in using GitHub account via Auth0 authentication, please try again.';
     }
-    print {*STDERR} '<<< DEBUG >>>: in Auth0::users_sign_in_auth0(), returned from $doorman->is_sign_in', "\n";
+    print {*STDERR} '<<< DEBUG >>>: in Auth0::users_sign_in_auth0(), bottom of subroutine', "\n";
 }
 
 

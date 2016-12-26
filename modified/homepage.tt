@@ -7,9 +7,12 @@
 
 	<h2>[%- elements.heading1 | html %]
 	</h2>
-
-[%- IF NOT c.user_exists %]
 	<br>
+
+    <table style='width:100%'>
+    <tr>
+    <td style='width:50%'>
+[%- IF NOT c.user_exists %]
     [%# DEV NOTE, CORRELATION #cff00: duplicate code, must also update in login.tt %]
     <div id="auth0_login_div" style="width: 320px; margin: auto; padding: 10px;"></div>
     <script src="https://cdn.auth0.com/js/lock/10.6/lock.min.js"></script>
@@ -33,9 +36,22 @@
         <img id='user_profile_pic' class='outlined' src='/static/cms-uploads/user-profile-pics/[% c.user.username %]/[% c.user.profile_pic %]'>
     </div>
 [%- END %]
-
-	[%- elements.html1 %]
+    </td>
+    <td>
+	[%#- elements.html1 %]
+	<img style='width:100%' src='/static/cms-uploads/images/cloudforfree_logo.png'>
+	</td>
+	</tr>
+	</table>
 </div>
+
+<div style='text-align:center'>
+<b>Your Fellow CloudForFree.org Developers:</b>
+<br><br>
+[%- show_all_users.output %]
+</div>
+
+<br>
 
 <!-- WBRASWELL 20140927 2014.270: add tables here to allow homepage-panel classes to center on page, link title of each homepage-panel -->
 <table style="width:100%">

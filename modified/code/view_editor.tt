@@ -511,9 +511,9 @@
                 name: 'tabs_w2ui',
                 active: 'tab1_div',
                 tabs: [
-                    { id: 'tab1_div', caption: 'Tab 1' },
-                    { id: 'tab2_div', caption: 'Tab 2' },
-                    { id: 'tab3_div', caption: 'Tab 3' },
+                    { id: 'tab1_div', caption: 'Current File' },
+                    //{ id: 'tab2_div', caption: 'Tab 2' },
+                    //{ id: 'tab3_div', caption: 'Tab 3' },
                 ],
                 onClick: function (event) {
                     $('#tabs_parent_div .tab_class').hide();

@@ -10,7 +10,7 @@
 [%- ELSE %]
 
     <head>
-        <style type="text/css" media="screen">
+        <style type='text/css' media='screen'>
             textarea {
                 width:100%;
             }
@@ -19,10 +19,13 @@
 
     <b><u>Job Queue</u></b><br><br>
 
-    <form method="post" action="run_command">
-        <b>Enter A New RPerl Command:</b><br>
-        cloud_user@cloud_machine:~$ rperl <input type="text" name="command" size="120"><br>
-        <input type="submit" value="Submit As New Job">
+    <form method='post' action='run_command'>
+        <b>Enter A File Name To Run As A New RPerl Command:</b><br><br>
+[%#        [%- queue.username % ]@cloud_machine:~$ rperl <input type='text' name='command' size='120'><br> %]
+        [%- queue.username %]@cloud_machine:~$ rperl -t -nop 
+        <input autofocus type='text' name='filename' size='120' value='LearningRPerl/Chapter2/exercise_2-circumference_of_any_radius.pl'>
+        <br><br>
+        <input type='submit' value='Submit As New Job'>
     </form>
    
     [%- queue.rperl_options_html %]

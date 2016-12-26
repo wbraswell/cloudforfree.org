@@ -256,24 +256,24 @@ Update db with new password.
 
 sub change_password_do : Chained( 'base' ) : PathPart( 'change-password-do' ) : Args( 0 ) {
     my ( $self, $c ) = @_;
-    
+
     # Get the current password from the form
     my $password = $c->request->param( 'password' );
-    
+
     # Check it against the db
     my $user = $c->model( 'DB::User' )->find({
         id => $c->user->id,
     });
     my $right_person = 1 if $user->check_password( $password ) 
         or $user->forgot_password;
-    
+
     # Get the new password from the form
     my $password_one = $c->request->params->{ password_one };
     my $password_two = $c->request->params->{ password_two };
-    
+
     # Verify they're both the same
     my $matching_passwords = 1 if $password_one eq $password_two;
-    
+
     if ( $right_person and $matching_passwords ) {
         # Update user info
         $user->update({
@@ -291,7 +291,7 @@ sub change_password_do : Chained( 'base' ) : PathPart( 'change-password-do' ) : 
         $c->flash->{error_msg}  = 'Wrong password.  '        unless $right_person;
         $c->flash->{error_msg} .= 'Passwords did not match.' unless $matching_passwords;
     }
-    
+
     # Bounce back to the 'edit' page
     $c->response->redirect( $c->uri_for( 'edit' ) );
 }

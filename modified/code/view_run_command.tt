@@ -31,10 +31,13 @@
     </script>
 
     <b><u>Run Command</u></b><br><br>
-    
+
+    <b>&gt; &gt; &gt; PRESS SPACEBAR TO BEGIN RECEIVING GENERATED OUTPUT &lt; &lt; &lt;</b>
+    <br><br>
+
     <b>Command:</b>
     <br>
-    <i>cloud_user@cloud_machine:~$ [%- run_command.command %]</i>
+    <i>[%- run_command.username %]@cloud_machine:~$ [%- run_command.command_sanitized %]</i>
     <br><br>
     
     <b>Process ID:</b>
@@ -43,10 +46,10 @@
     <br><br>
     
     <b>STDOUT & STDERR Output:</b>
-    <pre id="run_command_output_div">[%- run_command.stdout_stderr %]</pre>
+    <pre id="run_command_output_div" style='background-color:#444444; color:#EEEEEE'>[%- run_command.stdout_stderr %]</pre>
     <br><br>
 
-    <b>TMP AJAX OUTPUT:</b>
+    <b>TYPE YOUR INPUT HERE:</b>
     <br>
     [%- run_command.output_ajax %]
 

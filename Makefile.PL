@@ -41,9 +41,10 @@ requires (
 	'File::Pid'                                  => '0',
 	'HTML::TreeBuilder'                          => '0',
 
-    # WBRASWELL 20161222 2016.357
+    # WBRASWELL 20161226 2016.361
     # Auth0
     'Plack::Middleware::DoormanAuth0'            => '0.10',
+    'Lingua::EN::NameParse'                      => '1.36',
     # AJAX
     'CGI::Ajax'                                  => '0.707',
     # terminal emulation

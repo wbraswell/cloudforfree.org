@@ -94,7 +94,11 @@
     <li>
         [%- IF c.user_exists %]
         <form action='/user/logout' method='POST'>
-            <a href="[% c.uri_for( '/user' ) %]">[% ( c.user.display_name || c.user.username ) | html %]</a><a href="[% c.uri_for( '/user', 'edit' ) %]"> (edit)</a>
+            <a href="[% c.uri_for( '/user' ) %]">
+                <img id='user_profile_pic' class='outlined' align='left' width='30px' height='30px' style='margin-right: 5px' src='/static/cms-uploads/user-profile-pics/[% c.user.username %]/[% c.user.profile_pic %]'>
+                [% ( c.user.display_name || c.user.username ) | html %]
+            </a>
+            <a href="[% c.uri_for( '/user', 'edit' ) %]"> (edit)</a>
             <input type='submit' value='Log Out'/>
         </form>
         [%- ELSE %]

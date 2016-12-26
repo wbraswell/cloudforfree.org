@@ -546,8 +546,9 @@ li.topmenu a:hover {
 
 #welcome {
 	width:			938px;
-/* WBRASWELL 20140922 2014.265: allow for homepage sidebar image height  */
-	height:			750px; 
+/* WBRASWELL 20161226 2016.361: homepage login plus logo height  */
+/*	height:			750px; */
+	height:			500px; 
 /*	height:			327px; */
 /*	background:		transparent url('../images/welcome-bg.png') top left no-repeat; */
 	margin:			0 auto;

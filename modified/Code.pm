@@ -87,8 +87,6 @@ our hashref $KEY_CODES = {  # more listed here:  https://metacpan.org/pod/Term::
 
 
 
-
-
 =head1 METHODS
 
 =cut
@@ -146,10 +144,10 @@ sub editor_file_manager_input_ajax : Chained( 'base' ) : PathPart( 'editor_file_
 
     # Apache2::FileManager: file locations
     my $shiny_username = $c->user->{_user}->{_column_data}->{username};
-    my $document_root = '/home/wbraswell/public_html/cloudforfree.org-latest/root/user_files/' . $shiny_username . '/';
+    my $document_root = $ShinyCMS::ROOT_DIR . 'root/user_files/' . $shiny_username . '/';
     # TMP DEBUG
-    #$document_root .= 'github_repos/rperl-latest/';
-    $document_root .= 'github_repos/rperl-latest/lib/RPerl/Learning/';
+#    $document_root .= 'github_repos/rperl-latest/';
+#    $document_root .= 'github_repos/rperl-latest/lib/RPerl/Learning/';
 
     # accept parameters
     my $parameters = $request->parameters();
@@ -481,6 +479,10 @@ sub view_queue : Chained( 'base' ) : PathPart( 'queue' ) {
        return; 
     }
 
+    # username used in generated cloud command prompt
+    my string $username = $c->user->{_user}->{_column_data}->{username};
+    $c->stash->{queue}->{username} = $username;
+
     # list of all RPerl options, arguments, modes; generate HTML
 #    my $rperl_options_html = q{};
 #    $rperl_options_html .= 'RPERL COMMAND-LINE OPTIONS' . '<br>';
@@ -798,6 +800,7 @@ sub run_command : Chained( 'base' ) : PathPart( 'run_command' ) {
     $c->stash->{run_command}->{stdout_stderr} = q{};
     $c->stash->{run_command}->{output_ajax} = q{};
 
+=DISABLE_COMMAND
     # require command parameter
     my $parameters = $request->parameters();
     if (not ((exists $parameters->{command}) and (defined $parameters->{command}))) {
@@ -805,21 +808,45 @@ sub run_command : Chained( 'base' ) : PathPart( 'run_command' ) {
     }
 
     # accept command parameter
-    my $command = $parameters->{command};
+    my string $command = $parameters->{command};
     print {*STDOUT} '<<< DEBUG >>>: in Code::run_command(), have $command = ', $command, "\n";
 
     # SECURITY: disallow multiple commands, only allow 1 RPerl command!
-    if ($command =~ m/[;|><]/) {
+    if ($command =~ m/[;|><\\]/) {
         print {*STDOUT}  '<<< DEBUG >>>: SECURITY: in Code::run_command(), intercepted command with forbidden control character', "\n";
-        $c->stash->{run_command}->{stdout_stderr} = 'ERROR: Command with forbidden control character ; or | or < or >';
+        $c->stash->{run_command}->{stdout_stderr} = 'ERROR: Command with forbidden control character ; or | or < or > or \';
         return;
     }
 
     # SECURITY: all commands must be RPerl commands!
     $command = 'rperl ' . $command;
+=cut
 
-    # store command back in stash to be displayed
-    $c->stash->{run_command}->{command} = $command;
+    # require filename parameter
+    my $parameters = $request->parameters();
+    if (not ((exists $parameters->{filename}) and (defined $parameters->{filename}))) {
+        croak("\n" . q{ERROR ECORCPA00, RUN COMMAND, PARAMETERS: Missing HTML parameter 'filename', should contain filename to be run, croaking});
+    }
+    # accept filename parameter
+    my string $filename = $parameters->{filename};
+    print {*STDOUT} '<<< DEBUG >>>: in Code::run_filename(), have $filename = ', $filename, "\n";
+
+    # SECURITY: disallow multiple filenames, only allow 1 RPerl filename!
+    if ($filename =~ m/[;|><\\ ]/) {
+        print {*STDOUT}  '<<< DEBUG >>>: SECURITY: in Code::run_command(), intercepted filename with forbidden control character', "\n";
+        $c->stash->{run_command}->{stdout_stderr} = q{ERROR: Command with forbidden control character semi-colon ';' or vertical-pipe '|' or less-than '<' or greater-than '>' or backslash '\' or space ' '};
+        return;
+    }
+
+    # username used in generated cloud command prompt
+    my string $username = $c->user->{_user}->{_column_data}->{username};
+    $c->stash->{run_command}->{username} = $username;
+
+    # SECURITY: all commands must be RPerl commands!
+    my string $command = 'rperl -t -nop ' . $ShinyCMS::ROOT_DIR . 'root/user_files/' . $username . '/' . $filename;
+
+    # SECURITY: store SANITIZED command back in stash to be displayed
+    $c->stash->{run_command}->{command_sanitized} = 'rperl -t -nop ' . $filename;
 
     # SECURITY: run all commands as www-data user; we automatically inherit PERL env vars, must explicitly inherit PATH env var
     # DEV NOTE: must use `unbuffer -p` to avoid 4K libc buffer min limit, which requires erroneous newline input before unblocking output
@@ -914,9 +941,8 @@ sub run_command : Chained( 'base' ) : PathPart( 'run_command' ) {
     my string $run_command_output_ajax_html = <<EOHTML;
 <html>
 <body>
-Enter something: 
 <input type="hidden" name="run_command_pid" id="run_command_pid" value="$pid">
-<input type="text" name="run_command_input_param" id="run_command_input_param"
+<input autofocus type="text" name="run_command_input_param" id="run_command_input_param"
     onkeydown="
         handle_keydown(event);
     "
