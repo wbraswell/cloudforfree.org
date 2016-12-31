@@ -48,6 +48,7 @@ requires (
     # AJAX
     'CGI::Ajax'                                  => '0.707',
     # terminal emulation
+    'String::Random'                             => '0.29',
     'Term::VT102::Boundless'                     => '0.04',
     'Term::VT102::Incremental'                   => '0.05',
     # temp build files

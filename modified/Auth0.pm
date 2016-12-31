@@ -201,6 +201,24 @@ sub users_sign_in_auth0 : Chained( 'base' ) : PathPart( 'sign_in/auth0' ) {
         else
         {
             print {*STDERR} '<<< DEBUG >>>: in Auth0::users_sign_in_auth0(), FIRST TIME LOGIN, REGISTERING NEW SHINY ACCOUNT', "\n";
+ 
+            # check if the Doorman::Auth0 GitHub nickname is provided
+            my string $doorman_nickname = q{};
+            if ((exists $doorman_user_data->{nickname}) and 
+                (defined $doorman_user_data->{nickname}) and 
+                ($doorman_user_data->{nickname} ne q{})) {
+                $doorman_nickname = $doorman_user_data->{nickname};
+
+                # check if the Doorman::Auth0 nickname is valid
+                if ( $doorman_nickname =~ m/\W/g ) {
+                    $c->flash->{ error_msg } = 'ERROR: Invalid GitHub nickname received, GitHub nickname may only contain letters, numbers and underscores; ' . q{'} . $doorman_nickname . q{'};
+                    return;
+                }
+            }
+            else {
+                $c->flash->{ error_msg } = 'ERROR: No GitHub nickname received.';
+                return;
+            }
 
             # check if the Doorman::Auth0 given_name is provided
             my string $doorman_given_name = q{};
@@ -314,8 +332,21 @@ Please do NOT use middle names, nicknames, special characters, commas, periods, 
     $doorman_picture_html
     <span style="color: red">(*)</span> Real First Name: <input type='text' name='first_name' value='$doorman_given_name'><br>
     <span style="color: red">(*)</span> Real Last  Name: <input type='text' name='last_name' value='$doorman_family_name'><br>
-    <span style="color: red">(*)</span> Real Location:   <input type='text' name='location'> (City, State, Country)<br>
-    <input type="submit" value="Submit">
+    <span style="color: red">(*)</span> Real Location:   <input type='text' name='location'> (City, State, Country)<br><br>
+    <textarea readonly style="width:60%; height:180px">
+TERMS OF SERVICE:
+By accessing or utilizing the CloudForFree.org computer services in any way, you agree to be bound by all of the following Terms Of Service:
+- You are the person with the name and location provided above;
+- You are 18 years of age or older;
+- You will not use the services for illegal, unethical, or immoral purposes;
+- You will continue to abide by the CloudForFree.org Terms Of Service as they are updated from time to time; and
+- You will hold CloudForFree.org harmless in all affairs.
+These services are being provided with absolutely no warranty whatsoever.
+</textarea>
+    <br><br>
+    <b><i>NOTE: By clicking "I Understand & Agree" below, you confirm that you have read, understood, and agree to the Terms Of Service presented above.</i></b>
+    <br><br>
+    <input type="submit" value="I Understand & Agree">
 </form>
 EOL
 
@@ -374,24 +405,6 @@ EOL
             my $user_exists = $c->model( 'DB::User' )->find({ username => $shiny_username });
             if ( $user_exists ) {
                 # username try #1 not available, username already taken
-                # check if the Doorman::Auth0 nickname is provided
-                my string $doorman_nickname = q{};
-                if ((exists $doorman_user_data->{nickname}) and 
-                    (defined $doorman_user_data->{nickname}) and 
-                    ($doorman_user_data->{nickname} ne q{})) {
-                    $doorman_nickname = $doorman_user_data->{nickname};
-
-                    # check if the Doorman::Auth0 nickname is valid
-                    if ( $doorman_nickname =~ m/\W/g ) {
-                        $c->flash->{ error_msg } = 'ERROR: Can not utilize GitHub nickname to create non-conflicting username, GitHub nickname may only contain letters, numbers and underscores; ' . q{'} . $doorman_nickname . q{'};
-                        return;
-                    }
-                }
-                else {
-                    $c->flash->{ error_msg } = 'ERROR: Can not utilize GitHub nickname to create non-conflicting username, GitHub nickname not provided.';
-                    return;
-                }
-
                 my $shiny_username_try1 = $shiny_username;
                 $shiny_username .= '_' . $doorman_nickname;
                 $shiny_username = lc $shiny_username;
@@ -503,9 +516,10 @@ EOL
             # SECURITY: create Shiny user with BLANK ENCRYPTED PASSWORD
 
             # create the now-validated user, variable $shiny_user already created but undef
-            # use auto-generate Shiny username, BLANK ENCRYPTED PASSWORD, Doorman::Auth0 e-mail, and immediately active status 
+            # use auto-generate Shiny username, BLANK ENCRYPTED PASSWORD, Doorman::Auth0 e-mail, and immediately active status
             $shiny_user = $c->model( 'DB::User' )->create({
                 email    => $doorman_email,
+                github_nickname => $doorman_nickname,
                 username => $shiny_username,
                 password => q{},
                 firstname => $first_name,
@@ -527,9 +541,9 @@ EOL
 # START HERE: fix terminal newline-on-enter, terminal timing loop & no spacebar needed, name tab based on file name, alert before overwriting file
 # START HERE: fix terminal newline-on-enter, terminal timing loop & no spacebar needed, name tab based on file name, alert before overwriting file
 
-# NEXT START HERE: fix file save & add button & CTRL-S, run command options, A2::FM fix new file, A2::FM disable edit file, F2, F4
-# NEXT START HERE: fix file save & add button & CTRL-S, run command options, A2::FM fix new file, A2::FM disable edit file, F2, F4
-# NEXT START HERE: fix file save & add button & CTRL-S, run command options, A2::FM fix new file, A2::FM disable edit file, F2, F4
+# NEXT START HERE: profile pics resize, fix file save & add button & CTRL-S, run command options, A2::FM fix new file, A2::FM disable edit file, F2, F4
+# NEXT START HERE: profile pics resize, fix file save & add button & CTRL-S, run command options, A2::FM fix new file, A2::FM disable edit file, F2, F4
+# NEXT START HERE: profile pics resize, fix file save & add button & CTRL-S, run command options, A2::FM fix new file, A2::FM disable edit file, F2, F4
 
 
 

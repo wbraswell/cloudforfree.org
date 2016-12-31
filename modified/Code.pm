@@ -7,7 +7,7 @@ package ShinyCMS::Controller::Code;
 use strict;
 use warnings;
 use RPerl::AfterSubclass;
-our $VERSION = 0.018_000;
+our $VERSION = 0.019_000;
 
 =head1 NAME
 
@@ -44,7 +44,10 @@ use Symbol qw(gensym);
 use Plack::Request;
 use Apache2::FileManager::PSGI;
 use Apache2::FileManager;
+use String::Random qw(random_regex);
 use rperloptions;
+use rperltypes;
+use rperltypesconv;  # string_to_integer()
 use RPerl::Config;
 
 # [[[ CONSTANTS ]]]
@@ -82,6 +85,8 @@ our hashref $KEY_CODES = {  # more listed here:  https://metacpan.org/pod/Term::
 };
 
 # [[[ SUBROUTINES & OO METHODS ]]]
+
+
 
 
 
@@ -599,9 +604,9 @@ sub syntax_check : Chained( 'base' ) : PathPart( 'syntax_check' ) {
 }
 
 
-=head2 run_command
+=head2 run_command_input_ajax
 
-Run the RPerl command.
+Interface with running RPerl command.
 
 =cut
 
@@ -644,11 +649,49 @@ sub run_command_input_ajax : Chained( 'base' ) : PathPart( 'run_command_input_aj
     print {*STDOUT} '<<< DEBUG >>>: in Code::run_command_input_ajax(), have $pid = ', $pid, "\n";
     print {*STDOUT} '<<< DEBUG >>>: in Code::run_command_input_ajax(), have $input = ', q{'}, $input, q{'}, "\n";
 
+
+
+
+
+
+
+
+
+
+
+    # MULTI-THREADED
+    # retrieve entry from job_running database table
+    my $job_running_entry = $c->model( 'DB::JobRunning' )->find({ shiny_pid => $pid });
+    print {*STDERR} '<<< DEBUG >>>: in Code::run_command_input_ajax() MULTI-THREADED, have $job_running_entry = ', Dumper($job_running_entry), "\n";
+    my string $screen_session = $job_running_entry->screen_session;
+    print {*STDERR} '<<< DEBUG >>>: in Code::run_command_input_ajax() MULTI-THREADED, have $screen_session = ', $screen_session, "\n";
+
+    # create new I/O filehandles for each screen reattach
+    my filehandleref $COMMAND_IN;
+    my filehandleref $COMMAND_OUT;
+    my filehandleref $COMMAND_ERR = gensym;
+
+    # reattach to screen session
+    my string $screen_reattach_command = 'screen -r ' . $screen_session;
+    print {*STDERR} '<<< DEBUG >>>: in Code::run_command_input_ajax() MULTI-THREADED, have $screen_reattach_command = ', $screen_reattach_command, "\n";
+    my integer $screen_reattach_pid = open3($COMMAND_IN, $COMMAND_OUT, $COMMAND_ERR, $screen_reattach_command);
+    print {*STDERR} '<<< DEBUG >>>: in Code::run_command_input_ajax() MULTI-THREADED, have $screen_reattach_pid = ', $screen_reattach_pid, "\n";
+
+
+
+
+
+
+
+=DISABLE_SINGLE_THREADED
     # load this PID's I/O stream handles from shared global $JOBS package (class) variable
 #    print {*STDOUT} '<<< DEBUG >>>: in Code::run_command_input_ajax(), have $Code::JOBS = ', "\n", Dumper($Code::JOBS), "\n\n";
     my filehandleref $COMMAND_IN = $Code::JOBS->{$pid}->{IN};
     my filehandleref $COMMAND_OUT = $Code::JOBS->{$pid}->{OUT};
     my filehandleref $COMMAND_ERR = $Code::JOBS->{$pid}->{ERR};
+=cut
+
+
 
     # setup selector to collect available output
 #    print {*STDOUT} '<<< DEBUG >>>: in Code::run_command_input_ajax(), begin selector setup', "\n";
@@ -779,6 +822,17 @@ sub run_command_input_ajax : Chained( 'base' ) : PathPart( 'run_command_input_aj
 
     print {*STDOUT} '<<< DEBUG >>>: in Code::run_command_input_ajax(), about to return $stdout_stderr = ', $stdout_stderr, "\n";
     $c->stash->{run_command_input_ajax}->{output} = $stdout_stderr;
+
+
+
+
+    # MULTI-THREADED
+    # detach from screen session
+    my string $screen_detach_command = 'screen -S ' . $screen_session . ' -X detach';
+    print {*STDERR} '<<< DEBUG >>>: in Code::run_command_input_ajax() MULTI-THREADED, about to run $screen_detach_command = ', $screen_detach_command, "\n";
+    my string $screen_detach_command_retval = `$screen_detach_command 2>&1;`;
+    print {*STDERR} '<<< DEBUG >>>: in Code::run_command_input_ajax() MULTI-THREADED, have $CHILD_ERROR = ', $CHILD_ERROR, ', $screen_detach_command_retval = ', $screen_detach_command_retval, "\n";
+    if ($CHILD_ERROR) { $c->stash->{run_command_input_ajax}->{output} .= "\n" . 'ERROR: Failed to detach running `screen` session; ' . $screen_detach_command_retval; return; }
 }
 
 
@@ -853,9 +907,154 @@ sub run_command : Chained( 'base' ) : PathPart( 'run_command' ) {
 #    $command = q{su www-data -c "PATH=$PATH; set | grep TERM; unbuffer -p } . $command . q{"};
     $command = q{su www-data -c "PATH=$PATH; unbuffer -p } . $command . q{"};
 
-    print {*STDOUT} '<<< DEBUG >>>: in Code::run_command(), START running $command = ', $command, "\n";
+
+
+
+
+
+
+
+
+
+
+
+
+# START HERE: add debug statements to all multi-threaded code, give it a try!!!
+# START HERE: add debug statements to all multi-threaded code, give it a try!!!
+# START HERE: add debug statements to all multi-threaded code, give it a try!!!
+
+
+    # MULTI-THREADED
+    my string $screen_command;
+    my string $screen_command_retval;
+    my integer $screen_sessions_count = 1;  # force serialization loop below to execute at least once
+    my string $screen_session_suffix;
+    my string $screen_session;
+
+    # serialize screen session suffix with random characters to ensure ease-of-lookup
+    while ($screen_sessions_count) {
+        $screen_session_suffix = $username . '_' . random_regex('[a-zA-Z0-9]{4}');
+        print {*STDERR} '<<< DEBUG >>>: in Code::run_command() MULTI-THREADED, serialization check, have $screen_session_suffix = ', $screen_session_suffix, "\n";
+ 
+#        $screen_command = 'screen -ls | grep -c ' . $screen_session_suffix;  # more efficient, but disabled in favor of full grep retval for use in WARNING below
+        $screen_command = 'screen -ls | grep ' . $screen_session_suffix;
+        print {*STDERR} '<<< DEBUG >>>: in Code::run_command() MULTI-THREADED, serialization check, about to run $screen_command = ', $screen_command, "\n";
+        $screen_command_retval = `$screen_command 2>&1;`;
+        print {*STDERR} '<<< DEBUG >>>: in Code::run_command() MULTI-THREADED, serialization check, have $CHILD_ERROR = ', $CHILD_ERROR, 
+            ', $screen_command_retval = ', $screen_command_retval, "\n";
+        # grep returns 1 if no match, false error triggered
+#        if ($CHILD_ERROR) { 
+#            $c->stash->{run_command}->{stdout_stderr} = 'ERROR: Failed to list current `screen` sessions for serialization check; ' . $screen_command_retval;
+#            return;
+#        }
+ 
+#        $screen_sessions_count = string_to_integer($screen_command_retval);
+        $screen_sessions_count = scalar (split /\n/, $screen_command_retval);
+        print {*STDERR} '<<< DEBUG >>>: in Code::run_command() MULTI-THREADED, serialization check, have $screen_sessions_count = ', $screen_sessions_count, "\n";
+        if ($screen_sessions_count > 0) { 
+            print {*STDERR} '<<< DEBUG >>>: WARNING, in Code::run_command() MULTI-THREADED, SERIALIZATION COLLISION, have $screen_session_suffix = ', 
+                $screen_session_suffix, ', have $screen_command_retval = ', $screen_command_retval, "\n";
+        }
+    }
+
+    # start screen session & start RPerl command
+#    $screen_command = 'screen -dmS ' . $screen_session_suffix;  # DELAYED_COMMAND_START
+    $screen_command = 'screen -dmS ' . $screen_session_suffix . ' bash -c ' . q{'} . $command . q{'};
+    print {*STDERR} '<<< DEBUG >>>: in Code::run_command() MULTI-THREADED, about to run $screen_command = ', $screen_command, "\n";
+    $screen_command_retval = `$screen_command 2>&1;`;
+    print {*STDERR} '<<< DEBUG >>>: in Code::run_command() MULTI-THREADED, have $CHILD_ERROR = ', $CHILD_ERROR, ', $screen_command_retval = ', $screen_command_retval, "\n";
+    if ($CHILD_ERROR) { $c->stash->{run_command}->{stdout_stderr} = 'ERROR: Failed to start new `screen` session; ' . $screen_command_retval; return; }
+
+    # get full screen session name
+    $screen_command = 'screen -ls | grep ' . $screen_session_suffix;
+    print {*STDERR} '<<< DEBUG >>>: in Code::run_command() MULTI-THREADED, about to run $screen_command = ', $screen_command, "\n";
+    $screen_command_retval = `$screen_command 2>&1;`;
+    print {*STDERR} '<<< DEBUG >>>: in Code::run_command() MULTI-THREADED, have $CHILD_ERROR = ', $CHILD_ERROR, ', $screen_command_retval = ', $screen_command_retval, "\n";
+    # grep returns 1 if no match, false error triggered
+    #if ($CHILD_ERROR) { $c->stash->{run_command}->{stdout_stderr} = 'ERROR: Failed to list current `screen` sessions; ' . $screen_command_retval; return; }
+
+    # ensure exactly 1 session with this serialization is currently running
+    $screen_sessions_count = scalar (split /\n/, $screen_command_retval);
+    print {*STDERR} '<<< DEBUG >>>: in Code::run_command() MULTI-THREADED, have $screen_sessions_count = ', $screen_sessions_count, "\n";
+    if ($screen_sessions_count == 0)
+        { $c->stash->{run_command}->{stdout_stderr} = 'ERROR: Failed to find newly-started screen session ' . $screen_session_suffix; return; }
+    elsif ($screen_sessions_count > 1)
+        { $c->stash->{run_command}->{stdout_stderr} = 'ERROR: Failed to start uniquely-named screen session ' . $screen_session_suffix; return; }
+
+    # parse out screen session name from retval
+    $screen_session = $screen_command_retval;
+    $screen_session =~ s/\s([^\s]+)\s.*/$1/gxms;  # strip away all non-session-name text
+    print {*STDERR} '<<< DEBUG >>>: in Code::run_command() MULTI-THREADED, have $screen_session = ', $screen_session, "\n";
+
+    # prepare job data for database
+#    my integer $screen_pid = string_to_integer(shift (split /[.]/, $screen_session));
+    my integer $screen_session_split = [split /[.]/, $screen_session];
+    print {*STDERR} '<<< DEBUG >>>: in Code::run_command() MULTI-THREADED, have $screen_session_split = ', $screen_session_split, "\n";
+    my integer $screen_session_split_shift = shift @{$screen_session_split};
+    print {*STDERR} '<<< DEBUG >>>: in Code::run_command() MULTI-THREADED, have $screen_session_split_shift = ', $screen_session_split_shift, "\n";
+    my integer $screen_pid = string_to_integer($screen_session_split_shift);
+
+
+
+    print {*STDERR} '<<< DEBUG >>>: in Code::run_command() MULTI-THREADED, have $screen_pid = ', $screen_pid, "\n";
+    my integer $shiny_uid = $c->user->{_user}->{_column_data}->{id};
+    my string $compute_nodes = '';  # START HERE, NEED FIX: set compute nodes & utilize via SSH!!!
+    my integer $command_pid = -1;    
+#    my string $status = 'screen_started';  # DELAYED_COMMAND_START
+    my string $status = 'command_started';
+
+
+
+# START HERE: create Schema for DB::JobRunning below, add github_nickname to DB::User Schema
+# START HERE: create Schema for DB::JobRunning below, add github_nickname to DB::User Schema
+# START HERE: create Schema for DB::JobRunning below, add github_nickname to DB::User Schema
+
+
+    # create entry in job_running database table
+    my $job_running_entry = $c->model( 'DB::JobRunning' )->create({
+        screen_pid => $screen_pid,
+        shiny_uid => $shiny_uid,
+        screen_session => $screen_session,
+        compute_nodes => $compute_nodes,
+        command => $command,
+        command_pid => $command_pid,
+        status => $status
+    });
+
+    print {*STDERR} '<<< DEBUG >>>: in Code::run_command() MULTI-THREADED, have $job_running_entry = ', Dumper($job_running_entry), "\n";
+
+    # stash value(s)
+    $c->stash->{run_command}->{pid} = $screen_pid;  # START HERE, NEED UPDATE: change to {screen_pid}???
+    my integer $pid = $screen_pid;
+
+=DISABLE_DELAYED_COMMAND_START
+    $screen_command = 'screen -r ' . $screen_session . ' -p0 -X stuff "' . $command . ' \015"';
+    print {*STDERR} '<<< DEBUG >>>: in Code::run_command(), about to run $screen_command = ', $screen_command, "\n";
+    string $screen_command_retval = `$screen_command 2>&1;`;
+    print {*STDERR} '<<< DEBUG >>>: in Code::run_command(), have $CHILD_ERROR = ', $CHILD_ERROR, ', $screen_command_retval = ', $screen_command_retval, "\n";
+    if ($CHILD_ERROR) { $c->stash->{run_command}->{stdout_stderr} = 'ERROR: Failed to start job in `screen` session; ' . $screen_command_retval; return; }
+    $job_running_entry->update({ status => 'command_started' });
+=cut
+
+    # allow time for _Inline compile & command start???
+#    sleep 3;
+
+
+
+
+
+
+
+
+
 
     my string $stdout_stderr = q{};
+
+
+
+=DISABLE_SINGLE_THREADED
+    print {*STDOUT} '<<< DEBUG >>>: in Code::run_command(), START running $command = ', $command, "\n";
+
     my filehandleref $COMMAND_IN;
     my filehandleref $COMMAND_OUT;
     my filehandleref $COMMAND_ERR = gensym;
@@ -866,6 +1065,7 @@ sub run_command : Chained( 'base' ) : PathPart( 'run_command' ) {
     $Code::JOBS->{$pid}->{IN} = $COMMAND_IN;
     $Code::JOBS->{$pid}->{OUT} = $COMMAND_OUT;
     $Code::JOBS->{$pid}->{ERR} = $COMMAND_ERR;
+=cut
 
     # handle child process exiting
 #    $SIG{CHLD} = sub {

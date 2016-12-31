@@ -2,3 +2,5 @@ code, editor, F7 editor menu invisible when in F10 full window mode
 new user account registration problem, "no sender"
 new comment in forum problem, "no sender" as well?!?
 contact us e-mails not being delivered
+
+get shiny to work in mod_perl    https://rt.cpan.org/Ticket/Display.html?id=118899
