@@ -36,7 +36,9 @@ BEGIN { extends 'ShinyCMS::Controller'; }
 # [[[ INCLUDES ]]]
 use File::Temp qw(tempfile);
 use IPC::Run3 qw(run3);
-use IPC::Open3;
+#use IPC::Open3;  # replaced by IO::Pty::Easy below
+#use IO::Pty::Easy;  # replaced by Tie::File below
+use Tie::File;
 use IO::Select;
 use CGI qw(params);
 use CGI::Ajax;
@@ -65,7 +67,8 @@ our hashref $JOBS = {};
 our hashref $KEY_CODES = {  # more listed here:  https://metacpan.org/pod/Term::ANSIMenu
     '__B__'  => [ "\x08", '__B__' ],   # BACKSPACE  "\b" does not work
     '__T__'  => [ "\x09", '__T__' ],   # TAB  "\t" does work
-    '__E__'  => [ "\x0A",  '<br>'  ],   # ENTER  "\n" does work
+#    '__E__'  => [ "\x0A", '<br>' ],   # ENTER  "\n" does work
+    '__E__'  => [ "\015", "\n" ],   # ENTER  "\015" for screen stuff
 #    '__S__'  => [ "FOO", '__S__' ],   # SHIFT  UNTESTED
 #    '__C__'  => [ "FOO", '__C__' ],   # CTRL  UNTESTED
     '__Cc__'  => [ "\x03", '__Cc__' ],   # CTRL-c  UNTESTED
@@ -85,6 +88,7 @@ our hashref $KEY_CODES = {  # more listed here:  https://metacpan.org/pod/Term::
 };
 
 # [[[ SUBROUTINES & OO METHODS ]]]
+
 
 
 
@@ -661,21 +665,23 @@ sub run_command_input_ajax : Chained( 'base' ) : PathPart( 'run_command_input_aj
 
     # MULTI-THREADED
     # retrieve entry from job_running database table
-    my $job_running_entry = $c->model( 'DB::JobRunning' )->find({ shiny_pid => $pid });
-    print {*STDERR} '<<< DEBUG >>>: in Code::run_command_input_ajax() MULTI-THREADED, have $job_running_entry = ', Dumper($job_running_entry), "\n";
+    my $job_running_entry = $c->model( 'DB::JobRunning' )->find({ screen_pid => $pid });
+    print {*STDERR} '<<< DEBUG >>>: in Code::run_command_input_ajax() MULTI-THREADED, have $job_running_entry->{_column_data} = ', Dumper($job_running_entry->{_column_data}), "\n";
     my string $screen_session = $job_running_entry->screen_session;
     print {*STDERR} '<<< DEBUG >>>: in Code::run_command_input_ajax() MULTI-THREADED, have $screen_session = ', $screen_session, "\n";
+    my string $screen_logfile = $job_running_entry->screen_logfile;
+    print {*STDERR} '<<< DEBUG >>>: in Code::run_command_input_ajax() MULTI-THREADED, have $screen_logfile = ', $screen_logfile, "\n";
+    my string $output_line = $job_running_entry->output_line;
+    print {*STDERR} '<<< DEBUG >>>: in Code::run_command_input_ajax() MULTI-THREADED, have $output_line = ', $output_line, "\n";
+    my string $output_character = $job_running_entry->output_character;
+    print {*STDERR} '<<< DEBUG >>>: in Code::run_command_input_ajax() MULTI-THREADED, have $output_character = ', $output_character, "\n";
 
-    # create new I/O filehandles for each screen reattach
-    my filehandleref $COMMAND_IN;
-    my filehandleref $COMMAND_OUT;
-    my filehandleref $COMMAND_ERR = gensym;
 
-    # reattach to screen session
-    my string $screen_reattach_command = 'screen -r ' . $screen_session;
-    print {*STDERR} '<<< DEBUG >>>: in Code::run_command_input_ajax() MULTI-THREADED, have $screen_reattach_command = ', $screen_reattach_command, "\n";
-    my integer $screen_reattach_pid = open3($COMMAND_IN, $COMMAND_OUT, $COMMAND_ERR, $screen_reattach_command);
-    print {*STDERR} '<<< DEBUG >>>: in Code::run_command_input_ajax() MULTI-THREADED, have $screen_reattach_pid = ', $screen_reattach_pid, "\n";
+
+
+
+
+
 
 
 
@@ -684,6 +690,18 @@ sub run_command_input_ajax : Chained( 'base' ) : PathPart( 'run_command_input_aj
 
 
 =DISABLE_SINGLE_THREADED
+    # create new I/O filehandles for each screen reattach
+    my filehandleref $COMMAND_IN;
+    my filehandleref $COMMAND_OUT;
+    my filehandleref $COMMAND_ERR = gensym;
+
+    # reattach to screen session
+    my string $screen_reattach_command = 'screen -r ' . $screen_session;
+    print {*STDERR} '<<< DEBUG >>>: in Code::run_command_input_ajax(), have $screen_reattach_command = ', $screen_reattach_command, "\n";
+
+    my integer $screen_reattach_pid = open3($COMMAND_IN, $COMMAND_OUT, $COMMAND_ERR, $screen_reattach_command);
+    print {*STDERR} '<<< DEBUG >>>: in Code::run_command_input_ajax() MULTI-THREADED, have $screen_reattach_pid = ', $screen_reattach_pid, "\n";
+
     # load this PID's I/O stream handles from shared global $JOBS package (class) variable
 #    print {*STDOUT} '<<< DEBUG >>>: in Code::run_command_input_ajax(), have $Code::JOBS = ', "\n", Dumper($Code::JOBS), "\n\n";
     my filehandleref $COMMAND_IN = $Code::JOBS->{$pid}->{IN};
@@ -720,7 +738,7 @@ sub run_command_input_ajax : Chained( 'base' ) : PathPart( 'run_command_input_aj
 
 
 
-
+=DISABLE_SINGLE_THREADED
     print {*STDOUT} '<<< DEBUG >>>: in Code::run_command_input_ajax(), begin selector setup', "\n";
     my $selector = IO::Select->new();
     $selector->add($COMMAND_OUT);
@@ -765,10 +783,7 @@ sub run_command_input_ajax : Chained( 'base' ) : PathPart( 'run_command_input_aj
         }
     }
     print {*STDOUT} '<<< DEBUG >>>: in Code::run_command_input_ajax(), end pre-input collection of output', "\n";
-
-
-
-
+=cut
 
 
 
@@ -788,13 +803,105 @@ sub run_command_input_ajax : Chained( 'base' ) : PathPart( 'run_command_input_aj
 
     # decode ENTER key if found, append input to output which has been read
     if (exists $KEY_CODES->{$input}) {
-        $input = $KEY_CODES->{$input}->[0];
-        $stdout_stderr = $KEY_CODES->{$input}->[1];
+        my string $input_copy = $input;
+        $input = $KEY_CODES->{$input_copy}->[0];
+        $stdout_stderr .= $KEY_CODES->{$input_copy}->[1];
     }
-    else {
-        $stdout_stderr .= $input;
+#    else { $stdout_stderr .= $input; }  # disable direct input append for non-keycode characters, wait to read from logfile
+
+
+
+
+
+
+    # MULTI-THREADED
+
+
+
+=DISABLE_PTY
+    # provide input to and/or receive output from command via PTY
+    my string $screen_reattach_command = 'screen -r ' . $screen_session;
+    print {*STDERR} '<<< DEBUG >>>: in Code::run_command_input_ajax() MULTI-THREADED, have $screen_reattach_command = ', $screen_reattach_command, "\n";
+    my $screen_pty = IO::Pty::Easy->new;
+    # reattach to screen session
+    $screen_pty->spawn($screen_reattach_command);
+    sleep 1;  # give time for output to accrue
+
+    my string $stdout_stderr_tmp = undef;
+
+#    my $written_characters;
+#    if ((defined $input) and ($input ne '')) { $written_characters = $screen_pty->write($input, 0); }  # replaced by $screen_stuff_command above
+#    if (not ((defined $written_characters) and ($written_characters == 0))) {
+        $stdout_stderr_tmp = $screen_pty->read(0);
+#    }
+#    if ((defined $stdout_stderr_tmp) and ($stdout_stderr_tmp eq '')) { last; }
+
+    if (defined $stdout_stderr_tmp) { 
+        # NEED ANSWER: what in the world is this string of crazy control characters?
+        my string $pty_control_string = ')0[?1049h[4l[?1h=[0m(B[1;57r[H[J[H[J[33B';
+        $stdout_stderr_tmp =~ s/\Q$pty_control_string\E//gxms;
+        $stdout_stderr .= $stdout_stderr_tmp;
     }
 
+    $screen_pty->close;
+=cut
+
+
+    # provide input to command via screen stuff
+    my string $screen_stuff_command = 'screen -r ' . $screen_session . ' -p0 -X stuff "' . $input . '"';
+    print {*STDERR} '<<< DEBUG >>>: in Code::run_command_input_ajax(), about to run $screen_stuff_command = ', $screen_stuff_command, "\n";
+    my string $screen_stuff_command_retval = `$screen_stuff_command 2>&1;`;
+    print {*STDERR} '<<< DEBUG >>>: in Code::run_command_input_ajax(), have $CHILD_ERROR = ', $CHILD_ERROR, ', $screen_stuff_command_retval = ', $screen_stuff_command_retval, "\n";
+    if ($CHILD_ERROR) { $c->stash->{run_command}->{stdout_stderr} = 'ERROR: Failed to provide input to `screen` session; ' . $screen_stuff_command_retval; return; }
+    $job_running_entry->update({ status => 'command_running' });
+
+    # grab output from command via screen logfile
+    my @screen_logfile_tied;
+    my boolean $screen_logfile_tie_success = tie @screen_logfile_tied, 'Tie::File', $screen_logfile, mode => 'O_RDONLY', autochomp => 0;
+    if (not $screen_logfile_tie_success) {
+        $c->stash->{run_command}->{stdout_stderr} = 'ERROR: Failed to read output from `screen` session, can not tie to logfile';
+        return;
+    }
+    my integer $screen_logfile_num_lines = scalar @screen_logfile_tied;
+    print {*STDERR} '<<< DEBUG >>>: in Code::run_command_input_ajax(), have $screen_logfile_num_lines = ', $screen_logfile_num_lines, "\n";
+    if ($output_line > $screen_logfile_num_lines) {
+        $c->stash->{run_command}->{stdout_stderr} = 'ERROR: Failed to read output from `screen` session, attempt to read beyond end of logfile';
+        return;
+    }
+    my string $screen_logfile_line = $screen_logfile_tied[$output_line - 1];  # adjust by 1 for line count vs array index count
+    my integer $screen_logfile_line_num_chars = length $screen_logfile_line;
+    if ($output_character > $screen_logfile_line_num_chars) {
+        $c->stash->{run_command}->{stdout_stderr} = 'ERROR: Failed to read output from `screen` session, attempt to read beyond end of logfile line';
+        return;
+    }
+    $stdout_stderr .= substr $screen_logfile_line, ($output_character - 1);  # adjust by 1 for character count vs substr index count
+    $output_character = $screen_logfile_line_num_chars;
+    if ($screen_logfile_num_lines > $output_line) {
+        for my integer $i (($output_line + 1) .. $screen_logfile_num_lines) {
+            $output_line = $i;
+            $screen_logfile_line = $screen_logfile_tied[$output_line - 1];  # adjust by 1 for line count vs array index count
+            $stdout_stderr .= $screen_logfile_line;
+        }
+        $output_character = length $screen_logfile_line;
+    }
+
+
+# START HERE: fix "untie attempted while 1 inner references still exist" below, fix KEY_CODES not giving proper newline
+# START HERE: fix "untie attempted while 1 inner references still exist" below, fix KEY_CODES not giving proper newline
+# START HERE: fix "untie attempted while 1 inner references still exist" below, fix KEY_CODES not giving proper newline
+
+
+    untie @screen_logfile_tied;
+    $job_running_entry->update({ output_line => $output_line, output_character => $output_character });
+
+    # strip ^M newline control characters read from logfile
+    $stdout_stderr =~ s/\015//gxms;
+
+
+
+
+
+=DISABLE_SINGLE_THREADED
     # actually print input value to input filehandle
 #    print {*STDOUT} '<<< DEBUG >>>: in Code::run_command_input_ajax(), begin input print', "\n";
 #    print $COMMAND_IN $input;
@@ -819,6 +926,7 @@ sub run_command_input_ajax : Chained( 'base' ) : PathPart( 'run_command_input_aj
 #        }
 #    }
 #    print {*STDOUT} '<<< DEBUG >>>: in Code::run_command_input_ajax(), end post-input collection of output', "\n";
+=cut
 
     print {*STDOUT} '<<< DEBUG >>>: in Code::run_command_input_ajax(), about to return $stdout_stderr = ', $stdout_stderr, "\n";
     $c->stash->{run_command_input_ajax}->{output} = $stdout_stderr;
@@ -826,6 +934,7 @@ sub run_command_input_ajax : Chained( 'base' ) : PathPart( 'run_command_input_aj
 
 
 
+=DISABLE_DETACH_UNNEEDED
     # MULTI-THREADED
     # detach from screen session
     my string $screen_detach_command = 'screen -S ' . $screen_session . ' -X detach';
@@ -833,6 +942,7 @@ sub run_command_input_ajax : Chained( 'base' ) : PathPart( 'run_command_input_aj
     my string $screen_detach_command_retval = `$screen_detach_command 2>&1;`;
     print {*STDERR} '<<< DEBUG >>>: in Code::run_command_input_ajax() MULTI-THREADED, have $CHILD_ERROR = ', $CHILD_ERROR, ', $screen_detach_command_retval = ', $screen_detach_command_retval, "\n";
     if ($CHILD_ERROR) { $c->stash->{run_command_input_ajax}->{output} .= "\n" . 'ERROR: Failed to detach running `screen` session; ' . $screen_detach_command_retval; return; }
+=cut
 }
 
 
@@ -903,9 +1013,15 @@ sub run_command : Chained( 'base' ) : PathPart( 'run_command' ) {
     $c->stash->{run_command}->{command_sanitized} = 'rperl -t -nop ' . $filename;
 
     # SECURITY: run all commands as www-data user; we automatically inherit PERL env vars, must explicitly inherit PATH env var
-    # DEV NOTE: must use `unbuffer -p` to avoid 4K libc buffer min limit, which requires erroneous newline input before unblocking output
+    # DEV NOTE: when using open3(), must use `unbuffer -p` to avoid 4K libc buffer min limit, which requires erroneous newline input before unblocking output
 #    $command = q{su www-data -c "PATH=$PATH; set | grep TERM; unbuffer -p } . $command . q{"};
-    $command = q{su www-data -c "PATH=$PATH; unbuffer -p } . $command . q{"};
+#    $command = q{su www-data -c "PATH=$PATH; unbuffer -p } . $command . q{"};
+    $command = q{su www-data -c "PATH=$PATH; } . $command . q{"; echo; echo __JOB_COMPLETED__; sleep 1; exit};  # DEV NOTE: must sleep to write logfile
+#    $command = q{su www-data -c "PATH=$PATH; unbuffer -p } . $command . q{"; echo; read -p JOB_COMPLETED__PRESS_ENTER_TO_CLOSE; exit};
+
+# START HERE: add ssh to other compute_nodes, must use `ssh -t` to avoid screen 'Must be connected to a terminal.' error
+# START HERE: add ssh to other compute_nodes, must use `ssh -t` to avoid screen 'Must be connected to a terminal.' error
+# START HERE: add ssh to other compute_nodes, must use `ssh -t` to avoid screen 'Must be connected to a terminal.' error
 
 
 
@@ -918,10 +1034,9 @@ sub run_command : Chained( 'base' ) : PathPart( 'run_command' ) {
 
 
 
-
-# START HERE: add debug statements to all multi-threaded code, give it a try!!!
-# START HERE: add debug statements to all multi-threaded code, give it a try!!!
-# START HERE: add debug statements to all multi-threaded code, give it a try!!!
+# START HERE: detect when job/command/screen ends, change status and/or remove entry from job_running db table
+# START HERE: detect when job/command/screen ends, change status and/or remove entry from job_running db table
+# START HERE: detect when job/command/screen ends, change status and/or remove entry from job_running db table
 
 
     # MULTI-THREADED
@@ -957,13 +1072,16 @@ sub run_command : Chained( 'base' ) : PathPart( 'run_command' ) {
         }
     }
 
-    # start screen session & start RPerl command
-#    $screen_command = 'screen -dmS ' . $screen_session_suffix;  # DELAYED_COMMAND_START
-    $screen_command = 'screen -dmS ' . $screen_session_suffix . ' bash -c ' . q{'} . $command . q{'};
+    # start screen session
+    $screen_command = 'screen -dmS ' . $screen_session_suffix;  # DELAYED_COMMAND_START 
+#    $screen_command = 'screen -L -dmS ' . $screen_session_suffix;  # DELAYED_COMMAND_START WITH AUTO-LOGGING
+#    $screen_command = 'screen -dmS ' . $screen_session_suffix . ' bash -c ' . q{'} . $command . q{'};  # IMMEDIATE_COMMAND_EXIT
+#    $screen_command = 'screen -dmS ' . $screen_session_suffix . ' bash -c ' . q{'} . $command  . q{; read -p "JOB_COMPLETED__PRESS_ENTER_TO_CLOSE "} . q{'};
     print {*STDERR} '<<< DEBUG >>>: in Code::run_command() MULTI-THREADED, about to run $screen_command = ', $screen_command, "\n";
     $screen_command_retval = `$screen_command 2>&1;`;
     print {*STDERR} '<<< DEBUG >>>: in Code::run_command() MULTI-THREADED, have $CHILD_ERROR = ', $CHILD_ERROR, ', $screen_command_retval = ', $screen_command_retval, "\n";
     if ($CHILD_ERROR) { $c->stash->{run_command}->{stdout_stderr} = 'ERROR: Failed to start new `screen` session; ' . $screen_command_retval; return; }
+    my string $status = q{screen_started};
 
     # get full screen session name
     $screen_command = 'screen -ls | grep ' . $screen_session_suffix;
@@ -986,58 +1104,84 @@ sub run_command : Chained( 'base' ) : PathPart( 'run_command' ) {
     $screen_session =~ s/\s([^\s]+)\s.*/$1/gxms;  # strip away all non-session-name text
     print {*STDERR} '<<< DEBUG >>>: in Code::run_command() MULTI-THREADED, have $screen_session = ', $screen_session, "\n";
 
+    # assemble logfile name
+    # DEV NOTE, CORRELATION #cff01: screen logfile max path length is 70, must use OS symlink to shorten path
+#    my string $screen_logfile = $ShinyCMS::ROOT_DIR . 'root/user_jobs/' . $username . '/' . $screen_session . '.log';
+    my string $screen_logfile = '/srv/cloudff_user_jobs/' . $username . '/' . $screen_session . '.log';
+    my string $screen_logfile_command;
+    my string $screen_logfile_command_retval;
+
+    # set logfile
+    $screen_logfile_command = 'screen -r ' . $screen_session . ' -p0 -X colon "logfile ' . $screen_logfile . ' \015"';
+#    $screen_logfile_command = 'screen -r ' . $screen_session . ' -p0 -X colon "logfile ' . $screen_logfile . '.%n \015"';  # with %n numeric suffix
+    print {*STDERR} '<<< DEBUG >>>: in Code::run_command_input_ajax(), about to run $screen_logfile_command = ', $screen_logfile_command, "\n";
+    $screen_logfile_command_retval = `$screen_logfile_command 2>&1;`;
+    print {*STDERR} '<<< DEBUG >>>: in Code::run_command_input_ajax(), have $CHILD_ERROR = ', $CHILD_ERROR, ', $screen_logfile_command_retval = ', $screen_logfile_command_retval, "\n";
+    if ($CHILD_ERROR) { $c->stash->{run_command}->{stdout_stderr} = 'ERROR: Failed to enable logging on `screen` session; ' . $screen_logfile_command_retval; return; }
+    $status = 'command_logging';
+
+    # set realtime logging
+    $screen_logfile_command = 'screen -r ' . $screen_session . ' -p0 -X colon "logfile flush 0 \015"';  # flush output every 0 seconds, no delay
+    print {*STDERR} '<<< DEBUG >>>: in Code::run_command_input_ajax(), about to run $screen_logfile_command = ', $screen_logfile_command, "\n";
+    $screen_logfile_command_retval = `$screen_logfile_command 2>&1;`;
+    print {*STDERR} '<<< DEBUG >>>: in Code::run_command_input_ajax(), have $CHILD_ERROR = ', $CHILD_ERROR, ', $screen_logfile_command_retval = ', $screen_logfile_command_retval, "\n";
+    if ($CHILD_ERROR) { $c->stash->{run_command}->{stdout_stderr} = 'ERROR: Failed to enable logging on `screen` session; ' . $screen_logfile_command_retval; return; }
+    $status = 'command_logging';
+
+    # turn on logging
+    $screen_logfile_command = 'screen -r ' . $screen_session . ' -p0 -X colon "log on \015"';
+    print {*STDERR} '<<< DEBUG >>>: in Code::run_command_input_ajax(), about to run $screen_logfile_command = ', $screen_logfile_command, "\n";
+    $screen_logfile_command_retval = `$screen_logfile_command 2>&1;`;
+    print {*STDERR} '<<< DEBUG >>>: in Code::run_command_input_ajax(), have $CHILD_ERROR = ', $CHILD_ERROR, ', $screen_logfile_command_retval = ', $screen_logfile_command_retval, "\n";
+    if ($CHILD_ERROR) { $c->stash->{run_command}->{stdout_stderr} = 'ERROR: Failed to enable logging on `screen` session; ' . $screen_logfile_command_retval; return; }
+    $status = 'command_logging';
+
+    # start command
+    $screen_command = 'screen -r ' . $screen_session . ' -p0 -X stuff ' . q{'} . $command . q{ \015'};
+    print {*STDERR} '<<< DEBUG >>>: in Code::run_command(), about to run $screen_command = ', $screen_command, "\n";
+    $screen_command_retval = `$screen_command 2>&1;`;
+    print {*STDERR} '<<< DEBUG >>>: in Code::run_command(), have $CHILD_ERROR = ', $CHILD_ERROR, ', $screen_command_retval = ', $screen_command_retval, "\n";
+    if ($CHILD_ERROR) { $c->stash->{run_command}->{stdout_stderr} = 'ERROR: Failed to start job in `screen` session; ' . $screen_command_retval; return; }
+    $status = 'command_running';
+
+
+
+
+
     # prepare job data for database
 #    my integer $screen_pid = string_to_integer(shift (split /[.]/, $screen_session));
     my integer $screen_session_split = [split /[.]/, $screen_session];
     print {*STDERR} '<<< DEBUG >>>: in Code::run_command() MULTI-THREADED, have $screen_session_split = ', $screen_session_split, "\n";
     my integer $screen_session_split_shift = shift @{$screen_session_split};
     print {*STDERR} '<<< DEBUG >>>: in Code::run_command() MULTI-THREADED, have $screen_session_split_shift = ', $screen_session_split_shift, "\n";
+    # DEV NOTE: use of string_to_integer() here w/out calling 'use RPerl' required refactoring of the RPerl type system, yay!  :-P
     my integer $screen_pid = string_to_integer($screen_session_split_shift);
-
-
-
     print {*STDERR} '<<< DEBUG >>>: in Code::run_command() MULTI-THREADED, have $screen_pid = ', $screen_pid, "\n";
     my integer $shiny_uid = $c->user->{_user}->{_column_data}->{id};
     my string $compute_nodes = '';  # START HERE, NEED FIX: set compute nodes & utilize via SSH!!!
     my integer $command_pid = -1;    
-#    my string $status = 'screen_started';  # DELAYED_COMMAND_START
-    my string $status = 'command_started';
-
-
-
-# START HERE: create Schema for DB::JobRunning below, add github_nickname to DB::User Schema
-# START HERE: create Schema for DB::JobRunning below, add github_nickname to DB::User Schema
-# START HERE: create Schema for DB::JobRunning below, add github_nickname to DB::User Schema
-
 
     # create entry in job_running database table
     my $job_running_entry = $c->model( 'DB::JobRunning' )->create({
         screen_pid => $screen_pid,
         shiny_uid => $shiny_uid,
         screen_session => $screen_session,
+        screen_logfile => $screen_logfile,
         compute_nodes => $compute_nodes,
         command => $command,
         command_pid => $command_pid,
+        output_line => 2,  # start reading second line, skip command sequence
+        output_character => 1,  # start reading first character
         status => $status
     });
 
-    print {*STDERR} '<<< DEBUG >>>: in Code::run_command() MULTI-THREADED, have $job_running_entry = ', Dumper($job_running_entry), "\n";
+    print {*STDERR} '<<< DEBUG >>>: in Code::run_command() MULTI-THREADED, have $job_running_entry->{_column_data} = ', Dumper($job_running_entry->{_column_data}), "\n";
 
     # stash value(s)
     $c->stash->{run_command}->{pid} = $screen_pid;  # START HERE, NEED UPDATE: change to {screen_pid}???
     my integer $pid = $screen_pid;
 
-=DISABLE_DELAYED_COMMAND_START
-    $screen_command = 'screen -r ' . $screen_session . ' -p0 -X stuff "' . $command . ' \015"';
-    print {*STDERR} '<<< DEBUG >>>: in Code::run_command(), about to run $screen_command = ', $screen_command, "\n";
-    string $screen_command_retval = `$screen_command 2>&1;`;
-    print {*STDERR} '<<< DEBUG >>>: in Code::run_command(), have $CHILD_ERROR = ', $CHILD_ERROR, ', $screen_command_retval = ', $screen_command_retval, "\n";
-    if ($CHILD_ERROR) { $c->stash->{run_command}->{stdout_stderr} = 'ERROR: Failed to start job in `screen` session; ' . $screen_command_retval; return; }
-    $job_running_entry->update({ status => 'command_started' });
-=cut
 
-    # allow time for _Inline compile & command start???
-#    sleep 3;
 
 
 

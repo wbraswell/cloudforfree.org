@@ -321,7 +321,7 @@ Fetch a root-level page and stash it.
 
 sub get_root_page : Chained( 'base' ) : PathPart( '' ) : CaptureArgs( 1 ) {
     my ( $self, $c, $page ) = @_;
-    print {*STDERR} '<<< DEBUG >>>: in Pages::get_root_page(), top of subroutine', "\n";
+#    print {*STDERR} '<<< DEBUG >>>: in Pages::get_root_page(), top of subroutine', "\n";
     
     # get the default page if none is specified
     $page ||= default_page();
@@ -346,7 +346,7 @@ Fetch the page elements and stash them.
 #sub get_page : Chained( 'get_root_page' ) : PathPart( '' ) : CaptureArgs( 0 ) {    # 1 level URLs - /pages/bar
 sub get_page : Chained( 'get_section_page' ) : PathPart( '' ) : CaptureArgs( 0 ) {    # 2 level URLs - /pages/foo/bar
     my ( $self, $c ) = @_;
-    print {*STDERR} '<<< DEBUG >>>: in Pages::get_section_page(), top of subroutine', "\n";
+#    print {*STDERR} '<<< DEBUG >>>: in Pages::get_section_page(), top of subroutine', "\n";
 
     # Get page elements
     my @elements = $c->model( 'DB::CmsPageElement' )->search( {
@@ -428,7 +428,7 @@ View the default page for a section if no page is specified.
 
 sub view_default_page : Chained( 'get_section' ) : PathPart( '' ) : Args( 0 ) {
     my ( $self, $c ) = @_;
-    print {*STDERR} '<<< DEBUG >>>: in Pages::view_default_page(), top of subroutine', "\n";
+#    print {*STDERR} '<<< DEBUG >>>: in Pages::view_default_page(), top of subroutine', "\n";
     
     # Get the default page for this section
     $c->stash->{ page }   = $c->stash->{ section }->default_page;
