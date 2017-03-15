@@ -7,7 +7,7 @@ package ShinyCMS::Controller::Auth0;
 use strict;
 use warnings;
 use RPerl::AfterSubclass;
-our $VERSION = 0.003_000;
+our $VERSION = 0.004_000;
 
 =head1 NAME
 
@@ -95,12 +95,12 @@ sub do_login {
             session => undef,
             user    => $c->user->id,
         }) if $basket and not $c->user->basket;
-              
+
         # Log the IP address
         $c->user->user_ip_addresses->create({
             ip_address => $c->request->address,
         });
-                
+
         # Then change their session ID to frustrate session hijackers
         # TODO: This breaks my logins - am I using it incorrectly?
         #$c->change_session_id;
@@ -330,9 +330,263 @@ Please provide your real, legal first (given) and last (family) names, using onl
 Please do NOT use middle names, nicknames, special characters, commas, periods, etc.<br><br>
 <form action='/users/sign_in/auth0' method='POST'>
     $doorman_picture_html
-    <span style="color: red">(*)</span> Real First Name: <input type='text' name='first_name' value='$doorman_given_name'><br>
-    <span style="color: red">(*)</span> Real Last  Name: <input type='text' name='last_name' value='$doorman_family_name'><br>
-    <span style="color: red">(*)</span> Real Location:   <input type='text' name='location'> (City, State, Country)<br><br>
+    <span style="color: red">(*)</span> Real Name, First: <input type='text' name='first_name' value='$doorman_given_name'><br>
+    <span style="color: red">(*)</span> Real Name, Last:  <input type='text' name='last_name' value='$doorman_family_name'><br>
+    <span style="color: red">(*)</span> Real Location, City:    <input type='text' name='location_city'><br><br>
+    <span style="color: red">(*)</span> Real Location, State:   <input type='text' name='location_state'><br><br>
+    <span style="color: red">(*)</span> Real Location, Nation:  
+        <select name='location_nation'>
+            <option value="AF">Afghanistan</option>
+            <option value="AX">Åland Islands</option>
+            <option value="AL">Albania</option>
+            <option value="DZ">Algeria</option>
+            <option value="AS">American Samoa</option>
+            <option value="AD">Andorra</option>
+            <option value="AO">Angola</option>
+            <option value="AI">Anguilla</option>
+            <option value="AQ">Antarctica</option>
+            <option value="AG">Antigua and Barbuda</option>
+            <option value="AR">Argentina</option>
+            <option value="AM">Armenia</option>
+            <option value="AW">Aruba</option>
+            <option value="AU">Australia</option>
+            <option value="AT">Austria</option>
+            <option value="AZ">Azerbaijan</option>
+            <option value="BS">Bahamas</option>
+            <option value="BH">Bahrain</option>
+            <option value="BD">Bangladesh</option>
+            <option value="BB">Barbados</option>
+            <option value="BY">Belarus</option>
+            <option value="BE">Belgium</option>
+            <option value="BZ">Belize</option>
+            <option value="BJ">Benin</option>
+            <option value="BM">Bermuda</option>
+            <option value="BT">Bhutan</option>
+            <option value="BO">Bolivia, Plurinational State of</option>
+            <option value="BQ">Bonaire, Sint Eustatius and Saba</option>
+            <option value="BA">Bosnia and Herzegovina</option>
+            <option value="BW">Botswana</option>
+            <option value="BV">Bouvet Island</option>
+            <option value="BR">Brazil</option>
+            <option value="IO">British Indian Ocean Territory</option>
+            <option value="BN">Brunei Darussalam</option>
+            <option value="BG">Bulgaria</option>
+            <option value="BF">Burkina Faso</option>
+            <option value="BI">Burundi</option>
+            <option value="KH">Cambodia</option>
+            <option value="CM">Cameroon</option>
+            <option value="CA">Canada</option>
+            <option value="CV">Cape Verde</option>
+            <option value="KY">Cayman Islands</option>
+            <option value="CF">Central African Republic</option>
+            <option value="TD">Chad</option>
+            <option value="CL">Chile</option>
+            <option value="CN">China</option>
+            <option value="CX">Christmas Island</option>
+            <option value="CC">Cocos (Keeling) Islands</option>
+            <option value="CO">Colombia</option>
+            <option value="KM">Comoros</option>
+            <option value="CG">Congo</option>
+            <option value="CD">Congo, the Democratic Republic of the</option>
+            <option value="CK">Cook Islands</option>
+            <option value="CR">Costa Rica</option>
+            <option value="CI">Côte d'Ivoire</option>
+            <option value="HR">Croatia</option>
+            <option value="CU">Cuba</option>
+            <option value="CW">Curaçao</option>
+            <option value="CY">Cyprus</option>
+            <option value="CZ">Czech Republic</option>
+            <option value="DK">Denmark</option>
+            <option value="DJ">Djibouti</option>
+            <option value="DM">Dominica</option>
+            <option value="DO">Dominican Republic</option>
+            <option value="EC">Ecuador</option>
+            <option value="EG">Egypt</option>
+            <option value="SV">El Salvador</option>
+            <option value="GQ">Equatorial Guinea</option>
+            <option value="ER">Eritrea</option>
+            <option value="EE">Estonia</option>
+            <option value="ET">Ethiopia</option>
+            <option value="FK">Falkland Islands (Malvinas)</option>
+            <option value="FO">Faroe Islands</option>
+            <option value="FJ">Fiji</option>
+            <option value="FI">Finland</option>
+            <option value="FR">France</option>
+            <option value="GF">French Guiana</option>
+            <option value="PF">French Polynesia</option>
+            <option value="TF">French Southern Territories</option>
+            <option value="GA">Gabon</option>
+            <option value="GM">Gambia</option>
+            <option value="GE">Georgia</option>
+            <option value="DE">Germany</option>
+            <option value="GH">Ghana</option>
+            <option value="GI">Gibraltar</option>
+            <option value="GR">Greece</option>
+            <option value="GL">Greenland</option>
+            <option value="GD">Grenada</option>
+            <option value="GP">Guadeloupe</option>
+            <option value="GU">Guam</option>
+            <option value="GT">Guatemala</option>
+            <option value="GG">Guernsey</option>
+            <option value="GN">Guinea</option>
+            <option value="GW">Guinea-Bissau</option>
+            <option value="GY">Guyana</option>
+            <option value="HT">Haiti</option>
+            <option value="HM">Heard Island and McDonald Islands</option>
+            <option value="VA">Holy See (Vatican City State)</option>
+            <option value="HN">Honduras</option>
+            <option value="HK">Hong Kong</option>
+            <option value="HU">Hungary</option>
+            <option value="IS">Iceland</option>
+            <option value="IN">India</option>
+            <option value="ID">Indonesia</option>
+            <option value="IR">Iran, Islamic Republic of</option>
+            <option value="IQ">Iraq</option>
+            <option value="IE">Ireland</option>
+            <option value="IM">Isle of Man</option>
+            <option value="IL">Israel</option>
+            <option value="IT">Italy</option>
+            <option value="JM">Jamaica</option>
+            <option value="JP">Japan</option>
+            <option value="JE">Jersey</option>
+            <option value="JO">Jordan</option>
+            <option value="KZ">Kazakhstan</option>
+            <option value="KE">Kenya</option>
+            <option value="KI">Kiribati</option>
+            <option value="KP">Korea, Democratic People's Republic of</option>
+            <option value="KR">Korea, Republic of</option>
+            <option value="KW">Kuwait</option>
+            <option value="KG">Kyrgyzstan</option>
+            <option value="LA">Lao People's Democratic Republic</option>
+            <option value="LV">Latvia</option>
+            <option value="LB">Lebanon</option>
+            <option value="LS">Lesotho</option>
+            <option value="LR">Liberia</option>
+            <option value="LY">Libya</option>
+            <option value="LI">Liechtenstein</option>
+            <option value="LT">Lithuania</option>
+            <option value="LU">Luxembourg</option>
+            <option value="MO">Macao</option>
+            <option value="MK">Macedonia, the former Yugoslav Republic of</option>
+            <option value="MG">Madagascar</option>
+            <option value="MW">Malawi</option>
+            <option value="MY">Malaysia</option>
+            <option value="MV">Maldives</option>
+            <option value="ML">Mali</option>
+            <option value="MT">Malta</option>
+            <option value="MH">Marshall Islands</option>
+            <option value="MQ">Martinique</option>
+            <option value="MR">Mauritania</option>
+            <option value="MU">Mauritius</option>
+            <option value="YT">Mayotte</option>
+            <option value="MX">Mexico</option>
+            <option value="FM">Micronesia, Federated States of</option>
+            <option value="MD">Moldova, Republic of</option>
+            <option value="MC">Monaco</option>
+            <option value="MN">Mongolia</option>
+            <option value="ME">Montenegro</option>
+            <option value="MS">Montserrat</option>
+            <option value="MA">Morocco</option>
+            <option value="MZ">Mozambique</option>
+            <option value="MM">Myanmar</option>
+            <option value="NA">Namibia</option>
+            <option value="NR">Nauru</option>
+            <option value="NP">Nepal</option>
+            <option value="NL">Netherlands</option>
+            <option value="NC">New Caledonia</option>
+            <option value="NZ">New Zealand</option>
+            <option value="NI">Nicaragua</option>
+            <option value="NE">Niger</option>
+            <option value="NG">Nigeria</option>
+            <option value="NU">Niue</option>
+            <option value="NF">Norfolk Island</option>
+            <option value="MP">Northern Mariana Islands</option>
+            <option value="NO">Norway</option>
+            <option value="OM">Oman</option>
+            <option value="PK">Pakistan</option>
+            <option value="PW">Palau</option>
+            <option value="PS">Palestinian Territory, Occupied</option>
+            <option value="PA">Panama</option>
+            <option value="PG">Papua New Guinea</option>
+            <option value="PY">Paraguay</option>
+            <option value="PE">Peru</option>
+            <option value="PH">Philippines</option>
+            <option value="PN">Pitcairn</option>
+            <option value="PL">Poland</option>
+            <option value="PT">Portugal</option>
+            <option value="PR">Puerto Rico</option>
+            <option value="QA">Qatar</option>
+            <option value="RE">Réunion</option>
+            <option value="RO">Romania</option>
+            <option value="RU">Russian Federation</option>
+            <option value="RW">Rwanda</option>
+            <option value="BL">Saint Barthélemy</option>
+            <option value="SH">Saint Helena, Ascension and Tristan da Cunha</option>
+            <option value="KN">Saint Kitts and Nevis</option>
+            <option value="LC">Saint Lucia</option>
+            <option value="MF">Saint Martin (French part)</option>
+            <option value="PM">Saint Pierre and Miquelon</option>
+            <option value="VC">Saint Vincent and the Grenadines</option>
+            <option value="WS">Samoa</option>
+            <option value="SM">San Marino</option>
+            <option value="ST">Sao Tome and Principe</option>
+            <option value="SA">Saudi Arabia</option>
+            <option value="SN">Senegal</option>
+            <option value="RS">Serbia</option>
+            <option value="SC">Seychelles</option>
+            <option value="SL">Sierra Leone</option>
+            <option value="SG">Singapore</option>
+            <option value="SX">Sint Maarten (Dutch part)</option>
+            <option value="SK">Slovakia</option>
+            <option value="SI">Slovenia</option>
+            <option value="SB">Solomon Islands</option>
+            <option value="SO">Somalia</option>
+            <option value="ZA">South Africa</option>
+            <option value="GS">South Georgia and the South Sandwich Islands</option>
+            <option value="SS">South Sudan</option>
+            <option value="ES">Spain</option>
+            <option value="LK">Sri Lanka</option>
+            <option value="SD">Sudan</option>
+            <option value="SR">Suriname</option>
+            <option value="SJ">Svalbard and Jan Mayen</option>
+            <option value="SZ">Swaziland</option>
+            <option value="SE">Sweden</option>
+            <option value="CH">Switzerland</option>
+            <option value="SY">Syrian Arab Republic</option>
+            <option value="TW">Taiwan, Province of China</option>
+            <option value="TJ">Tajikistan</option>
+            <option value="TZ">Tanzania, United Republic of</option>
+            <option value="TH">Thailand</option>
+            <option value="TL">Timor-Leste</option>
+            <option value="TG">Togo</option>
+            <option value="TK">Tokelau</option>
+            <option value="TO">Tonga</option>
+            <option value="TT">Trinidad and Tobago</option>
+            <option value="TN">Tunisia</option>
+            <option value="TR">Turkey</option>
+            <option value="TM">Turkmenistan</option>
+            <option value="TC">Turks and Caicos Islands</option>
+            <option value="TV">Tuvalu</option>
+            <option value="UG">Uganda</option>
+            <option value="UA">Ukraine</option>
+            <option value="AE">United Arab Emirates</option>
+            <option value="GB">United Kingdom</option>
+            <option value="US" selected="selected">United States</option>
+            <option value="UM">United States Minor Outlying Islands</option>
+            <option value="UY">Uruguay</option>
+            <option value="UZ">Uzbekistan</option>
+            <option value="VU">Vanuatu</option>
+            <option value="VE">Venezuela, Bolivarian Republic of</option>
+            <option value="VN">Viet Nam</option>
+            <option value="VG">Virgin Islands, British</option>
+            <option value="VI">Virgin Islands, U.S.</option>
+            <option value="WF">Wallis and Futuna</option>
+            <option value="EH">Western Sahara</option>
+            <option value="YE">Yemen</option>
+            <option value="ZM">Zambia</option>
+            <option value="ZW">Zimbabwe</option>
+        </select>
+        <br><br>
     <textarea readonly style="width:60%; height:180px">
 TERMS OF SERVICE:
 By accessing or utilizing the CloudForFree.org computer services in any way, you agree to be bound by all of the following Terms Of Service:
@@ -376,18 +630,321 @@ EOL
                 }
             }
 
-            # get & validate location parameter
-            my string $location = q{};
-            if ((exists $parameters->{location}) and 
-                (defined $parameters->{location}) and
-                ($parameters->{location}) ne q{}) {
-                $location = $parameters->{location};
-                print {*STDERR} '<<< DEBUG >>>: in Auth0::users_sign_in_auth0(), have parameter $location = ', $location, "\n";
-                if ( $location =~ m/[^a-zA-Z0-9,.\- ]/g ) {
-                    $c->flash->{ error_msg } = 'Locations may only contain letters, numbers, commas, periods, hyphens, and spaces.';
+
+
+
+
+            # get & validate location_city parameter
+            my string $location_city = q{};
+            if ((exists $parameters->{location_city}) and 
+                (defined $parameters->{location_city}) and
+                ($parameters->{location_city}) ne q{}) {
+                $location_city = $parameters->{location_city};
+                print {*STDERR} '<<< DEBUG >>>: in Auth0::users_sign_in_auth0(), have parameter $location_city = ', $location_city, "\n";
+                if ( $location_city =~ m/[^a-zA-Z0-9,.\- ]/g ) {
+                    $c->flash->{ error_msg } = 'Location cities may only contain letters, numbers, commas, periods, hyphens, and spaces.';
                     return;
                 }
             }
+
+            # get & validate location_state parameter
+            my string $location_state = q{};
+            if ((exists $parameters->{location_state}) and 
+                (defined $parameters->{location_state}) and
+                ($parameters->{location_state}) ne q{}) {
+                $location_state = $parameters->{location_state};
+                print {*STDERR} '<<< DEBUG >>>: in Auth0::users_sign_in_auth0(), have parameter $location_state = ', $location_state, "\n";
+                if ( $location_state =~ m/[^a-zA-Z0-9,.\- ]/g ) {
+                    $c->flash->{ error_msg } = 'Location states may only contain letters, numbers, commas, periods, hyphens, and spaces.';
+                    return;
+                }
+            }
+
+            # all nation codes, w/out commas so we can use commas when combining "city, state, nation"
+            my string_hashref $nation_codes = {
+                'AF' => q{Afghanistan},
+                'AX' => q{Åland Islands},
+                'AL' => q{Albania},
+                'DZ' => q{Algeria},
+                'AS' => q{American Samoa},
+                'AD' => q{Andorra},
+                'AO' => q{Angola},
+                'AI' => q{Anguilla},
+                'AQ' => q{Antarctica},
+                'AG' => q{Antigua and Barbuda},
+                'AR' => q{Argentina},
+                'AM' => q{Armenia},
+                'AW' => q{Aruba},
+                'AU' => q{Australia},
+                'AT' => q{Austria},
+                'AZ' => q{Azerbaijan},
+                'BS' => q{Bahamas},
+                'BH' => q{Bahrain},
+                'BD' => q{Bangladesh},
+                'BB' => q{Barbados},
+                'BY' => q{Belarus},
+                'BE' => q{Belgium},
+                'BZ' => q{Belize},
+                'BJ' => q{Benin},
+                'BM' => q{Bermuda},
+                'BT' => q{Bhutan},
+#                'BO' => q{Bolivia, Plurinational State of},
+                'BO' => q{Bolivia},
+#                'BQ' => q{Bonaire, Sint Eustatius and Saba},
+                'BQ' => q{Bonaire},
+                'BA' => q{Bosnia and Herzegovina},
+                'BW' => q{Botswana},
+                'BV' => q{Bouvet Island},
+                'BR' => q{Brazil},
+                'IO' => q{British Indian Ocean Territory},
+                'BN' => q{Brunei Darussalam},
+                'BG' => q{Bulgaria},
+                'BF' => q{Burkina Faso},
+                'BI' => q{Burundi},
+                'KH' => q{Cambodia},
+                'CM' => q{Cameroon},
+                'CA' => q{Canada},
+                'CV' => q{Cape Verde},
+                'KY' => q{Cayman Islands},
+                'CF' => q{Central African Republic},
+                'TD' => q{Chad},
+                'CL' => q{Chile},
+                'CN' => q{China},
+                'CX' => q{Christmas Island},
+                'CC' => q{Cocos (Keeling) Islands},
+                'CO' => q{Colombia},
+                'KM' => q{Comoros},
+                'CG' => q{Congo},
+#                'CD' => q{Congo, the Democratic Republic of the},
+                'CD' => q{The Democratic Republic of the Congo},
+                'CK' => q{Cook Islands},
+                'CR' => q{Costa Rica},
+                'CI' => q{Côte d'Ivoire},
+                'HR' => q{Croatia},
+                'CU' => q{Cuba},
+                'CW' => q{Curaçao},
+                'CY' => q{Cyprus},
+                'CZ' => q{Czech Republic},
+                'DK' => q{Denmark},
+                'DJ' => q{Djibouti},
+                'DM' => q{Dominica},
+                'DO' => q{Dominican Republic},
+                'EC' => q{Ecuador},
+                'EG' => q{Egypt},
+                'SV' => q{El Salvador},
+                'GQ' => q{Equatorial Guinea},
+                'ER' => q{Eritrea},
+                'EE' => q{Estonia},
+                'ET' => q{Ethiopia},
+                'FK' => q{Falkland Islands (Malvinas)},
+                'FO' => q{Faroe Islands},
+                'FJ' => q{Fiji},
+                'FI' => q{Finland},
+                'FR' => q{France},
+                'GF' => q{French Guiana},
+                'PF' => q{French Polynesia},
+                'TF' => q{French Southern Territories},
+                'GA' => q{Gabon},
+                'GM' => q{Gambia},
+                'GE' => q{Georgia},
+                'DE' => q{Germany},
+                'GH' => q{Ghana},
+                'GI' => q{Gibraltar},
+                'GR' => q{Greece},
+                'GL' => q{Greenland},
+                'GD' => q{Grenada},
+                'GP' => q{Guadeloupe},
+                'GU' => q{Guam},
+                'GT' => q{Guatemala},
+                'GG' => q{Guernsey},
+                'GN' => q{Guinea},
+                'GW' => q{Guinea-Bissau},
+                'GY' => q{Guyana},
+                'HT' => q{Haiti},
+                'HM' => q{Heard Island and McDonald Islands},
+                'VA' => q{Holy See (Vatican City State)},
+                'HN' => q{Honduras},
+                'HK' => q{Hong Kong},
+                'HU' => q{Hungary},
+                'IS' => q{Iceland},
+                'IN' => q{India},
+                'ID' => q{Indonesia},
+#                'IR' => q{Iran, Islamic Republic of},
+                'IR' => q{Iran},
+                'IQ' => q{Iraq},
+                'IE' => q{Ireland},
+                'IM' => q{Isle of Man},
+                'IL' => q{Israel},
+                'IT' => q{Italy},
+                'JM' => q{Jamaica},
+                'JP' => q{Japan},
+                'JE' => q{Jersey},
+                'JO' => q{Jordan},
+                'KZ' => q{Kazakhstan},
+                'KE' => q{Kenya},
+                'KI' => q{Kiribati},
+#                'KP' => q{Korea, Democratic People's Republic of},
+                'KP' => q{Democratic People's Republic of Korea},
+#                'KR' => q{Korea, Republic of},
+                'KR' => q{Republic of Korea},
+                'KW' => q{Kuwait},
+                'KG' => q{Kyrgyzstan},
+                'LA' => q{Lao People's Democratic Republic},
+                'LV' => q{Latvia},
+                'LB' => q{Lebanon},
+                'LS' => q{Lesotho},
+                'LR' => q{Liberia},
+                'LY' => q{Libya},
+                'LI' => q{Liechtenstein},
+                'LT' => q{Lithuania},
+                'LU' => q{Luxembourg},
+                'MO' => q{Macao},
+#                'MK' => q{Macedonia, the former Yugoslav Republic of},
+                'MK' => q{Macedonia},
+                'MG' => q{Madagascar},
+                'MW' => q{Malawi},
+                'MY' => q{Malaysia},
+                'MV' => q{Maldives},
+                'ML' => q{Mali},
+                'MT' => q{Malta},
+                'MH' => q{Marshall Islands},
+                'MQ' => q{Martinique},
+                'MR' => q{Mauritania},
+                'MU' => q{Mauritius},
+                'YT' => q{Mayotte},
+                'MX' => q{Mexico},
+#                'FM' => q{Micronesia, Federated States of},
+                'FM' => q{Micronesia},
+#                'MD' => q{Moldova, Republic of},
+                'MD' => q{Moldova},
+                'MC' => q{Monaco},
+                'MN' => q{Mongolia},
+                'ME' => q{Montenegro},
+                'MS' => q{Montserrat},
+                'MA' => q{Morocco},
+                'MZ' => q{Mozambique},
+                'MM' => q{Myanmar},
+                'NA' => q{Namibia},
+                'NR' => q{Nauru},
+                'NP' => q{Nepal},
+                'NL' => q{Netherlands},
+                'NC' => q{New Caledonia},
+                'NZ' => q{New Zealand},
+                'NI' => q{Nicaragua},
+                'NE' => q{Niger},
+                'NG' => q{Nigeria},
+                'NU' => q{Niue},
+                'NF' => q{Norfolk Island},
+                'MP' => q{Northern Mariana Islands},
+                'NO' => q{Norway},
+                'OM' => q{Oman},
+                'PK' => q{Pakistan},
+                'PW' => q{Palau},
+#                'PS' => q{Palestinian Territory, Occupied},
+                'PS' => q{Palestinian Territory},
+                'PA' => q{Panama},
+                'PG' => q{Papua New Guinea},
+                'PY' => q{Paraguay},
+                'PE' => q{Peru},
+                'PH' => q{Philippines},
+                'PN' => q{Pitcairn},
+                'PL' => q{Poland},
+                'PT' => q{Portugal},
+                'PR' => q{Puerto Rico},
+                'QA' => q{Qatar},
+                'RE' => q{Réunion},
+                'RO' => q{Romania},
+                'RU' => q{Russian Federation},
+                'RW' => q{Rwanda},
+                'BL' => q{Saint Barthélemy},
+#                'SH' => q{Saint Helena, Ascension and Tristan da Cunha},
+                'SH' => q{Saint Helena},
+                'KN' => q{Saint Kitts and Nevis},
+                'LC' => q{Saint Lucia},
+                'MF' => q{Saint Martin (French part)},
+                'PM' => q{Saint Pierre and Miquelon},
+                'VC' => q{Saint Vincent and the Grenadines},
+                'WS' => q{Samoa},
+                'SM' => q{San Marino},
+                'ST' => q{Sao Tome and Principe},
+                'SA' => q{Saudi Arabia},
+                'SN' => q{Senegal},
+                'RS' => q{Serbia},
+                'SC' => q{Seychelles},
+                'SL' => q{Sierra Leone},
+                'SG' => q{Singapore},
+                'SX' => q{Sint Maarten (Dutch part)},
+                'SK' => q{Slovakia},
+                'SI' => q{Slovenia},
+                'SB' => q{Solomon Islands},
+                'SO' => q{Somalia},
+                'ZA' => q{South Africa},
+                'GS' => q{South Georgia and the South Sandwich Islands},
+                'SS' => q{South Sudan},
+                'ES' => q{Spain},
+                'LK' => q{Sri Lanka},
+                'SD' => q{Sudan},
+                'SR' => q{Suriname},
+                'SJ' => q{Svalbard and Jan Mayen},
+                'SZ' => q{Swaziland},
+                'SE' => q{Sweden},
+                'CH' => q{Switzerland},
+                'SY' => q{Syrian Arab Republic},
+#                'TW' => q{Taiwan, Province of China},
+                'TW' => q{Taiwan},
+                'TJ' => q{Tajikistan},
+#                'TZ' => q{Tanzania, United Republic of},
+                'TZ' => q{Tanzania},
+                'TH' => q{Thailand},
+                'TL' => q{Timor-Leste},
+                'TG' => q{Togo},
+                'TK' => q{Tokelau},
+                'TO' => q{Tonga},
+                'TT' => q{Trinidad and Tobago},
+                'TN' => q{Tunisia},
+                'TR' => q{Turkey},
+                'TM' => q{Turkmenistan},
+                'TC' => q{Turks and Caicos Islands},
+                'TV' => q{Tuvalu},
+                'UG' => q{Uganda},
+                'UA' => q{Ukraine},
+                'AE' => q{United Arab Emirates},
+                'GB' => q{United Kingdom},
+                'US' => q{United States},
+                'UM' => q{United States Minor Outlying Islands},
+                'UY' => q{Uruguay},
+                'UZ' => q{Uzbekistan},
+                'VU' => q{Vanuatu},
+#                'VE' => q{Venezuela, Bolivarian Republic of},
+                'VE' => q{Venezuela},
+#                'VN' => q{Viet Nam},
+                'VN' => q{Vietnam},
+#                'VG' => q{Virgin Islands, British},
+                'VG' => q{British Virgin Islands},
+#                'VI' => q{Virgin Islands, U.S.},
+                'VI' => q{U.S. Virgin Islands},
+                'WF' => q{Wallis and Futuna},
+                'EH' => q{Western Sahara},
+                'YE' => q{Yemen},
+                'ZM' => q{Zambia},
+                'ZW' => q{Zimbabwe}
+            };
+
+            # get & validate location_nation parameter
+            my string $location_nation = q{};
+            if ((exists $parameters->{location_nation}) and 
+                (defined $parameters->{location_nation}) and
+                ($parameters->{location_nation}) ne q{}) {
+                $location_nation = $parameters->{location_nation};
+                print {*STDERR} '<<< DEBUG >>>: in Auth0::users_sign_in_auth0(), have parameter $location_nation = ', $location_nation, "\n";
+                if (not exists $nation_codes->{$location_nation}) {
+                    $c->flash->{ error_msg } = 'Location nations must appear in drop-down select list.';
+                    return;
+                }
+                $location_nation = $nation_codes->{$location_nation};
+            }
+
+            my string $location = $location_city . ', ' . $location_state . ', ' . $location_nation;
 
             # require both first name & last name & location parameters
             if (($first_name eq q{}) or ($last_name eq q{}) or ($location eq q{})) {

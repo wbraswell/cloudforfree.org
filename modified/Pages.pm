@@ -7,7 +7,7 @@ package ShinyCMS::Controller::Pages;
 use strict;
 use warnings;
 use RPerl::AfterSubclass;
-our $VERSION = 0.001_000;
+our $VERSION = 0.002_000;
 
 
 use Moose;
@@ -56,7 +56,7 @@ sub show_all_users {
     # set up stash
 #    $c->stash->{template} = 'foo.tt';
     $c->stash->{show_all_users} = {};
-    $c->stash->{show_all_users}->{output} = q{<table table style='width:100%'>};
+    $c->stash->{show_all_users}->{output} = q{<table style='width:100%; table-layout:fixed;'>};
 
     my integer $active_user_count = 0;
     foreach my integer $i (2 .. 101) {
