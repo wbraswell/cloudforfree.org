@@ -7,9 +7,9 @@
     [% INCLUDE 'user/login.tt' %]
 [%- ELSE %]
 
-<!-- START HERE: fix spaces in output by using either <pre> or textarea??? -->
-<!-- START HERE: fix spaces in output by using either <pre> or textarea??? -->
-<!-- START HERE: fix spaces in output by using either <pre> or textarea??? -->
+<!-- START HERE: fix collapsed spaces in output by using either <pre> or textarea??? -->
+<!-- START HERE: fix collapsed spaces in output by using either <pre> or textarea??? -->
+<!-- START HERE: fix collapsed spaces in output by using either <pre> or textarea??? -->
 
     <head>
         <style type="text/css" media="screen">
@@ -21,19 +21,38 @@
 
     <!-- AJAX: append instead of overwriting output div -->
     <script>
+        // update request, proactively fetch output, measured in milliseconds
+        var update_request_id = setInterval(js_run_command_output_fetch, 500);
+        var job_completed = 0;
+
+        function js_run_command_output_fetch() {
+            document.getElementById('run_command_input_param_update_request').value = '__UR__';
+            run_command_input_ajax( ['run_command_pid', 'run_command_input_param_update_request'], [js_run_command_output_div_append] );
+            document.getElementById('run_command_input_param_update_request').value = '';
+        }
+
         function js_run_command_output_div_append() {
-            var input1 = arguments[0].trim();
+            var input1 = arguments[0];
+            // NEED ANSWER: how in the world do we end up with 3 extraneous trailing newlines?!?
             if (input1) {
-                //document.getElementById('run_command_output_div').innerHTML = document.getElementById('run_command_output_div').innerHTML.concat("<br>");
+                input1 = input1.replace(/\n$/, "");  // trim extraneous trailing newline only
+                input1 = input1.replace(/\n$/, "");  // trim extraneous trailing newline only
+                input1 = input1.replace(/\n$/, "");  // trim extraneous trailing newline only
+                input1 = input1.replace(new RegExp(/__BL__/, 'g'), "");  // KEYCODE, replace all occurrences of keycoded blank line
                 document.getElementById('run_command_output_div').innerHTML = document.getElementById('run_command_output_div').innerHTML.concat(input1);
+
+                // stop update requests once job is completed and exited
+                if ((job_completed) && (input1 === "\nexit")) {
+                    clearInterval(update_request_id);
+                }
+                if (input1 === "\n\n__JOB_COMPLETED__") {
+                    job_completed = 1;
+                }
             }
         }
     </script>
 
     <b><u>Run Command</u></b><br><br>
-
-    <b>&gt; &gt; &gt; PRESS SPACEBAR TO BEGIN RECEIVING GENERATED OUTPUT &lt; &lt; &lt;</b>
-    <br><br>
 
     <b>Command:</b>
     <br>
@@ -45,7 +64,7 @@
     <i>[%- run_command.pid %]</i>
     <br><br>
     
-    <b>STDOUT & STDERR Output:</b>
+    <b>Live Terminal AKA Interactive Shell:</b>
     <pre id="run_command_output_div" style='background-color:#444444; color:#EEEEEE'>[%- run_command.stdout_stderr %]</pre>
     <br><br>
 

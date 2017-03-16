@@ -66,7 +66,7 @@ __PACKAGE__->config(
             root_url => 'http://cloudforfree.org',
             scope => 'users',
             auth0_domain => 'cloudforfree.auth0.com',
-            auth0_client_secret => 'REDACTED',
+            auth0_client_secret => 'drY0Cbe0eL4IIBAb0OXK1yPz_5lZhwYx5qhoa3i-M8BYHifknS49G82qkeeQ2RSR',
             auth0_client_id     => 'JMwBFCjaelke73mE5HvLq7oTPOOQby9V'
         }
     ],

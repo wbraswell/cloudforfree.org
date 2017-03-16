@@ -7,7 +7,7 @@ package ShinyCMS::Controller::Auth0;
 use strict;
 use warnings;
 use RPerl::AfterSubclass;
-our $VERSION = 0.004_000;
+our $VERSION = 0.005_000;
 
 =head1 NAME
 
@@ -332,8 +332,8 @@ Please do NOT use middle names, nicknames, special characters, commas, periods, 
     $doorman_picture_html
     <span style="color: red">(*)</span> Real Name, First: <input type='text' name='first_name' value='$doorman_given_name'><br>
     <span style="color: red">(*)</span> Real Name, Last:  <input type='text' name='last_name' value='$doorman_family_name'><br>
-    <span style="color: red">(*)</span> Real Location, City:    <input type='text' name='location_city'><br><br>
-    <span style="color: red">(*)</span> Real Location, State:   <input type='text' name='location_state'><br><br>
+    <span style="color: red">(*)</span> Real Location, City:    <input type='text' name='location_city'><br>
+    <span style="color: red">(*)</span> Real Location, State:   <input type='text' name='location_state'><br>
     <span style="color: red">(*)</span> Real Location, Nation:  
         <select name='location_nation'>
             <option value="AF">Afghanistan</option>
@@ -571,7 +571,7 @@ Please do NOT use middle names, nicknames, special characters, commas, periods, 
             <option value="UA">Ukraine</option>
             <option value="AE">United Arab Emirates</option>
             <option value="GB">United Kingdom</option>
-            <option value="US" selected="selected">United States</option>
+            <option value="US" selected="selected">United States of America</option>
             <option value="UM">United States Minor Outlying Islands</option>
             <option value="UY">Uruguay</option>
             <option value="UZ">Uzbekistan</option>
@@ -910,7 +910,8 @@ EOL
                 'UA' => q{Ukraine},
                 'AE' => q{United Arab Emirates},
                 'GB' => q{United Kingdom},
-                'US' => q{United States},
+#                'US' => q{United States of America},
+                'US' => q{USA},
                 'UM' => q{United States Minor Outlying Islands},
                 'UY' => q{Uruguay},
                 'UZ' => q{Uzbekistan},
@@ -944,13 +945,13 @@ EOL
                 $location_nation = $nation_codes->{$location_nation};
             }
 
-            my string $location = $location_city . ', ' . $location_state . ', ' . $location_nation;
-
-            # require both first name & last name & location parameters
-            if (($first_name eq q{}) or ($last_name eq q{}) or ($location eq q{})) {
-                $c->flash->{ error_msg } = 'First name and last name and location are required fields.';
+            # require first name & last name & location_city & location_state & location_nation parameters
+            if (($first_name eq q{}) or ($last_name eq q{}) or ($location_city eq q{}) or ($location_state eq q{}) or ($location_nation eq q{})) {
+                $c->flash->{ error_msg } = 'Name and location are all required fields.';
                 return;
             }
+
+            my string $location = $location_city . ', ' . $location_state . ', ' . $location_nation;
 
             # Shiny username try #1: first letter of first name, whole last name, all lowercase
             my string $shiny_username = substr $first_name, 0, 1;

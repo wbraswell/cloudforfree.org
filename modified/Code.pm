@@ -7,7 +7,7 @@ package ShinyCMS::Controller::Code;
 use strict;
 use warnings;
 use RPerl::AfterSubclass;
-our $VERSION = 0.019_000;
+our $VERSION = 0.020_000;
 
 =head1 NAME
 
@@ -63,8 +63,9 @@ has posts_per_page => (
 
 # [[ PACKAGE VARIABLES ]]
 
-our hashref $JOBS = {};
 our hashref $KEY_CODES = {  # more listed here:  https://metacpan.org/pod/Term::ANSIMenu
+    '__UR__'  => [ '', '' ],           # UPDATE REQUEST, accepted as input only, no output generated
+    '__BL__'  => [ '__BL__', '__BL__' ],  # BLANK LINE, not accepted as input, only generated as output
     '__B__'  => [ "\x08", '__B__' ],   # BACKSPACE  "\b" does not work
     '__T__'  => [ "\x09", '__T__' ],   # TAB  "\t" does work
 #    '__E__'  => [ "\x0A", '<br>' ],   # ENTER  "\n" does work
@@ -89,6 +90,122 @@ our hashref $KEY_CODES = {  # more listed here:  https://metacpan.org/pod/Term::
 
 # [[[ SUBROUTINES & OO METHODS ]]]
 
+
+
+# START HERE: FIX ALL THIS CODE BELOW!!!
+# START HERE: FIX ALL THIS CODE BELOW!!!
+# START HERE: FIX ALL THIS CODE BELOW!!!
+
+sub GetOptions {
+    my %options = @ARG;
+    my $retval = q{};
+
+    my $cgi = CGI->new();
+
+    if (not $cgi->param('__getopt__')) {
+        # Not a form submission, so display form
+        $retval .= $cgi->start_form(-method => "POST", -action => "");
+        $retval .= $cgi->start_table();
+        foreach my $key (sort keys %options) {
+            my $val = $options{$key};
+            if ($key !~ m/^([\w\d\|]+)([=:][isf])?([\+!\@\%])?$/) {
+                next; # Not sure what this is
+            }
+
+            my $name = [split('|', $1, 1)]->[0];
+            $retval .= $cgi->start_Tr();
+            $retval .= $cgi->th($name . ($2 || ""));
+
+            my $inner;
+            if (($3 || "") eq '+') {
+                die "Cannot mix + and params" if $2;
+                $inner = $cgi->popup_menu(-name => $name, -values => [1..9]);
+            } elsif (($3 || "") eq '!') {
+                die "Cannot mix ! and params" if $2;
+                $inner = $cgi->checkbox(-name => $name, -checked => 1);
+            } elsif ($2) {
+                $inner = $cgi->textfield(-name => $name);
+                if (($3 || "") eq '%' or ($3 || "") eq '@' or ref($val) eq 'ARRAY' or ref($val) eq 'HASH') {
+                    $inner = [$inner, $cgi->br(), $inner, $cgi->br(), $inner];
+                }
+            } else {
+                $inner = $cgi->checkbox(-name => $name);
+            }
+
+            $retval .= $cgi->td($inner);
+            $retval .= $cgi->end_Tr();
+        }
+        $retval .= $cgi->end_table();
+        # This name is looked for on submit
+        $retval .= $cgi->submit(-name => '__getopt__', -value => 'Go');
+        $retval .= $cgi->end_form();
+        return $retval;
+    }
+
+    # CGI form submission, so grab responses
+    foreach my $key (sort keys %options) {
+        my $val = $options{$key};
+        if ($key !~ m/^([\w\d\|]+)([=:][isf])?([\+!\@\%])?$/) {
+            next; # Unknown item
+        }
+
+        my $name = [split('|', $1, 1)]->[0];
+
+        if (($3 || "") eq '+') {
+            $$val = $cgi->param($name); # "Incremental" integer
+        } elsif ($2) {
+            my @values = $cgi->param($name);
+            my $type = $2;
+            if (($3 || "") eq '%' or ref($val) eq 'HASH') {
+                my %values = map { split /=/, $_, 1 } @values;
+                if ($type =~ m/i$/) {
+                    foreach my $k (keys %values) {
+                        $values{$k} = int($values{$k})
+                    }
+                } elsif ($type =~ m/f$/) {
+                    foreach my $k (keys %values) {
+                        $values{$k} = 0 + $values{$k}
+                    }
+                }
+                if (ref($val) eq 'CODE') {
+                    while(my($k, $v) = each %values) {
+                       $val->($name, $k, $v);
+                    }
+                } else {
+                    %$val = %values;
+                }
+            } else {
+                if ($type =~ m/i$/) {
+                    @values = map { int($_) } @values;
+                } elsif ($type =~ m/f$/) {
+                    @values = map { 0 + $_ } @values;
+                }
+                if (($3 || "") eq '@' or ref($val) eq 'ARRAY') {
+                    if (ref($val) eq 'CODE') {
+                        $val->($name, \@values)
+                    } else {
+                        @$val = @values;
+                    }
+                } else {
+                    if (ref($val) eq 'CODE') {
+                        $val->($name, $values[0]);
+                    } else {
+                        $$val = $values[0];
+                    }
+                }
+            }
+        } else {
+            # Checkbox
+            $$val = $cgi->param($name) ? 1 : 0;
+        }
+    }
+}
+
+
+
+
+
+
 =head1 METHODS
 
 =cut
@@ -103,7 +220,8 @@ sub base : Chained( '/base' ) : PathPart( 'code' ) : CaptureArgs( 0 ) {
     my ( $self, $c ) = @ARG;
 #    print {*STDOUT} '<<< DEBUG >>>: in Code::base(), received $self = ', "\n", Dumper($self), "\n\n";
 #    print {*STDOUT} '<<< DEBUG >>>: in Code::base(), received $c = ', "\n", Dumper($c), "\n\n";
-    print {*STDOUT} '<<< DEBUG >>>: in Code::base()', "\n";
+#    print {*STDOUT} '<<< DEBUG >>>: in Code::base()', "\n";
+    print {*STDOUT} '<<< DEBUG >>>: in Code::base(), have time = ', time, "\n";
 
 
     # Stash the upload_dir setting
@@ -491,12 +609,7 @@ sub view_queue : Chained( 'base' ) : PathPart( 'queue' ) {
 #    $rperl_options_html .= '<br>';
 #    $rperl_options_html .= GetOptions ( %{$::rperl_options} ) or die("Error in command line arguments\n");
 #    $c->stash->{queue}->{rperl_options_html} = $rperl_options_html;
-
 }
-
-
-
-
 
 =head2 syntax_check
 
@@ -636,25 +749,23 @@ sub run_command_input_ajax : Chained( 'base' ) : PathPart( 'run_command_input_aj
     if (not ((exists $parameters->{run_command_pid}) and (defined $parameters->{run_command_pid}))) {
         croak("\n" . q{ERROR ECORCIAPA00, RUN COMMAND INPUT AJAX, PARAMETERS: Missing HTML parameter 'run_command_pid', should contain PID of running command, croaking});
     }
-    if (not ((exists $parameters->{run_command_input_param}) and (defined $parameters->{run_command_input_param}))) {
-        croak("\n" . q{ERROR ECORCIAPA01, RUN COMMAND INPUT AJAX, PARAMETERS: Missing HTML parameter 'run_command_input_param', should contain input for running command, croaking});
+    if ((not exists $parameters->{run_command_input_param}) and (not defined $parameters->{run_command_input_param}) and
+        (not exists $parameters->{run_command_input_param_update_request}) and (not defined $parameters->{run_command_input_param_update_request})) {
+        croak("\n" . q{ERROR ECORCIAPA01, RUN COMMAND INPUT AJAX, PARAMETERS: Missing HTML parameter 'run_command_input_param' or 'run_command_input_param_update_request', should contain input for running command or update request, croaking});
     }
 
     # accept pid & input parameters
     my $pid = $parameters->{run_command_pid};
-    my $input = $parameters->{run_command_input_param};
+    my $input;
+    # accept real user input if present, otherwise accept automated update request input
+    if ((exists $parameters->{run_command_input_param}) and (defined $parameters->{run_command_input_param})) {
+        $input = $parameters->{run_command_input_param};
+    }
+    else {
+        $input = $parameters->{run_command_input_param_update_request};
+    }
     print {*STDOUT} '<<< DEBUG >>>: in Code::run_command_input_ajax(), have $pid = ', $pid, "\n";
     print {*STDOUT} '<<< DEBUG >>>: in Code::run_command_input_ajax(), have $input = ', q{'}, $input, q{'}, "\n";
-
-
-
-
-
-
-
-
-
-
 
     # MULTI-THREADED
     # retrieve entry from job_running database table
@@ -669,147 +780,23 @@ sub run_command_input_ajax : Chained( 'base' ) : PathPart( 'run_command_input_aj
     my string $output_character = $job_running_entry->output_character;
     print {*STDERR} '<<< DEBUG >>>: in Code::run_command_input_ajax() MULTI-THREADED, have $output_character = ', $output_character, "\n";
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-=DISABLE_SINGLE_THREADED
-    # create new I/O filehandles for each screen reattach
-    my filehandleref $COMMAND_IN;
-    my filehandleref $COMMAND_OUT;
-    my filehandleref $COMMAND_ERR = gensym;
-
-    # reattach to screen session
-    my string $screen_reattach_command = 'screen -r ' . $screen_session;
-    print {*STDERR} '<<< DEBUG >>>: in Code::run_command_input_ajax(), have $screen_reattach_command = ', $screen_reattach_command, "\n";
-
-    my integer $screen_reattach_pid = open3($COMMAND_IN, $COMMAND_OUT, $COMMAND_ERR, $screen_reattach_command);
-    print {*STDERR} '<<< DEBUG >>>: in Code::run_command_input_ajax() MULTI-THREADED, have $screen_reattach_pid = ', $screen_reattach_pid, "\n";
-
-    # load this PID's I/O stream handles from shared global $JOBS package (class) variable
-#    print {*STDOUT} '<<< DEBUG >>>: in Code::run_command_input_ajax(), have $Code::JOBS = ', "\n", Dumper($Code::JOBS), "\n\n";
-    my filehandleref $COMMAND_IN = $Code::JOBS->{$pid}->{IN};
-    my filehandleref $COMMAND_OUT = $Code::JOBS->{$pid}->{OUT};
-    my filehandleref $COMMAND_ERR = $Code::JOBS->{$pid}->{ERR};
-=cut
-
-
-
-    # setup selector to collect available output
-#    print {*STDOUT} '<<< DEBUG >>>: in Code::run_command_input_ajax(), begin selector setup', "\n";
-#    my IO::Select $selector = IO::Select->new();
-#    $selector->add(*{$COMMAND_OUT}, *{$COMMAND_ERR});
-#    print {*STDOUT} '<<< DEBUG >>>: in Code::run_command_input_ajax(), end selector setup', "\n";
-
-    # read available output before input has been provided
-#    print {*STDOUT} '<<< DEBUG >>>: in Code::run_command_input_ajax(), begin pre-input collection of output', "\n";
-#    while (my @readable_filehandles = $selector->can_read(1)) {
-##    my @readable_filehandles = $selector->can_read(0.1);
-#        print {*STDOUT} '<<< DEBUG >>>: in Code::run_command_input_ajax(), have @readable_filehandles = ', "\n", Dumper(\@readable_filehandles), "\n\n";
-#        foreach my filehandleref $readable_filehandle (@readable_filehandles) {
-#            print {*STDOUT} '<<< DEBUG >>>: in Code::run_command_input_ajax(), have $readable_filehandle = ', Dumper($readable_filehandle), "\n";
-#            if (fileno($readable_filehandle) == fileno(*{$COMMAND_ERR})) 
-#                { $stdout_stderr .= scalar <$COMMAND_ERR>; }
-#            else
-#                { $stdout_stderr .= scalar <$COMMAND_OUT>; }
-#            if (eof($readable_filehandle)) { $selector->remove($readable_filehandle); }
-#        }
-#    }
-#    print {*STDOUT} '<<< DEBUG >>>: in Code::run_command_input_ajax(), end pre-input collection of output', "\n";
-
-
-
-
-
-
-=DISABLE_SINGLE_THREADED
-    print {*STDOUT} '<<< DEBUG >>>: in Code::run_command_input_ajax(), begin selector setup', "\n";
-    my $selector = IO::Select->new();
-    $selector->add($COMMAND_OUT);
-    $selector->add($COMMAND_ERR);
-    print {*STDOUT} '<<< DEBUG >>>: in Code::run_command_input_ajax(), end selector setup', "\n";
-
-    print {*STDOUT} '<<< DEBUG >>>: in Code::run_command_input_ajax(), begin pre-input collection of output', "\n";
-    my string $stdout_stderr_tmp = q{};
-    while (my @readable_filehandles = $selector->can_read(0.1)) {
-        print {*STDOUT} '<<< DEBUG >>>: in Code::run_command_input_ajax(), have @readable_filehandles = ', "\n", Dumper(\@readable_filehandles);
-        foreach my $readable_filehandle (@readable_filehandles) {
-            if ($readable_filehandle == $COMMAND_OUT) {
-                my $bytes_read = sysread($readable_filehandle, $stdout_stderr_tmp, 1024);
-                if ($bytes_read == -1) {
-                    warn("Error reading from child's STDOUT: $!\n");
-                    $selector->remove($readable_filehandle);
-                    next;
-                }
-                if ($bytes_read == 0) {
-                    print("Child's STDOUT closed\n");
-                    $selector->remove($readable_filehandle);
-                    next;
-                }
-                printf("%4d bytes read from child's STDOUT\n", $bytes_read);
-                $stdout_stderr .= $stdout_stderr_tmp;
-            }
-            elsif ($readable_filehandle == $COMMAND_ERR) {
-                my $bytes_read = sysread($readable_filehandle, $stdout_stderr_tmp, 1024);
-                if ($bytes_read == -1) {
-                    warn("Error reading from child's STDERR: $!\n");
-                    $selector->remove($readable_filehandle);
-                    next;
-                }
-                if ($bytes_read == 0) {
-                    print("Child's STDERR closed\n");
-                    $selector->remove($readable_filehandle);
-                    next;
-                }
-                printf("%4d bytes read from child's STDERR\n", $bytes_read);
-                $stdout_stderr .= $stdout_stderr_tmp;
-            }
-        }
-    }
-    print {*STDOUT} '<<< DEBUG >>>: in Code::run_command_input_ajax(), end pre-input collection of output', "\n";
-=cut
-
-
-
-
-
-
     # strip trailing newline from input
     chomp $input;
 
-    # START HERE: handle other special keys, clean up messy code
-    # START HERE: handle other special keys, clean up messy code
-    # START HERE: handle other special keys, clean up messy code
-    
-    # START HERE: then add JS cursor handler    http://stackoverflow.com/questions/512528/set-cursor-position-in-html-textbox
-    # START HERE: then add JS cursor handler    http://stackoverflow.com/questions/512528/set-cursor-position-in-html-textbox
-    # START HERE: then add JS cursor handler    http://stackoverflow.com/questions/512528/set-cursor-position-in-html-textbox
+    if ($input ne '__UR__') {  # BEGIN REAL INPUT, NOT UPDATE REQUEST
+        # START HERE: handle other special keys, then add JS cursor handler    http://stackoverflow.com/questions/512528/set-cursor-position-in-html-textbox
+        # START HERE: handle other special keys, then add JS cursor handler    http://stackoverflow.com/questions/512528/set-cursor-position-in-html-textbox
+        # START HERE: handle other special keys, then add JS cursor handler    http://stackoverflow.com/questions/512528/set-cursor-position-in-html-textbox
 
-    # decode ENTER key if found, append input to output which has been read
-    if (exists $KEY_CODES->{$input}) {
-        my string $input_copy = $input;
-        $input = $KEY_CODES->{$input_copy}->[0];
-        $stdout_stderr .= $KEY_CODES->{$input_copy}->[1];
-    }
-#    else { $stdout_stderr .= $input; }  # disable direct input append for non-keycode characters, wait to read from logfile
-
-
-
-
-
+        # decode ENTER key if found; do NOT append input to output which has been read
+        if (exists $KEY_CODES->{$input}) {
+            my string $input_copy = $input;
+            $input = $KEY_CODES->{$input_copy}->[0];
+#            $stdout_stderr .= $KEY_CODES->{$input_copy}->[1];    # disable direct input append for keycode characters, wait to read from logfile
+        }
+#        else { $stdout_stderr .= $input; }  # disable direct input append for non-keycode characters, wait to read from logfile
 
     # MULTI-THREADED
-
-
 
 =DISABLE_PTY
     # provide input to and/or receive output from command via PTY
@@ -839,14 +826,14 @@ sub run_command_input_ajax : Chained( 'base' ) : PathPart( 'run_command_input_aj
     $screen_pty->close;
 =cut
 
-
-    # provide input to command via screen stuff
-    my string $screen_stuff_command = 'screen -r ' . $screen_session . ' -p0 -X stuff "' . $input . '"';
-    print {*STDERR} '<<< DEBUG >>>: in Code::run_command_input_ajax(), about to run $screen_stuff_command = ', $screen_stuff_command, "\n";
-    my string $screen_stuff_command_retval = `$screen_stuff_command 2>&1;`;
-    print {*STDERR} '<<< DEBUG >>>: in Code::run_command_input_ajax(), have $CHILD_ERROR = ', $CHILD_ERROR, ', $screen_stuff_command_retval = ', $screen_stuff_command_retval, "\n";
-    if ($CHILD_ERROR) { $c->stash->{run_command}->{stdout_stderr} = 'ERROR: Failed to provide input to `screen` session; ' . $screen_stuff_command_retval; return; }
-    $job_running_entry->update({ status => 'command_running' });
+        # provide input to command via screen stuff
+        my string $screen_stuff_command = 'screen -r ' . $screen_session . ' -p0 -X stuff "' . $input . '"';
+        print {*STDERR} '<<< DEBUG >>>: in Code::run_command_input_ajax(), about to run $screen_stuff_command = ', $screen_stuff_command, "\n";
+        my string $screen_stuff_command_retval = `$screen_stuff_command 2>&1;`;
+        print {*STDERR} '<<< DEBUG >>>: in Code::run_command_input_ajax(), have $CHILD_ERROR = ', $CHILD_ERROR, ', $screen_stuff_command_retval = ', $screen_stuff_command_retval, "\n";
+        if ($CHILD_ERROR) { $c->stash->{run_command}->{stdout_stderr} = 'ERROR: Failed to provide input to `screen` session; ' . $screen_stuff_command_retval; return; }
+        $job_running_entry->update({ status => 'command_running' });
+    }  # END REAL INPUT, NOT UPDATE REQUEST
 
     # grab output from command via screen logfile
     my @screen_logfile_tied;
@@ -878,11 +865,9 @@ sub run_command_input_ajax : Chained( 'base' ) : PathPart( 'run_command_input_aj
         $output_character = length $screen_logfile_line;
     }
 
-
-# START HERE: fix "untie attempted while 1 inner references still exist" below, fix KEY_CODES not giving proper newline
-# START HERE: fix "untie attempted while 1 inner references still exist" below, fix KEY_CODES not giving proper newline
-# START HERE: fix "untie attempted while 1 inner references still exist" below, fix KEY_CODES not giving proper newline
-
+# START HERE: fix "untie attempted while 1 inner references still exist" below, likely caused to accepting input after job has completed
+# START HERE: fix "untie attempted while 1 inner references still exist" below, likely caused to accepting input after job has completed
+# START HERE: fix "untie attempted while 1 inner references still exist" below, likely caused to accepting input after job has completed
 
     untie @screen_logfile_tied;
     $job_running_entry->update({ output_line => $output_line, output_character => $output_character });
@@ -890,42 +875,22 @@ sub run_command_input_ajax : Chained( 'base' ) : PathPart( 'run_command_input_aj
     # strip ^M newline control characters read from logfile
     $stdout_stderr =~ s/\015//gxms;
 
-
-
-
-
-=DISABLE_SINGLE_THREADED
-    # actually print input value to input filehandle
-#    print {*STDOUT} '<<< DEBUG >>>: in Code::run_command_input_ajax(), begin input print', "\n";
-#    print $COMMAND_IN $input;
-#    print {*STDOUT} '<<< DEBUG >>>: in Code::run_command_input_ajax(), end input print', "\n";
-
-    print {*STDOUT} '<<< DEBUG >>>: in Code::run_command_input_ajax(), begin input syswrite', "\n";
-    syswrite $COMMAND_IN, $input;
-    print {*STDOUT} '<<< DEBUG >>>: in Code::run_command_input_ajax(), end input syswrite', "\n";
-
-    # read available output after input has been provided
-#    print {*STDOUT} '<<< DEBUG >>>: in Code::run_command_input_ajax(), begin post-input collection of output', "\n";
-#    $selector->remove(*{$COMMAND_OUT}, *{$COMMAND_ERR});
-#    $selector->add(*{$COMMAND_OUT}, *{$COMMAND_ERR});
-#    while (my @readable_filehandles = $selector->can_read(1)) {
-##    my @readable_filehandles = $selector->can_read(0.1);
-#        foreach my filehandleref $readable_filehandle (@readable_filehandles) {
-#            if (fileno($readable_filehandle) == fileno(*{$COMMAND_ERR})) 
-#                { $stdout_stderr .= scalar <$COMMAND_ERR>; }
-#            else
-#                { $stdout_stderr .= scalar <$COMMAND_OUT>; }
-#            if (eof($readable_filehandle)) { $selector->remove($readable_filehandle); }
-#        }
-#    }
-#    print {*STDOUT} '<<< DEBUG >>>: in Code::run_command_input_ajax(), end post-input collection of output', "\n";
-=cut
-
     print {*STDOUT} '<<< DEBUG >>>: in Code::run_command_input_ajax(), about to return $stdout_stderr = ', $stdout_stderr, "\n";
-    $c->stash->{run_command_input_ajax}->{output} = $stdout_stderr;
 
+    # KEYCODE, encode $stdout_stderr using keycodes
+    my string_arrayref $stdout_stderr_keycoded_lines = [];
+    foreach my $stdout_stderr_line (split /\n/, $stdout_stderr) {
+        if ($stdout_stderr_line eq q{}) {
+            push @{$stdout_stderr_keycoded_lines}, '__BL__';
+        }
+        else {
+            push @{$stdout_stderr_keycoded_lines}, $stdout_stderr_line;
+        }
+    }
+    my string $stdout_stderr_keycoded = join "\n", @{$stdout_stderr_keycoded_lines};
 
-
+#    $c->stash->{run_command_input_ajax}->{output} = $stdout_stderr;
+    $c->stash->{run_command_input_ajax}->{output} = $stdout_stderr_keycoded;
 
 =DISABLE_DETACH_UNNEEDED
     # MULTI-THREADED
@@ -1009,28 +974,17 @@ sub run_command : Chained( 'base' ) : PathPart( 'run_command' ) {
     # DEV NOTE: when using open3(), must use `unbuffer -p` to avoid 4K libc buffer min limit, which requires erroneous newline input before unblocking output
 #    $command = q{su www-data -c "PATH=$PATH; set | grep TERM; unbuffer -p } . $command . q{"};
 #    $command = q{su www-data -c "PATH=$PATH; unbuffer -p } . $command . q{"};
-    $command = q{su www-data -c "PATH=$PATH; } . $command . q{"; echo; echo __JOB_COMPLETED__; sleep 1; exit};  # DEV NOTE: must sleep to write logfile
+    # DEV NOTE: must sleep to get output in correct order, then sleep again to write logfile
+    $command = q{su www-data -c "PATH=$PATH; } . $command . q{"; sleep 1; echo; echo __JOB_COMPLETED__; sleep 1; exit};
 #    $command = q{su www-data -c "PATH=$PATH; unbuffer -p } . $command . q{"; echo; read -p JOB_COMPLETED__PRESS_ENTER_TO_CLOSE; exit};
 
 # START HERE: add ssh to other compute_nodes, must use `ssh -t` to avoid screen 'Must be connected to a terminal.' error
 # START HERE: add ssh to other compute_nodes, must use `ssh -t` to avoid screen 'Must be connected to a terminal.' error
 # START HERE: add ssh to other compute_nodes, must use `ssh -t` to avoid screen 'Must be connected to a terminal.' error
 
-
-
-
-
-
-
-
-
-
-
-
 # START HERE: detect when job/command/screen ends, change status and/or remove entry from job_running db table
 # START HERE: detect when job/command/screen ends, change status and/or remove entry from job_running db table
 # START HERE: detect when job/command/screen ends, change status and/or remove entry from job_running db table
-
 
     # MULTI-THREADED
     my string $screen_command;
@@ -1137,10 +1091,6 @@ sub run_command : Chained( 'base' ) : PathPart( 'run_command' ) {
     if ($CHILD_ERROR) { $c->stash->{run_command}->{stdout_stderr} = 'ERROR: Failed to start job in `screen` session; ' . $screen_command_retval; return; }
     $status = 'command_running';
 
-
-
-
-
     # prepare job data for database
 #    my integer $screen_pid = string_to_integer(shift (split /[.]/, $screen_session));
     my integer $screen_session_split = [split /[.]/, $screen_session];
@@ -1174,73 +1124,7 @@ sub run_command : Chained( 'base' ) : PathPart( 'run_command' ) {
     $c->stash->{run_command}->{pid} = $screen_pid;  # START HERE, NEED UPDATE: change to {screen_pid}???
     my integer $pid = $screen_pid;
 
-
-
-
-
-
-
-
-
-
-
-
     my string $stdout_stderr = q{};
-
-
-
-=DISABLE_SINGLE_THREADED
-    print {*STDOUT} '<<< DEBUG >>>: in Code::run_command(), START running $command = ', $command, "\n";
-
-    my filehandleref $COMMAND_IN;
-    my filehandleref $COMMAND_OUT;
-    my filehandleref $COMMAND_ERR = gensym;
-
-    my integer $pid = open3($COMMAND_IN, $COMMAND_OUT, $COMMAND_ERR, $command);
-    $c->stash->{run_command}->{pid} = $pid;
-    $Code::JOBS->{$pid} = {};
-    $Code::JOBS->{$pid}->{IN} = $COMMAND_IN;
-    $Code::JOBS->{$pid}->{OUT} = $COMMAND_OUT;
-    $Code::JOBS->{$pid}->{ERR} = $COMMAND_ERR;
-=cut
-
-    # handle child process exiting
-#    $SIG{CHLD} = sub {
-#        if (waitpid($pid, 0) > 0) {
-#            print {*STDOUT} 'CHILD PROCESS: exit status ', $CHILD_ERROR, ' on PID ', $pid, "\n";
-#            close($Code::JOBS->{$pid}->{IN});
-#            close($Code::JOBS->{$pid}->{OUT});
-#            close($Code::JOBS->{$pid}->{ERR});
-#        }
-#    };
-
-#    print {*COMMAND_IN} "23\n";  # NEED CHANGE: TEMP TEST INPUT
-#    close(*{COMMAND_IN});
-
-    # get initial output, up to first request for input or end of program
-#    my IO::Select $selector = IO::Select->new();
-#    $selector->add(*{COMMAND_ERR}, *{COMMAND_OUT});
-
-##    while (my @readable_filehandles = $selector->can_read) {
-#    my @readable_filehandles = $selector->can_read();
-#        foreach my filehandleref $readable_filehandle (@readable_filehandles) {
-#        if (fileno($readable_filehandle) == fileno(*{COMMAND_ERR})) 
-#            { $stdout_stderr .= scalar <COMMAND_ERR>; }
-#        else
-#            { $stdout_stderr .= scalar <COMMAND_OUT>; }
-#        if (eof($readable_filehandle)) { $selector->remove($readable_filehandle); }
-#        }
-##    }
-
-#    close(*{COMMAND_OUT});
-#    close(*{COMMAND_ERR});
-
-
-
-
-
-
-
 
 #    print {*STDOUT} '<<< DEBUG >>>: in Code::run_command(), FINISH running $command = ', $command, "\n";
 
@@ -1264,12 +1148,7 @@ sub run_command : Chained( 'base' ) : PathPart( 'run_command' ) {
 #        $c->stash->{run_command}->{stdout_stderr} .= "\n\n" . '[[[ JOB ENDED WITH SUCCESS ]]]';
 #    }
 
-
-
 # KEYCODE
-
-
-
 
     # AJAX: generate code
     my CGI $cgi = CGI->new();
@@ -1279,6 +1158,7 @@ sub run_command : Chained( 'base' ) : PathPart( 'run_command' ) {
 <html>
 <body>
 <input type="hidden" name="run_command_pid" id="run_command_pid" value="$pid">
+<input type="hidden" name="run_command_input_param_update_request" id="run_command_input_param_update_request" value="">
 <input autofocus type="text" name="run_command_input_param" id="run_command_input_param"
     onkeydown="
         handle_keydown(event);
@@ -1331,7 +1211,6 @@ key_codes[46] = '__D__';   // DELETE
     }
 </script>
 
-
 </body>
 </html>
 EOHTML
@@ -1340,11 +1219,6 @@ EOHTML
     my string $output_ajax = $cgi_ajax->build_html($cgi, $run_command_output_ajax_html);
 #    print {*STDOUT} '<<< DEBUG >>>: in Code::run_command(), have $output_ajax = ', "\n", $output_ajax, "\n\n";
     $c->stash->{run_command}->{output_ajax} = $output_ajax;
-
-
-
-
-
 }
 
 
