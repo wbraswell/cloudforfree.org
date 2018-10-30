@@ -51,6 +51,7 @@ use rperloptions;
 use rperltypes;
 use rperltypesconv;  # string_to_integer()
 use RPerl::Config;
+#use RPerl::HelperFunctions_cpp;
 
 # [[[ CONSTANTS ]]]
 has posts_per_page => (
@@ -798,33 +799,33 @@ sub run_command_input_ajax : Chained( 'base' ) : PathPart( 'run_command_input_aj
 
     # MULTI-THREADED
 
-=DISABLE_PTY
-    # provide input to and/or receive output from command via PTY
-    my string $screen_reattach_command = 'screen -r ' . $screen_session;
-    print {*STDERR} '<<< DEBUG >>>: in Code::run_command_input_ajax() MULTI-THREADED, have $screen_reattach_command = ', $screen_reattach_command, "\n";
-    my $screen_pty = IO::Pty::Easy->new;
-    # reattach to screen session
-    $screen_pty->spawn($screen_reattach_command);
-    sleep 1;  # give time for output to accrue
-
-    my string $stdout_stderr_tmp = undef;
-
-#    my $written_characters;
-#    if ((defined $input) and ($input ne '')) { $written_characters = $screen_pty->write($input, 0); }  # replaced by $screen_stuff_command above
-#    if (not ((defined $written_characters) and ($written_characters == 0))) {
-        $stdout_stderr_tmp = $screen_pty->read(0);
+#=DISABLE_PTY
+#    # provide input to and/or receive output from command via PTY
+#    my string $screen_reattach_command = 'screen -r ' . $screen_session;
+#    print {*STDERR} '<<< DEBUG >>>: in Code::run_command_input_ajax() MULTI-THREADED, have $screen_reattach_command = ', $screen_reattach_command, "\n";
+#    my $screen_pty = IO::Pty::Easy->new;
+#    # reattach to screen session
+#    $screen_pty->spawn($screen_reattach_command);
+#    sleep 1;  # give time for output to accrue
+#
+#    my string $stdout_stderr_tmp = undef;
+#
+##    my $written_characters;
+##    if ((defined $input) and ($input ne '')) { $written_characters = $screen_pty->write($input, 0); }  # replaced by $screen_stuff_command above
+##    if (not ((defined $written_characters) and ($written_characters == 0))) {
+#        $stdout_stderr_tmp = $screen_pty->read(0);
+##    }
+##    if ((defined $stdout_stderr_tmp) and ($stdout_stderr_tmp eq '')) { last; }
+#
+#    if (defined $stdout_stderr_tmp) { 
+#        # NEED ANSWER: what in the world is this string of crazy control characters?
+#        my string $pty_control_string = ')0[?1049h[4l[?1h=[0m(B[1;57r[H[J[H[J[33B';
+#        $stdout_stderr_tmp =~ s/\Q$pty_control_string\E//gxms;
+#        $stdout_stderr .= $stdout_stderr_tmp;
 #    }
-#    if ((defined $stdout_stderr_tmp) and ($stdout_stderr_tmp eq '')) { last; }
-
-    if (defined $stdout_stderr_tmp) { 
-        # NEED ANSWER: what in the world is this string of crazy control characters?
-        my string $pty_control_string = ')0[?1049h[4l[?1h=[0m(B[1;57r[H[J[H[J[33B';
-        $stdout_stderr_tmp =~ s/\Q$pty_control_string\E//gxms;
-        $stdout_stderr .= $stdout_stderr_tmp;
-    }
-
-    $screen_pty->close;
-=cut
+#
+#    $screen_pty->close;
+#=cut
 
         # provide input to command via screen stuff
         my string $screen_stuff_command = 'screen -r ' . $screen_session . ' -p0 -X stuff "' . $input . '"';
@@ -892,15 +893,15 @@ sub run_command_input_ajax : Chained( 'base' ) : PathPart( 'run_command_input_aj
 #    $c->stash->{run_command_input_ajax}->{output} = $stdout_stderr;
     $c->stash->{run_command_input_ajax}->{output} = $stdout_stderr_keycoded;
 
-=DISABLE_DETACH_UNNEEDED
-    # MULTI-THREADED
-    # detach from screen session
-    my string $screen_detach_command = 'screen -S ' . $screen_session . ' -X detach';
-    print {*STDERR} '<<< DEBUG >>>: in Code::run_command_input_ajax() MULTI-THREADED, about to run $screen_detach_command = ', $screen_detach_command, "\n";
-    my string $screen_detach_command_retval = `$screen_detach_command 2>&1;`;
-    print {*STDERR} '<<< DEBUG >>>: in Code::run_command_input_ajax() MULTI-THREADED, have $CHILD_ERROR = ', $CHILD_ERROR, ', $screen_detach_command_retval = ', $screen_detach_command_retval, "\n";
-    if ($CHILD_ERROR) { $c->stash->{run_command_input_ajax}->{output} .= "\n" . 'ERROR: Failed to detach running `screen` session; ' . $screen_detach_command_retval; return; }
-=cut
+#=DISABLE_DETACH_UNNEEDED
+#    # MULTI-THREADED
+#    # detach from screen session
+#    my string $screen_detach_command = 'screen -S ' . $screen_session . ' -X detach';
+#    print {*STDERR} '<<< DEBUG >>>: in Code::run_command_input_ajax() MULTI-THREADED, about to run $screen_detach_command = ', $screen_detach_command, "\n";
+#    my string $screen_detach_command_retval = `$screen_detach_command 2>&1;`;
+#    print {*STDERR} '<<< DEBUG >>>: in Code::run_command_input_ajax() MULTI-THREADED, have $CHILD_ERROR = ', $CHILD_ERROR, ', $screen_detach_command_retval = ', $screen_detach_command_retval, "\n";
+#    if ($CHILD_ERROR) { $c->stash->{run_command_input_ajax}->{output} .= "\n" . 'ERROR: Failed to detach running `screen` session; ' . $screen_detach_command_retval; return; }
+#=cut
 }
 
 
@@ -922,27 +923,27 @@ sub run_command : Chained( 'base' ) : PathPart( 'run_command' ) {
     $c->stash->{run_command}->{stdout_stderr} = q{};
     $c->stash->{run_command}->{output_ajax} = q{};
 
-=DISABLE_COMMAND
-    # require command parameter
-    my $parameters = $request->parameters();
-    if (not ((exists $parameters->{command}) and (defined $parameters->{command}))) {
-        croak("\n" . q{ERROR ECORCPA00, RUN COMMAND, PARAMETERS: Missing HTML parameter 'command', should contain command to be run, croaking});
-    }
-
-    # accept command parameter
-    my string $command = $parameters->{command};
-    print {*STDOUT} '<<< DEBUG >>>: in Code::run_command(), have $command = ', $command, "\n";
-
-    # SECURITY: disallow multiple commands, only allow 1 RPerl command!
-    if ($command =~ m/[;|><\\]/) {
-        print {*STDOUT}  '<<< DEBUG >>>: SECURITY: in Code::run_command(), intercepted command with forbidden control character', "\n";
-        $c->stash->{run_command}->{stdout_stderr} = 'ERROR: Command with forbidden control character ; or | or < or > or \';
-        return;
-    }
-
-    # SECURITY: all commands must be RPerl commands!
-    $command = 'rperl ' . $command;
-=cut
+#=DISABLE_COMMAND
+#    # require command parameter
+#    my $parameters = $request->parameters();
+#    if (not ((exists $parameters->{command}) and (defined $parameters->{command}))) {
+#        croak("\n" . q{ERROR ECORCPA00, RUN COMMAND, PARAMETERS: Missing HTML parameter 'command', should contain command to be run, croaking});
+#    }
+#
+#    # accept command parameter
+#    my string $command = $parameters->{command};
+#    print {*STDOUT} '<<< DEBUG >>>: in Code::run_command(), have $command = ', $command, "\n";
+#
+#    # SECURITY: disallow multiple commands, only allow 1 RPerl command!
+#    if ($command =~ m/[;|><\\]/) {
+#        print {*STDOUT}  '<<< DEBUG >>>: SECURITY: in Code::run_command(), intercepted command with forbidden control character', "\n";
+#        $c->stash->{run_command}->{stdout_stderr} = 'ERROR: Command with forbidden control character ; or | or < or > or \';
+#        return;
+#    }
+#
+#    # SECURITY: all commands must be RPerl commands!
+#    $command = 'rperl ' . $command;
+#=cut
 
     # require filename parameter
     my $parameters = $request->parameters();
@@ -974,8 +975,14 @@ sub run_command : Chained( 'base' ) : PathPart( 'run_command' ) {
     # DEV NOTE: when using open3(), must use `unbuffer -p` to avoid 4K libc buffer min limit, which requires erroneous newline input before unblocking output
 #    $command = q{su www-data -c "PATH=$PATH; set | grep TERM; unbuffer -p } . $command . q{"};
 #    $command = q{su www-data -c "PATH=$PATH; unbuffer -p } . $command . q{"};
+
+
     # DEV NOTE: must sleep to get output in correct order, then sleep again to write logfile
-    $command = q{su www-data -c "PATH=$PATH; } . $command . q{"; sleep 1; echo; echo __JOB_COMPLETED__; sleep 1; exit};
+    $command = q{su www-data -c "PATH=$PATH; } . $command . q{"; sleep 1; echo; echo __JOB_COMPLETED__; sleep 1; exit};  # ORIGINAL
+#    $command = q{su www-data -c "PATH=$PATH; RPERL_DEBUG=1; RPERL_VERBOSE=1; which rperl; rperl -v; } . $command . q{"; sleep 1; echo; echo __JOB_COMPLETED__; sleep 1; exit};
+#    $command = q{su www-data -c "PATH=$PATH; RPERL_DEBUG=1; RPERL_VERBOSE=1; which rperl; "; sleep 1; echo; echo __JOB_COMPLETED__; sleep 1; exit};
+
+
 #    $command = q{su www-data -c "PATH=$PATH; unbuffer -p } . $command . q{"; echo; read -p JOB_COMPLETED__PRESS_ENTER_TO_CLOSE; exit};
 
 # START HERE: add ssh to other compute_nodes, must use `ssh -t` to avoid screen 'Must be connected to a terminal.' error

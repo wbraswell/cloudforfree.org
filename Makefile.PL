@@ -60,6 +60,9 @@ requires (
     'File::NCopy'                                => '0.32',
     'File::Remove'                               => '0.20',
 #    'Apache2::FileManager'                       => '0.30',
+
+    # WBRASWELL 20180618 2018.169
+    'DBD::mysql'                                 => '4.046',
 );
 
 recommends (
