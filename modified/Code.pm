@@ -7,7 +7,7 @@ package ShinyCMS::Controller::Code;
 use strict;
 use warnings;
 use RPerl::AfterSubclass;
-our $VERSION = 0.020_000;
+our $VERSION = 0.030_000;
 
 =head1 NAME
 
@@ -240,10 +240,12 @@ Display the IDE code editor.
 
 sub editor_file_manager_input_ajax : Chained( 'base' ) : PathPart( 'editor_file_manager_input_ajax' ) {
     my ( $self, $c ) = @ARG;
+    print {*STDOUT} '<<< DEBUG >>>: in Code::editor_file_manager_input_ajax(), top of subroutine', "\n";
 #    print {*STDOUT} '<<< DEBUG >>>: in Code::editor_file_manager_input_ajax(), received $self = ', "\n", Dumper($self), "\n\n";
 #    print {*STDOUT} '<<< DEBUG >>>: in Code::editor_file_manager_input_ajax(), received $c = ', "\n", Dumper($c), "\n\n";
 
     my $request = $c->request();
+#    print {*STDOUT} '<<< DEBUG >>>: in Code::editor_file_manager_input_ajax(), have $request = ', "\n", Dumper($request), "\n\n";
 
     # set up stash
     $c->stash->{template} = 'code/view_editor_file_manager_input_ajax.tt';
@@ -277,7 +279,7 @@ sub editor_file_manager_input_ajax : Chained( 'base' ) : PathPart( 'editor_file_
     # process input or output file parameter(s), return
     if ((exists $parameters->{FILEMANAGER_curr_file}) and (defined $parameters->{FILEMANAGER_curr_file}) and ($parameters->{FILEMANAGER_curr_file} ne q{})) {
         my $filename = $parameters->{FILEMANAGER_curr_file};
-#        print {*STDOUT} '<<< DEBUG >>>: in Code::editor_file_manager_input_ajax(), have $filename = ', q{'}, $filename, q{'}, "\n";
+        print {*STDOUT} '<<< DEBUG >>>: in Code::editor_file_manager_input_ajax(), have non-empty FILEMANAGER_curr_file $filename = ', q{'}, $filename, q{'}, "\n";
 
         # SECURITY: do not allow double-dots in filename, server-side check
         if (($filename =~ m/[^a-zA-Z0-9-_.\/]/gxms) or ($filename =~ m/[.][.]+/gxms)) {
@@ -289,7 +291,9 @@ sub editor_file_manager_input_ajax : Chained( 'base' ) : PathPart( 'editor_file_
 
         # accept output file parameter(s) (AKA save AKA write), return file write success
         if ((exists $parameters->{FILEMANAGER_cmd}) and (defined $parameters->{FILEMANAGER_cmd}) and ($parameters->{FILEMANAGER_cmd} ne q{})) {
+            print {*STDOUT} '<<< DEBUG >>>: in Code::editor_file_manager_input_ajax(), have $parameters->{FILEMANAGER_cmd} = ', $parameters->{FILEMANAGER_cmd}, "\n";
             if ($parameters->{FILEMANAGER_cmd} eq 'save') {
+                print {*STDOUT} '<<< DEBUG >>>: in Code::editor_file_manager_input_ajax(), SAVE FILE COMMAND', "\n";
                 if (not ((exists $parameters->{editor_ace_textarea}) and (defined $parameters->{editor_ace_textarea}))) 
                     { croak("\n" . q{ERROR ECOFMCSPA00, FILE MANAGER COMMAND SAVE, PARAMETERS: Missing HTML parameter 'editor_ace_textarea', should contain source code to be saved, croaking}); }
                 my string $output_source_code = $parameters->{editor_ace_textarea};
@@ -297,10 +301,14 @@ sub editor_file_manager_input_ajax : Chained( 'base' ) : PathPart( 'editor_file_
                 if ($output_source_code eq q{}) 
                     { croak("\n" . q{ERROR ECOFMCSPA01, FILE MANAGER COMMAND SAVE, PARAMETERS: Empty HTML parameter 'input_source_code', should contain source code to be saved, croaking}); }
 
-                # NEED ANSWER: is this correct here?!?
+                # NEED ANSWER: is this necessary? was there something else in the ACE editor or LearningRPerl example files causing this error?
                 # append newline to avoid "ERROR ECOPAPC13, RPERL PARSER, PERL CRITIC VIOLATION: RPerl source code input file '/tmp/rperl_tempfileFOO.pl' does not end with newline character or line of all-whitespace characters, dying
                 # append return character to avoid "ERROR ECOPAPC02, RPERL PARSER, PERL CRITIC VIOLATION: Perl::Critic::Policy::CodeLayout::RequireConsistentNewlines"
-                $output_source_code .= "\r\n";
+#                $output_source_code .= "\n";  # RIGHT?  Linux newline
+#                $output_source_code .= "\r\n";  # WRONG?  Windows newline
+
+                # replace all newline characters with Linux "\n" new line characters, to avoid error Perl::Critic::Policy::CodeLayout::RequireConsistentNewlines
+                $output_source_code =~ s/\R/\n/gxms;
 
                 (open my filehandleref $SAVE_FILEHANDLE, '>', ($document_root . $filename)) or do {
                     $c->stash->{editor_file_manager}->{output} = $OS_ERROR;
@@ -317,12 +325,11 @@ sub editor_file_manager_input_ajax : Chained( 'base' ) : PathPart( 'editor_file_
                 $c->stash->{editor_file_manager}->{output} = 'SUCCESS: Source code saved in file name ' . q{'} . $filename . q{'} . '.';
                 return;
             }
-            else {
-                $c->stash->{editor_file_manager}->{output} = 'ERROR: Unrecognized File Manager command ' . q{'} . $parameters->{FILEMANAGER_cmd} . q{'};
-                return;
-            }
-        }
-        else {
+            elsif ($parameters->{FILEMANAGER_cmd} eq 'open') {
+                print {*STDOUT} '<<< DEBUG >>>: in Code::editor_file_manager_input_ajax(), OPEN FILE COMMAND', "\n";
+
+
+
             # accept input file parameter (AKA open AKA read), return contents of file to editor
             my $input_file_lines = q{};
             (open my filehandleref $INPUT_FILEHANDLE, '<', ($document_root . $filename)) or do {
@@ -336,12 +343,38 @@ sub editor_file_manager_input_ajax : Chained( 'base' ) : PathPart( 'editor_file_
                 $c->stash->{editor_file_manager}->{output} = $OS_ERROR;
                 return;
             };
-            $c->stash->{editor_file_manager}->{output} = $input_file_lines;
+
+            # DEV NOTE, CORRELATION #cff03: stashed Perl values like $c->stash->{editor_file_manager}->{curr_file} 
+            # are accessed in HTML as static TT values like [%- editor_file_manager.curr_file %] but the HTML must be re-loaded each time to refresh new values;
+            # use CGI::Ajax functions for dynamic JS values without re-loading the HTML page
+
+            # our goal is to return both $input_file_lines and $filename from here in Perl to js_editor_file_content_update() in JS
+#            $c->stash->{editor_file_manager}->{output} = $input_file_lines;  # ORIGINAL: contains $input_file_lines only, not curr_file (AKA $filename)
+            $c->stash->{editor_file_manager}->{output} = $filename . "\n" . $input_file_lines;  # GOOD HACK: returns concatenated dynamic values, must separate in JS
+#            $c->stash->{editor_file_manager}->{output} = [$filename, $input_file_lines];  # BAD: returns stringified "ARRAY(0x0123456)"
+#            $c->stash->{editor_file_manager}->{output} = ($filename, $input_file_lines);  # BAD: only returns $input_file_lines w/ "useless use of private variable" warning
+#            $c->stash->{editor_file_manager}->{output} = ($input_file_lines, $filename);  # BAD: only returns $filename w/ "useless use of private variable" warning
+#            $c->stash->{editor_file_manager}->{curr_file} = $filename;  # BAD: static value
+#            print {*STDOUT} '<<< DEBUG >>>: in Code::editor_file_manager_input_ajax(), have $c->stash->{editor_file_manager} = ', Dumper($c->stash->{editor_file_manager}), "\n";
             return;
+#            return ($filename, $input_file_lines);  # BAD: has no effect?
+#            return 'HOWDY!HOWDY!HOWDY!';            # BAD: has no effect?
+
+
+
+            }
+
+            else {
+                $c->stash->{editor_file_manager}->{output} = 'ERROR: Unrecognized File Manager command ' . q{'} . $parameters->{FILEMANAGER_cmd} . q{'};
+                return;
+            }
+        }
+        else {
+            print {*STDOUT} '<<< DEBUG >>>: in Code::editor_file_manager_input_ajax(), NO COMMAND', "\n";
         }
     }
     
-    # NOT input or output file parameters(s), create Apache2::FileManager object, generate, return
+    # if the code reaches this point, we do NOT have input or output file parameters(s), create Apache2::FileManager object, generate, return
 
     # Apache2::FileManager: override $r with $request_wrapped_psgi, thereby wrapping $r
     my $request_wrapped_psgi;
@@ -357,7 +390,8 @@ sub editor_file_manager_input_ajax : Chained( 'base' ) : PathPart( 'editor_file_
     # replace with calls to editor_file_manager_input_ajax() for submitting the same FileManager form data via CGI::Ajax
     my $ajax_call_string_filemanager = q{editor_file_manager_input_ajax( ['FILEMANAGER_curr_file', 'FILEMANAGER_curr_dir', 'FILEMANAGER_cmd', 'FILEMANAGER_arg', 'FILEMANAGER_last_select_all'], [js_editor_file_manager_div_update] );};
     my $ajax_call_string_file_content = q{editor_file_manager_input_ajax( ['FILEMANAGER_curr_file', 'FILEMANAGER_curr_dir', 'FILEMANAGER_cmd', 'FILEMANAGER_arg', 'FILEMANAGER_last_select_all'], [js_editor_file_content_update] );};
-#    $ajax_call_string = q{alert('about to call editor_file_manager_input_ajax()...');} . "\n" . $ajax_call_string;
+#    $ajax_call_string_filemanager = q{alert('TMP DEBUG: about to call Perl editor_file_manager_input_ajax() and pass results to JS js_editor_file_manager_div_update()...');} . "\n" . $ajax_call_string_filemanager;
+#    $ajax_call_string_file_content = q{alert('TMP DEBUG: about to call Perl editor_file_manager_input_ajax() and pass results to JS js_editor_file_content_update()...');} . "\n" . $ajax_call_string_file_content;
     $handler_retval =~ s/f\.submit\(\);/$ajax_call_string_filemanager/gxms;
 
     # AJAX & Apache2::FileManager: intercept calls to window.document.FileManager which does not work inside W2UI layout, 
@@ -402,8 +436,10 @@ sub editor_file_manager_input_ajax : Chained( 'base' ) : PathPart( 'editor_file_
         <A HREF=# onclick="
             var f=window.document.forms.namedItem('FileManager');
             f.FILEMANAGER_curr_file.value='$path';
+            f.FILEMANAGER_cmd.value='open';
             $ajax_call_string_file_content
             f.FILEMANAGER_curr_file.value='';
+            f.FILEMANAGER_cmd.value='';
             return false;">
             <FONT COLOR=BLACK>$filename</FONT>
 EOL
@@ -481,6 +517,11 @@ EOL
     # subsequent calls from user clicking on links, yes parameters, do not include AJAX javascript from build_html()
     $c->stash->{editor_file_manager}->{output} = $handler_retval;
 
+    # DEV NOTE, CORRELATION #cff03: stashed Perl values like $c->stash->{editor_file_manager}->{curr_file} 
+    # are accessed in HTML as static TT values like [%- editor_file_manager.curr_file %] but the HTML must be re-loaded each time to refresh new values;
+    # use CGI::Ajax functions for dynamic JS values without re-loading the HTML page
+#    $c->stash->{editor_file_manager}->{curr_file} = 'COWBELL!';  # BAD: static TT value, need dynamic JS value
+
     # DEBUG OUTPUT
 #    open(my $fh, '>', '/tmp/handler_retval.out');
 #    print {$fh} $handler_retval;
@@ -540,6 +581,7 @@ our $VERSION = 0.001_000;
 print 'Hello, world!', "\n";
 EOF
     $c->stash->{ file_input } = { default => $learning_rperl_ch1_ex1 };
+    $c->stash->{editor_file_manager}->{curr_file} = 'default.pl';  # default file name, static TT data
 }
 
 =head2 view_repos

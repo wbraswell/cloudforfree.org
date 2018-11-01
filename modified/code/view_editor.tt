@@ -1,3 +1,4 @@
+<!-- VERSION 0.030_000 -->
 [%- meta.wrapper = 'site-wrapper.tt';
     meta.title   = editor.title;
 %]
@@ -23,11 +24,14 @@
         [%- editor_file_manager.output_js %]
 
         <script>
+//            alert('TMP DEBUG: have static TT value editor_file_manager.curr_file = ' + "'" + '[%- editor_file_manager.curr_file %]' + "'");
+
             // AJAX & Apache2::FileManager: overwrite filemanager div
             function js_editor_file_manager_div_update() {
                 var input1 = arguments[0].trim();
                 if (input1) {
                     window.document.getElementById('editor_file_manager_div').innerHTML = input1;
+//                    alert('TMP DEBUG: update editor_file_manager_div.innerHTML');
                 }
                 else {
                     alert('ERROR ECOFMDI00, FILE MANAGER DISPLAY: No File Manager HTML received from server.');
@@ -36,9 +40,39 @@
 
             // AJAX & Apache2::FileManager & ACE Editor: load file content into editor from input AKA open AKA read
             function js_editor_file_content_update() {
-                var input1 = arguments[0].trim();
-                if (input1) {
-                    editor.setValue(input1);
+//                var input_file_lines = arguments[0].trim();  // ORIGINAL: contains input_file_lines only, not curr_file
+                var curr_file = arguments[0].trim().split('\n', 1)[0];  // limit parameter 1 on split() operator only splits first line then returns, faster speed
+                var input_file_lines = arguments[0].trim().substring(arguments[0].trim().indexOf("\n") + 1);  // use indexOf instead of split() for remaining lines, faster speed
+
+                if (input_file_lines) {
+                    // DEV NOTE, CORRELATION #cff03: stashed Perl values like $c->stash->{editor_file_manager}->{curr_file} 
+                    // are accessed in HTML as static TT values like [%- editor_file_manager.curr_file %] but the HTML must be re-loaded each time to refresh new values;
+                    // use CGI::Ajax functions for dynamic JS values without re-loading the HTML page
+
+                    // BAD: static value
+//                    alert('TMP DEBUG: update editor.setValue(), have editor_file_manager.curr_file = ' + "'" + '[%- editor_file_manager.curr_file %]' + "'");
+//                    alert('TMP DEBUG: update editor.setValue(), have curr_file = ' + "'" + curr_file + "'");  // GOOD
+
+                    // W2UI BUG: confusion between tab "caption" vs "text", must set both    https://github.com/vitmalina/w2ui/issues/8
+//                    alert('TMP DEBUG: about to change tab caption');
+                    w2ui['tabs_w2ui'].set('tab1_div', { caption: curr_file, text: curr_file });  // GOOD!
+//                    alert('TMP DEBUG: about to refresh tabs');
+                    w2ui['tabs_w2ui'].refresh();
+//                    console.log(w2ui['tabs_w2ui']);  // TMP DEBUG
+
+                    // TMP DEBUG: works
+//                    alert('TMP DEBUG: about to hide tab');
+//                    $('#tab1_div').hide();
+//                    alert('TMP DEBUG: about to show tab');
+//                    $('#tab1_div').show();
+
+                    // f.FILEMANAGER_curr_file.value does not contain any data, set now
+                    var f=window.document.forms.namedItem('FileManager');
+                    f.FILEMANAGER_curr_file.value = curr_file;
+//                    alert('TMP DEBUG: update editor.setValue(), have f.FILEMANAGER_curr_file.value = ' + "'" + f.FILEMANAGER_curr_file.value + "'");
+//                    console.log(f);  // dump contents of object to JS console in browser dev tools
+
+                    editor.setValue(input_file_lines);
                     editor.session.selection.clearSelection();
                 }
                 else {
@@ -311,10 +345,12 @@
                             &nbsp;&nbsp;\
                             Keybindings:\
                             <label><input type='radio' name='ace_keybindings'\
-                                onclick='editor.setKeyboardHandler(\"ace/keyboard/vim\");' checked='checked'/>Vim (default)</label>\
+                                onclick='editor.setKeyboardHandler(\"ace/keyboard/vim\");' checked='checked'/>Vim</label>\
                             <label><input type='radio' name='ace_keybindings' onclick='editor.setKeyboardHandler(\"ace/keyboard/emacs\");'/>Emacs</label>\
                             <label><input type='radio' name='ace_keybindings' onclick='editor.setKeyboardHandler(\"\");'/>Normal</label>\
                             &nbsp;&nbsp;\
+                            <!-- must pass empty arguments ({}, {}, {}) to saveFile() errors: Cannot read property 'argString' of undefined -->\
+                            <button class='w2ui-btn' onclick='editor.commands.byName.saveFile.exec({}, {}, {});'>Save (CTRL-S)</button>\
                             <!-- RPerl Syntax Check button & soon-to-be-hidden textarea -->\
                             <form name='syntax_check' action='syntax_check' method='post' target='_blank' style='display: inline;'>\
                                 <button class='w2ui-btn' id='syntax_check_submit' onclick='window.document.forms.namedItem(\"syntax_check\").submit();'>\
@@ -439,14 +475,14 @@
                 sender: 'editor|cli'
               },
               exec: function (env, args, request) {
-                //alert('SAVE FILE TRIGGER: args.input = ' + args.input + ', args.commandName = ' + args.commandName + ', args.argString = ' + args.argString);
+//                alert('SAVE FILE TRIGGER: args.input = ' + args.input + ', args.commandName = ' + args.commandName + ', args.argString = ' + args.argString);
             
                 var f=window.document.forms.namedItem('FileManager');
             
                 if (args.argString) {
                     // SECURITY: do not allow double-dots in filename, client-side check
                     var arg_string = args.argString.substring(1);
-                    alert("HAVE arg_string = '" + arg_string + "'");
+//                    alert("HAVE arg_string = '" + arg_string + "'");
                     var non_filename_regex = /[^a-zA-Z0-9-_.\/]/g;
                     var multidot_regex = /[.][.]+/g;
                     if (non_filename_regex.test(arg_string) || multidot_regex.test(arg_string)) {
@@ -455,22 +491,30 @@
                     }
                     else {
                         f.FILEMANAGER_curr_file.value = arg_string;
-                        alert('GOOD: Supported file name, from arg_string, have f.FILEMANAGER_curr_file.value = ' + "'" + f.FILEMANAGER_curr_file.value + "'" + '.');
+//                        alert('GOOD: Supported file name, from arg_string, have f.FILEMANAGER_curr_file.value = ' + "'" + f.FILEMANAGER_curr_file.value + "'" + '.');
                     }
                 }
                 else {
-                    f.FILEMANAGER_curr_file.value = 'FOOOOO NEED REAL FILENAME';
-                    alert('GOOD: Supported file name, existing, have f.FILEMANAGER_curr_file.value = ' + "'" + f.FILEMANAGER_curr_file.value + "'" + '.');
+                    if ((typeof f.FILEMANAGER_curr_file.value == 'undefined') || (f.FILEMANAGER_curr_file.value == '')) {
+                        f.FILEMANAGER_curr_file.value = '[%- editor_file_manager.curr_file %]';
+//                        alert('GOOD: Supported file name, default file from static TT value, set f.FILEMANAGER_curr_file.value = ' + "'" + f.FILEMANAGER_curr_file.value + "'" + '.');
+                    }
+//                    else {
+//                        alert('GOOD: Supported file name, existing, have f.FILEMANAGER_curr_file.value = ' + "'" + f.FILEMANAGER_curr_file.value + "'" + '.');
+//                    }
                 }
             
                 f.FILEMANAGER_cmd.value = 'save';
                 editor_ace_textarea_var.val(editor.getSession().getValue());
                 editor_file_manager_input_ajax( ['FILEMANAGER_curr_file', 'FILEMANAGER_curr_dir', 'FILEMANAGER_cmd', 'FILEMANAGER_arg', 'FILEMANAGER_last_select_all', 'editor_ace_textarea'], [js_editor_file_save_report] );
             
+                // unset 'save' command to avoid false triggering when navigating FileManager after saving a file
+                f.FILEMANAGER_cmd.value = '';
+
                 //console.log('SAVE FILE TRIGGER: env = ', env, ', args = ', args, ', request = ', request);
               }
             });
-            
+ 
             // enable vim :w and :write commands
             ace.config.loadModule('ace/keyboard/vim', function(m) {
                 var VimApi = ace.require('ace/keyboard/vim').CodeMirror.Vim;
@@ -484,9 +528,9 @@
 
 
 
-// START HERE: open file in new tab, set tab title to filename, save full file path to reuse for save command w/out filename, save current dir to reuse for save command w/ filename, check if "\r\n" causes '^M' at the end output file, change output file owner to not be root.root, refresh filemanager after save
-// START HERE: open file in new tab, set tab title to filename, save full file path to reuse for save command w/out filename, save current dir to reuse for save command w/ filename, check if "\r\n" causes '^M' at the end output file, change output file owner to not be root.root, refresh filemanager after save
-// START HERE: open file in new tab, set tab title to filename, save full file path to reuse for save command w/out filename, save current dir to reuse for save command w/ filename, check if "\r\n" causes '^M' at the end output file, change output file owner to not be root.root, refresh filemanager after save
+// START HERE: fix weird \r\n ^M newline issue, open files in new tabs, save current dir to reuse for `:w foo.pl` save command w/ explicit filename, change output file owner to not be root.root, refresh filemanager after saves
+// START HERE: fix weird \r\n ^M newline issue, open files in new tabs, save current dir to reuse for `:w foo.pl` save command w/ explicit filename, change output file owner to not be root.root, refresh filemanager after saves
+// START HERE: fix weird \r\n ^M newline issue, open files in new tabs, save current dir to reuse for `:w foo.pl` save command w/ explicit filename, change output file owner to not be root.root, refresh filemanager after saves
 
 
 
@@ -511,7 +555,8 @@
                 name: 'tabs_w2ui',
                 active: 'tab1_div',
                 tabs: [
-                    { id: 'tab1_div', caption: 'Current File' },
+                    //{ id: 'tab1_div', caption: 'Current File' },
+                    { id: 'tab1_div', caption: '[%- editor_file_manager.curr_file %]' },
                     //{ id: 'tab2_div', caption: 'Tab 2' },
                     //{ id: 'tab3_div', caption: 'Tab 3' },
                 ],
