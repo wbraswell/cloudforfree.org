@@ -43,7 +43,8 @@ requires (
 
     # WBRASWELL 20161226 2016.361
     # Auth0
-    'Plack::Middleware::DoormanAuth0'            => '0.10',
+    #'Plack::Middleware::DoormanAuth0'            => '0.10',
+    'Doorman'                                    => '0.10',
     'Lingua::EN::NameParse'                      => '1.36',
     # AJAX
     'CGI::Ajax'                                  => '0.707',
