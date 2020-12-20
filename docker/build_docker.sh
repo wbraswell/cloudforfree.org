@@ -1,4 +1,4 @@
 #!/bin/bash
 
-docker build -t cloudff_app ./docker/app;
-docker build -t cloudff_db ./docker/db;
+docker build -t cloudff_app ./app;
+docker build -t cloudff_db ./db;
