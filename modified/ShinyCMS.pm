@@ -4,7 +4,8 @@ print {*STDERR} '<<< DEBUG >>>: top of ShinyCMS.pm', "\n";
 
 # NEED FIX, CORRELATION #cff02: remove hard-coded absolute paths
 our $GITHUB_REPOS_DIR = '/home/wbraswell/github_repos/';
-our $ROOT_DIR = $GITHUB_REPOS_DIR . 'cloudforfree.org-latest/';
+our $LEARNING_RPERL_DIR = '/home/rperluser/perl5';
+our $ROOT_DIR = '/home/cff/public_html/cloudforfree.org/';
 
 #print {*STDERR} '<<< DEBUG >>>: in ShinyCMS.pm, about to use ShinyCMS_dependencies', "\n";
 #use ShinyCMS_dependencies;
@@ -59,17 +60,6 @@ print {*STDERR} '<<< DEBUG >>>: in ShinyCMS.pm, about to call config()', "\n";
 
 __PACKAGE__->config(
     # Auth0: enable PSGI middleware
-    'psgi_middleware', [
-#        'Debug',  # SECURITY: publicly displays client secret!!!
-        'Session::Cookie' => { secret => 'fake_secret' },
-        'DoormanAuth0' => {
-            root_url => 'http://cloudforfree.org',
-            scope => 'users',
-            auth0_domain => 'cloudforfree.auth0.com',
-            auth0_client_secret => 'drY0Cbe0eL4IIBAb0OXK1yPz_5lZhwYx5qhoa3i-M8BYHifknS49G82qkeeQ2RSR',
-            auth0_client_id     => 'JMwBFCjaelke73mE5HvLq7oTPOOQby9V'
-        }
-    ],
 	name => 'ShinyCMS',
 	# Configure DB sessions
 	'Plugin::Session' => {
@@ -100,8 +90,20 @@ __PACKAGE__->config(
 
 # Set cookie domain to be wildcard (so it works on sub-domains too)
 method finalize_config {
+	#Config values that need data from the parsed config file
 	__PACKAGE__->config(
-		session => { cookie_domain => '.'.$self->config->{ domain } }
+		session => { cookie_domain => '.'.$self->config->{ domain } },
+    'psgi_middleware', [
+#        'Debug',  # SECURITY: publicly displays client secret!!!
+        'Session::Cookie' => { secret => 'fake_secret' },
+        'DoormanAuth0' => {
+            root_url => 'http://' . $self->config->{ domain },
+            scope => 'users',
+            auth0_domain => 'cloudforfree.auth0.com',
+            auth0_client_secret => 'drY0Cbe0eL4IIBAb0OXK1yPz_5lZhwYx5qhoa3i-M8BYHifknS49G82qkeeQ2RSR',
+            auth0_client_id     => 'JMwBFCjaelke73mE5HvLq7oTPOOQby9V'
+        }
+    ],
 	);
 	$self->next::method( @_ );
 };

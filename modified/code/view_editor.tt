@@ -353,7 +353,7 @@
                             <button class='w2ui-btn' onclick='editor.commands.byName.saveFile.exec({}, {}, {});'>Save (CTRL-S)</button>\
                             <!-- RPerl Syntax Check button & soon-to-be-hidden textarea -->\
                             <form name='syntax_check' action='syntax_check' method='post' target='_blank' style='display: inline;'>\
-                                <button class='w2ui-btn' id='syntax_check_submit' onclick='window.document.forms.namedItem(\"syntax_check\").submit();'>\
+                                <button class='w2ui-btn' id='syntax_check_submit' >\
                                     Syntax Check (F6)</button>\
                                 <!-- purposefully empty textarea, to avoid any visible pixels before editor_ace_textarea_var.hide() occurs -->\
                                 <textarea name='editor_ace_textarea'></textarea>\
@@ -543,7 +543,8 @@
 
             // Syntax Check: set hidden textarea value to ACE Editor value
             $('#syntax_check_submit').on('click', function() {
-                editor_ace_textarea_var.val(editor.getSession().getValue());
+								editor_ace_textarea_var.val(editor.getSession().getValue());
+								window.document.forms.namedItem("syntax_check").submit();
             });
 
         // W2UI: create layout, done

@@ -4,5 +4,9 @@ META.yml
 blib
 inc
 
-# do not publish MySQL password
-shinycms.conf
+.vscode/
+MYMETA.json
+MYMETA.yml
+_Inline/
+modified/cms-uploads/
+modified/user_files/

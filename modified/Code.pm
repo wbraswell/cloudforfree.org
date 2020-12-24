@@ -531,8 +531,8 @@ EOL
 
 sub view_editor : Chained( 'base' ) : PathPart( 'editor' ) {
     my ( $self, $c ) = @ARG;
-#    print {*STDOUT} '<<< DEBUG >>>: in Code::view_editor(), received $self = ', "\n", Dumper($self), "\n\n";
-#    print {*STDOUT} '<<< DEBUG >>>: in Code::view_editor(), received $c = ', "\n", Dumper($c), "\n\n";
+		print {*STDOUT} '<<< DEBUG >>>: in Code::view_editor(), received $self = ', "\n", Dumper($self), "\n\n";
+		print {*STDOUT} '<<< DEBUG >>>: in Code::view_editor(), received $c = ', "\n", Dumper($c), "\n\n";
 
     my $request = $c->request();
     # NEED ANSWER: are we going to accept input parameters on this page?
@@ -662,12 +662,12 @@ Check the RPerl syntax of input source code.
 
 sub syntax_check : Chained( 'base' ) : PathPart( 'syntax_check' ) {
     my ( $self, $c ) = @ARG;
-#    print {*STDOUT} '<<< DEBUG >>>: in Code::syntax_check(), received $self = ', "\n", Dumper($self), "\n\n";
-#    print {*STDOUT} '<<< DEBUG >>>: in Code::syntax_check(), received $c = ', "\n", Dumper($c), "\n\n";
+		print {*STDOUT} '<<< DEBUG >>>: in Code::syntax_check(), received $self = ', "\n", Dumper($self), "\n\n";
+		print {*STDOUT} '<<< DEBUG >>>: in Code::syntax_check(), received $c = ', "\n", Dumper($c), "\n\n";
 
     my $request = $c->request();
-#    print {*STDOUT} '<<< DEBUG >>>: in Code::syntax_check(), have $request->param() = ', "\n", Dumper($request->param()), "\n\n";
-#    print {*STDOUT} '<<< DEBUG >>>: in Code::syntax_check(), have $request->parameters() = ', "\n", Dumper($request->parameters()), "\n\n";
+		print {*STDOUT} '<<< DEBUG >>>: in Code::syntax_check(), have $request->param() = ', "\n", Dumper($request->param()), "\n\n";
+		print {*STDOUT} '<<< DEBUG >>>: in Code::syntax_check(), have $request->parameters() = ', "\n", Dumper($request->parameters()), "\n\n";
 
     # set up stash
     $c->stash->{template} = 'code/view_syntax_check.tt';
@@ -1020,7 +1020,7 @@ sub run_command : Chained( 'base' ) : PathPart( 'run_command' ) {
 
 
     # DEV NOTE: must sleep to get output in correct order, then sleep again to write logfile
-    $command = q{su www-data -c "PATH=$PATH; } . $command . q{"; sleep 1; echo; echo __JOB_COMPLETED__; sleep 1; exit};  # ORIGINAL
+    $command = q{PATH=$PATH; } . $command . q{; sleep 1; echo; echo __JOB_COMPLETED__; sleep 1; exit};  # ORIGINAL
 #    $command = q{su www-data -c "PATH=$PATH; RPERL_DEBUG=1; RPERL_VERBOSE=1; which rperl; rperl -v; } . $command . q{"; sleep 1; echo; echo __JOB_COMPLETED__; sleep 1; exit};
 #    $command = q{su www-data -c "PATH=$PATH; RPERL_DEBUG=1; RPERL_VERBOSE=1; which rperl; "; sleep 1; echo; echo __JOB_COMPLETED__; sleep 1; exit};
 
@@ -1103,9 +1103,15 @@ sub run_command : Chained( 'base' ) : PathPart( 'run_command' ) {
     # assemble logfile name
     # DEV NOTE, CORRELATION #cff01: screen logfile max path length is 70, must use OS symlink to shorten path
 #    my string $screen_logfile = $ShinyCMS::ROOT_DIR . 'root/user_jobs/' . $username . '/' . $screen_session . '.log';
-    my string $screen_logfile = '/srv/cloudff_user_jobs/' . $username . '/' . $screen_session . '.log';
-    my string $screen_logfile_command;
-    my string $screen_logfile_command_retval;
+		my string $screen_logpath = '/srv/cloudff_user_jobs/' . $username . '/';
+		my string $screen_logfile = $screen_logpath . $screen_session . '.log';
+		my string $screen_logfile_command;
+		my string $screen_logfile_command_retval;
+
+    print {*STDERR} "<<< DEBUG >>>: in Code::run_command_input_ajax(), about to run command = mkdir -p\n";
+		`mkdir -p $screen_logpath 2>&1`;
+
+
 
     # set logfile
     $screen_logfile_command = 'screen -r ' . $screen_session . ' -p0 -X colon "logfile ' . $screen_logfile . ' \015"';
