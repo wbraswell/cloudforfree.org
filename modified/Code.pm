@@ -531,8 +531,8 @@ EOL
 
 sub view_editor : Chained( 'base' ) : PathPart( 'editor' ) {
     my ( $self, $c ) = @ARG;
-		print {*STDOUT} '<<< DEBUG >>>: in Code::view_editor(), received $self = ', "\n", Dumper($self), "\n\n";
-		print {*STDOUT} '<<< DEBUG >>>: in Code::view_editor(), received $c = ', "\n", Dumper($c), "\n\n";
+		#print {*STDOUT} '<<< DEBUG >>>: in Code::view_editor(), received $self = ', "\n", Dumper($self), "\n\n";
+		#print {*STDOUT} '<<< DEBUG >>>: in Code::view_editor(), received $c = ', "\n", Dumper($c), "\n\n";
 
     my $request = $c->request();
     # NEED ANSWER: are we going to accept input parameters on this page?
@@ -662,12 +662,12 @@ Check the RPerl syntax of input source code.
 
 sub syntax_check : Chained( 'base' ) : PathPart( 'syntax_check' ) {
     my ( $self, $c ) = @ARG;
-		print {*STDOUT} '<<< DEBUG >>>: in Code::syntax_check(), received $self = ', "\n", Dumper($self), "\n\n";
-		print {*STDOUT} '<<< DEBUG >>>: in Code::syntax_check(), received $c = ', "\n", Dumper($c), "\n\n";
+		#print {*STDOUT} '<<< DEBUG >>>: in Code::syntax_check(), received $self = ', "\n", Dumper($self), "\n\n";
+		#print {*STDOUT} '<<< DEBUG >>>: in Code::syntax_check(), received $c = ', "\n", Dumper($c), "\n\n";
 
     my $request = $c->request();
-		print {*STDOUT} '<<< DEBUG >>>: in Code::syntax_check(), have $request->param() = ', "\n", Dumper($request->param()), "\n\n";
-		print {*STDOUT} '<<< DEBUG >>>: in Code::syntax_check(), have $request->parameters() = ', "\n", Dumper($request->parameters()), "\n\n";
+		#print {*STDOUT} '<<< DEBUG >>>: in Code::syntax_check(), have $request->param() = ', "\n", Dumper($request->param()), "\n\n";
+		#print {*STDOUT} '<<< DEBUG >>>: in Code::syntax_check(), have $request->parameters() = ', "\n", Dumper($request->parameters()), "\n\n";
 
     # set up stash
     $c->stash->{template} = 'code/view_syntax_check.tt';
