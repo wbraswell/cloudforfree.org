@@ -4,7 +4,7 @@ print {*STDERR} '<<< DEBUG >>>: top of ShinyCMS.pm', "\n";
 
 # NEED FIX, CORRELATION #cff02: remove hard-coded absolute paths
 our $GITHUB_REPOS_DIR = '/home/wbraswell/github_repos/';
-our $LEARNING_RPERL_DIR = '/home/rperluser/perl5';
+our $LEARNING_RPERL_DIR = '/home/rperluser/perl5/lib/perl5/RPerl/Learning/';
 our $ROOT_DIR = '/home/cff/public_html/cloudforfree.org/';
 
 #print {*STDERR} '<<< DEBUG >>>: in ShinyCMS.pm, about to use ShinyCMS_dependencies', "\n";
