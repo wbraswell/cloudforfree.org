@@ -543,8 +543,8 @@
 
             // Syntax Check: set hidden textarea value to ACE Editor value
             $('#syntax_check_submit').on('click', function() {
-								editor_ace_textarea_var.val(editor.getSession().getValue());
-								window.document.forms.namedItem("syntax_check").submit();
+                editor_ace_textarea_var.val(editor.getSession().getValue());
+                window.document.forms.namedItem("syntax_check").submit();
             });
 
         // W2UI: create layout, done

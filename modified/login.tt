@@ -1,10 +1,10 @@
 [%- meta.wrapper = 'site-wrapper.tt';
-	meta.title   = 'Log In';
+  meta.title   = 'Log In';
 %]
 
 <h2>
-	[% meta.title %]
-	<br>Using GitHub Account<br>Via Auth0 Authentication
+  [% meta.title %]
+  <br>Using GitHub Account<br>Via Auth0 Authentication
 </h2>
 
 [%# DEV NOTE, CORRELATION #cff00: duplicate code, must also update in homepage.tt %]

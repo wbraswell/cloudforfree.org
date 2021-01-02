@@ -22,14 +22,14 @@ use Catalyst::Runtime 5.80;
 print {*STDERR} '<<< DEBUG >>>: in ShinyCMS.pm, about to use Catalyst', "\n";
 
 use Catalyst qw/
-	ConfigLoader
-	Static::Simple
-	
-	Authentication
-	
-	Session
-	Session::Store::DBIC
-	Session::State::Cookie
+  ConfigLoader
+  Static::Simple
+  
+  Authentication
+  
+  Session
+  Session::Store::DBIC
+  Session::State::Cookie
 /;
 
 print {*STDERR} '<<< DEBUG >>>: in ShinyCMS.pm, about to use CatalystX::RoleApplicator', "\n";
@@ -60,39 +60,39 @@ print {*STDERR} '<<< DEBUG >>>: in ShinyCMS.pm, about to call config()', "\n";
 
 __PACKAGE__->config(
     # Auth0: enable PSGI middleware
-	name => 'ShinyCMS',
-	# Configure DB sessions
-	'Plugin::Session' => {
-		dbic_class => 'DB::Session',
-		expires    => 3600,
-		# Stick the flash in the stash
-		flash_to_stash => 1,
-	},
-	# Disable deprecated behaviour needed by old Catalyst applications
-	disable_component_resolution_regex_fallback => 1,
+  name => 'ShinyCMS',
+  # Configure DB sessions
+  'Plugin::Session' => {
+    dbic_class => 'DB::Session',
+    expires    => 3600,
+    # Stick the flash in the stash
+    flash_to_stash => 1,
+  },
+  # Disable deprecated behaviour needed by old Catalyst applications
+  disable_component_resolution_regex_fallback => 1,
     # Configure SimpleDB Authentication
     'Plugin::Authentication' => {
-	    default => {
-		    class           => 'SimpleDB',
-		    user_model      => 'DB::User',
+      default => {
+        class           => 'SimpleDB',
+        user_model      => 'DB::User',
             # SECURITY & DoormanAuth0: comment following line to enable empty plaintext Shiny DB passwords
-		    password_type   => 'self_check',
-		    use_userdata_from_session => 1,
-	    },
+        password_type   => 'self_check',
+        use_userdata_from_session => 1,
+      },
     },
-	'Plugin::ConfigLoader' => {
-		driver => {
-			'General' => { -InterPolateVars => 1 },
-		},
-	},
+  'Plugin::ConfigLoader' => {
+    driver => {
+      'General' => { -InterPolateVars => 1 },
+    },
+  },
 );
 
 
 # Set cookie domain to be wildcard (so it works on sub-domains too)
 method finalize_config {
-	#Config values that need data from the parsed config file
-	__PACKAGE__->config(
-		session => { cookie_domain => '.'.$self->config->{ domain } },
+  #Config values that need data from the parsed config file
+  __PACKAGE__->config(
+    session => { cookie_domain => '.'.$self->config->{ domain } },
     'psgi_middleware', [
 #        'Debug',  # SECURITY: publicly displays client secret!!!
         'Session::Cookie' => { secret => 'fake_secret' },
@@ -104,14 +104,14 @@ method finalize_config {
             auth0_client_id     => 'JMwBFCjaelke73mE5HvLq7oTPOOQby9V'
         }
     ],
-	);
-	$self->next::method( @_ );
+  );
+  $self->next::method( @_ );
 };
 
 
 # Load browser detection trait (for detecting mobiles)
 __PACKAGE__->apply_request_class_roles(
-	'Catalyst::TraitFor::Request::BrowserDetect' 
+  'Catalyst::TraitFor::Request::BrowserDetect' 
 );
 
 

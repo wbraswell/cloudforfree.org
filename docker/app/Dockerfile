@@ -4,10 +4,10 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends ap
 
 WORKDIR /tmp
 RUN git clone https://github.com/wbraswell/apache2-filemanager.git apache2-filemanager \
-	&& cd apache2-filemanager \
-	&& perl Makefile.PL \
-	&& make \ 
-	&& make install
+  && cd apache2-filemanager \
+  && perl Makefile.PL \
+  && make \ 
+  && make install
 
 RUN useradd -ms /bin/bash cff
 
@@ -15,9 +15,9 @@ RUN mkdir -p /home/cff/public_html
 WORKDIR /home/cff/public_html
 
 #RUN git clone https://github.com/rmzg/cloudforfree.org.git \
-	#&& cd cloudforfree.org \
-	#&& perl Makefile.PL \
-	#&& cpanm -v --notest --installdeps .
+  #&& cd cloudforfree.org \
+  #&& perl Makefile.PL \
+  #&& cpanm -v --notest --installdeps .
 
 
 #WORKDIR /home/cff/public_html/cloudforfree.org

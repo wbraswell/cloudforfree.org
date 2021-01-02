@@ -1,8 +1,8 @@
 # IMPORTANT: if you delete this file your app will not work as expected.
 use inc::Module::Install;
 BEGIN {
-	eval "use Module::Install::Catalyst";
-	die "*** Please install Module::Install::Catalyst and run perl Makefile.PL again\n" if $@;
+  eval "use Module::Install::Catalyst";
+  die "*** Please install Module::Install::Catalyst and run perl Makefile.PL again\n" if $@;
 }
 
 name 'ShinyCMS';
@@ -16,30 +16,30 @@ requires 'parent';
 requires 'Config::General';
 
 requires (
-	'Catalyst::Plugin::Authentication'           => '0',
-	'Catalyst::Plugin::Session'                  => '0',
-	'Catalyst::Plugin::Session::Store::DBIC'     => '0',
-	'Catalyst::Plugin::Session::State::Cookie'   => '0',
-	'Catalyst::Authentication::Realm::SimpleDB'  => '0',
-	'Catalyst::View::TT'                         => '0',
-	'Catalyst::View::Email'                      => '0',
-	'Catalyst::TraitFor::Request::BrowserDetect' => '0',
-	'CatalystX::RoleApplicator'                  => '0',
-	'DBIx::Class::EncodedColumn'                 => '0',
-	'DBIx::Class::Schema::Loader'                => '0',
-	'DBIx::Class::TimeStamp'                     => '0',
-	'Method::Signatures::Simple'                 => '0',
-	'MooseX::NonMoose'                           => '0',
-	'MooseX::MarkAsMethods'                      => '0',
-	'XML::Feed'                                  => '0',
-	'Captcha::reCAPTCHA'                         => '0',
-	'HTML::Restrict'                             => '0',
-	'Email::Sender'                              => '0.102360', # gets rid of -alias/-excludes warnings
-	'Email::Valid'                               => '0',
-	'Net::Domain::TLD'                           => '0',
-	'Text::CSV::Simple'                          => '0',
-	'File::Pid'                                  => '0',
-	'HTML::TreeBuilder'                          => '0',
+  'Catalyst::Plugin::Authentication'           => '0',
+  'Catalyst::Plugin::Session'                  => '0',
+  'Catalyst::Plugin::Session::Store::DBIC'     => '0',
+  'Catalyst::Plugin::Session::State::Cookie'   => '0',
+  'Catalyst::Authentication::Realm::SimpleDB'  => '0',
+  'Catalyst::View::TT'                         => '0',
+  'Catalyst::View::Email'                      => '0',
+  'Catalyst::TraitFor::Request::BrowserDetect' => '0',
+  'CatalystX::RoleApplicator'                  => '0',
+  'DBIx::Class::EncodedColumn'                 => '0',
+  'DBIx::Class::Schema::Loader'                => '0',
+  'DBIx::Class::TimeStamp'                     => '0',
+  'Method::Signatures::Simple'                 => '0',
+  'MooseX::NonMoose'                           => '0',
+  'MooseX::MarkAsMethods'                      => '0',
+  'XML::Feed'                                  => '0',
+  'Captcha::reCAPTCHA'                         => '0',
+  'HTML::Restrict'                             => '0',
+  'Email::Sender'                              => '0.102360', # gets rid of -alias/-excludes warnings
+  'Email::Valid'                               => '0',
+  'Net::Domain::TLD'                           => '0',
+  'Text::CSV::Simple'                          => '0',
+  'File::Pid'                                  => '0',
+  'HTML::TreeBuilder'                          => '0',
 
     # WBRASWELL 20161226 2016.361
     # Auth0
@@ -67,9 +67,9 @@ requires (
 );
 
 recommends (
-	'Template::Plugin::Markdown'                 => '0',
-	'FCGI'                                       => '0',
-	'FCGI::ProcManager'                          => '0',
+  'Template::Plugin::Markdown'                 => '0',
+  'FCGI'                                       => '0',
+  'FCGI::ProcManager'                          => '0',
 );
 
 catalyst;
