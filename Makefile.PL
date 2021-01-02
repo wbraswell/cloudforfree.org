@@ -12,6 +12,10 @@ our $VERSION = 0.002_000;
 name 'ShinyCMS';
 all_from 'lib/ShinyCMS.pm';
 
+# WBRASWELL 20210102 2021.002: override "all_from" command above
+name 'CloudForFree';
+author 'Will Braswell <wbraswell@cpan.org>';
+
 # DEV NOTE 20210102 2021.002, CORRELATION #cff07: CPAN dependencies copied manually to cpanfile
 requires 'Catalyst::Runtime' => '5.80004';
 requires 'Catalyst::Plugin::ConfigLoader';
