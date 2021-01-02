@@ -12,6 +12,7 @@ our $VERSION = 0.002_000;
 name 'ShinyCMS';
 all_from 'lib/ShinyCMS.pm';
 
+# DEV NOTE 20210102 2021.002, CORRELATION #cff07: CPAN dependencies copied manually to cpanfile
 requires 'Catalyst::Runtime' => '5.80004';
 requires 'Catalyst::Plugin::ConfigLoader';
 requires 'Catalyst::Plugin::Static::Simple';

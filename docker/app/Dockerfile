@@ -29,6 +29,9 @@ RUN git clone https://github.com/wbraswell/apache2-filemanager.git apache2-filem
     && make \
     && make install
 
+COPY ./cpanfile .
+RUN cpanm --installdeps -n .
+
 RUN useradd -ms /bin/bash cff
 
 RUN mkdir -p /home/cff/public_html

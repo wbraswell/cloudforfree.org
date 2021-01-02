@@ -1,0 +1,50 @@
+# DEV NOTE 20210102 2021.002, CORRELATION #cff07: CPAN dependencies copied manually from Makefile.PL
+
+requires 'Catalyst::Runtime', '5.80004';
+requires 'Catalyst::Plugin::ConfigLoader';
+requires 'Catalyst::Plugin::Static::Simple';
+requires 'Catalyst::Action::RenderView';
+requires 'parent';
+requires 'Config::General';
+
+requires 'Catalyst::Plugin::Authentication'          ;
+requires 'Catalyst::Plugin::Session'                 ;
+requires 'Catalyst::Plugin::Session::Store::DBIC'    ;
+requires 'Catalyst::Plugin::Session::State::Cookie'  ;
+requires 'Catalyst::Authentication::Realm::SimpleDB' ;
+requires 'Catalyst::View::TT'                        ;
+requires 'Catalyst::View::Email'                     ;
+requires 'Catalyst::TraitFor::Request::BrowserDetect';
+requires 'CatalystX::RoleApplicator'                 ;
+requires 'DBIx::Class::EncodedColumn'                ;
+requires 'DBIx::Class::Schema::Loader'               ;
+requires 'DBIx::Class::TimeStamp'                    ;
+requires 'Method::Signatures::Simple'                ;
+requires 'MooseX::NonMoose'                          ;
+requires 'MooseX::MarkAsMethods'                     ;
+requires 'XML::Feed'                                 ;
+requires 'Captcha::reCAPTCHA'                        ;
+requires 'HTML::Restrict'                            ;
+requires 'Email::Sender'                             , '0.102360'; # gets rid of -alias/-excludes warnings
+requires 'Email::Valid'                              ;
+requires 'Net::Domain::TLD'                          ;
+requires 'Text::CSV::Simple'                         ;
+requires 'File::Pid'                                 ;
+requires 'HTML::TreeBuilder'                         ;
+requires 'Doorman'                                   , '0.10';  # for Plack::Middleware::DoormanAuth0
+requires 'Lingua::EN::NameParse'                     , '1.36';
+requires 'CGI::Ajax'                                 , '0.707';
+requires 'IO::Pty::Easy'                             , '0.10';
+requires 'String::Random'                            , '0.29';
+requires 'Term::VT102::Boundless'                    , '0.04';
+requires 'Term::VT102::Incremental'                  , '0.05';
+requires 'File::Temp'                                , '0.2304';
+requires 'Archive::Any'                              , '0.03';
+requires 'CGI::Cookie'                               , '1.20';
+requires 'File::NCopy'                               , '0.32';
+requires 'File::Remove'                              , '0.20';
+requires 'DBD::mysql'                                , '4.046';
+
+requires 'Template::Plugin::Markdown'                ;
+requires 'FCGI'                                      ;
+requires 'FCGI::ProcManager'                         ;
