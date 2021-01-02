@@ -5,6 +5,10 @@ BEGIN {
   die "*** Please install Module::Install::Catalyst and run perl Makefile.PL again\n" if $@;
 }
 
+use strict;
+use warnings;
+our $VERSION = 0.002_000;
+
 name 'ShinyCMS';
 all_from 'lib/ShinyCMS.pm';
 
@@ -41,10 +45,9 @@ requires (
   'File::Pid'                                  => '0',
   'HTML::TreeBuilder'                          => '0',
 
-    # WBRASWELL 20161226 2016.361
+    # WBRASWELL 20210102 2021.001
     # Auth0
-    #'Plack::Middleware::DoormanAuth0'            => '0.10',
-    'Doorman'                                    => '0.10',
+    'Doorman'                                    => '0.10',  # for Plack::Middleware::DoormanAuth0
     'Lingua::EN::NameParse'                      => '1.36',
     # AJAX
     'CGI::Ajax'                                  => '0.707',
