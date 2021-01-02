@@ -6,8 +6,10 @@ print {*STDERR} '<<< DEBUG >>>: top of ShinyCMS.pm', "\n";
 our $GITHUB_REPOS_DIR = '/home/wbraswell/github_repos/';
 our $LEARNING_RPERL_DIR = '/home/rperluser/perl5/lib/perl5/RPerl/Learning/';
 our $ROOT_DIR = '/home/cff/public_html/cloudforfree.org/';
-our $WWW_USER_GROUP = undef;                # NEED FIX, CORRELATION #cff04: Debian vs Docker; this line is for Docker
-#our $WWW_USER_GROUP = 'www-data.www-data';  # NEED FIX, CORRELATION #cff04: Debian vs Docker; this line is for Debian (and possibly other operating systems)
+our $WWW_USER  = undef;        # NEED FIX, CORRELATION #cff04: Debian vs Docker; this line is for Docker
+our $WWW_GROUP = undef;        # NEED FIX, CORRELATION #cff04: Debian vs Docker; this line is for Docker
+#our $WWW_USER  = 'www-data';  # NEED FIX, CORRELATION #cff04: Debian vs Docker; this line is for Debian (and possibly other operating systems)
+#our $WWW_GROUP = 'www-data';  # NEED FIX, CORRELATION #cff04: Debian vs Docker; this line is for Debian (and possibly other operating systems)
 
 #print {*STDERR} '<<< DEBUG >>>: in ShinyCMS.pm, about to use ShinyCMS_dependencies', "\n";
 #use ShinyCMS_dependencies;
