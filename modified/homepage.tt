@@ -5,9 +5,16 @@
 
 <div id="welcome">
 
-	<h2>[%- elements.heading1 | html %]
-	</h2>
+	<h2 style='font-style: italic;'>[%- elements.heading1 | html %]</h2>
+    <h2>
+    CloudForFree.org v1.4
+    <br>
+    <div style='font-size: small;'>
+    powered by
+    </div>
+    RPerl v4.001000
 	<br>
+    </h2>
 
     <table style='width:100%'>
     <tr>

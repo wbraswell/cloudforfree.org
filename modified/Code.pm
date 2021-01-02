@@ -7,7 +7,7 @@ package ShinyCMS::Controller::Code;
 use strict;
 use warnings;
 use RPerl::AfterSubclass;
-our $VERSION = 0.020_000;
+our $VERSION = 0.030_000;
 
 =head1 NAME
 
@@ -51,6 +51,7 @@ use rperloptions;
 use rperltypes;
 use rperltypesconv;  # string_to_integer()
 use RPerl::Config;
+#use RPerl::HelperFunctions_cpp;
 
 # [[[ CONSTANTS ]]]
 has posts_per_page => (
@@ -239,10 +240,12 @@ Display the IDE code editor.
 
 sub editor_file_manager_input_ajax : Chained( 'base' ) : PathPart( 'editor_file_manager_input_ajax' ) {
     my ( $self, $c ) = @ARG;
+    print {*STDOUT} '<<< DEBUG >>>: in Code::editor_file_manager_input_ajax(), top of subroutine', "\n";
 #    print {*STDOUT} '<<< DEBUG >>>: in Code::editor_file_manager_input_ajax(), received $self = ', "\n", Dumper($self), "\n\n";
 #    print {*STDOUT} '<<< DEBUG >>>: in Code::editor_file_manager_input_ajax(), received $c = ', "\n", Dumper($c), "\n\n";
 
     my $request = $c->request();
+#    print {*STDOUT} '<<< DEBUG >>>: in Code::editor_file_manager_input_ajax(), have $request = ', "\n", Dumper($request), "\n\n";
 
     # set up stash
     $c->stash->{template} = 'code/view_editor_file_manager_input_ajax.tt';
@@ -276,7 +279,7 @@ sub editor_file_manager_input_ajax : Chained( 'base' ) : PathPart( 'editor_file_
     # process input or output file parameter(s), return
     if ((exists $parameters->{FILEMANAGER_curr_file}) and (defined $parameters->{FILEMANAGER_curr_file}) and ($parameters->{FILEMANAGER_curr_file} ne q{})) {
         my $filename = $parameters->{FILEMANAGER_curr_file};
-#        print {*STDOUT} '<<< DEBUG >>>: in Code::editor_file_manager_input_ajax(), have $filename = ', q{'}, $filename, q{'}, "\n";
+        print {*STDOUT} '<<< DEBUG >>>: in Code::editor_file_manager_input_ajax(), have non-empty FILEMANAGER_curr_file $filename = ', q{'}, $filename, q{'}, "\n";
 
         # SECURITY: do not allow double-dots in filename, server-side check
         if (($filename =~ m/[^a-zA-Z0-9-_.\/]/gxms) or ($filename =~ m/[.][.]+/gxms)) {
@@ -288,7 +291,9 @@ sub editor_file_manager_input_ajax : Chained( 'base' ) : PathPart( 'editor_file_
 
         # accept output file parameter(s) (AKA save AKA write), return file write success
         if ((exists $parameters->{FILEMANAGER_cmd}) and (defined $parameters->{FILEMANAGER_cmd}) and ($parameters->{FILEMANAGER_cmd} ne q{})) {
+            print {*STDOUT} '<<< DEBUG >>>: in Code::editor_file_manager_input_ajax(), have $parameters->{FILEMANAGER_cmd} = ', $parameters->{FILEMANAGER_cmd}, "\n";
             if ($parameters->{FILEMANAGER_cmd} eq 'save') {
+                print {*STDOUT} '<<< DEBUG >>>: in Code::editor_file_manager_input_ajax(), SAVE FILE COMMAND', "\n";
                 if (not ((exists $parameters->{editor_ace_textarea}) and (defined $parameters->{editor_ace_textarea}))) 
                     { croak("\n" . q{ERROR ECOFMCSPA00, FILE MANAGER COMMAND SAVE, PARAMETERS: Missing HTML parameter 'editor_ace_textarea', should contain source code to be saved, croaking}); }
                 my string $output_source_code = $parameters->{editor_ace_textarea};
@@ -296,10 +301,14 @@ sub editor_file_manager_input_ajax : Chained( 'base' ) : PathPart( 'editor_file_
                 if ($output_source_code eq q{}) 
                     { croak("\n" . q{ERROR ECOFMCSPA01, FILE MANAGER COMMAND SAVE, PARAMETERS: Empty HTML parameter 'input_source_code', should contain source code to be saved, croaking}); }
 
-                # NEED ANSWER: is this correct here?!?
+                # NEED ANSWER: is this necessary? was there something else in the ACE editor or LearningRPerl example files causing this error?
                 # append newline to avoid "ERROR ECOPAPC13, RPERL PARSER, PERL CRITIC VIOLATION: RPerl source code input file '/tmp/rperl_tempfileFOO.pl' does not end with newline character or line of all-whitespace characters, dying
                 # append return character to avoid "ERROR ECOPAPC02, RPERL PARSER, PERL CRITIC VIOLATION: Perl::Critic::Policy::CodeLayout::RequireConsistentNewlines"
-                $output_source_code .= "\r\n";
+#                $output_source_code .= "\n";  # RIGHT?  Linux newline
+#                $output_source_code .= "\r\n";  # WRONG?  Windows newline
+
+                # replace all newline characters with Linux "\n" new line characters, to avoid error Perl::Critic::Policy::CodeLayout::RequireConsistentNewlines
+                $output_source_code =~ s/\R/\n/gxms;
 
                 (open my filehandleref $SAVE_FILEHANDLE, '>', ($document_root . $filename)) or do {
                     $c->stash->{editor_file_manager}->{output} = $OS_ERROR;
@@ -316,12 +325,11 @@ sub editor_file_manager_input_ajax : Chained( 'base' ) : PathPart( 'editor_file_
                 $c->stash->{editor_file_manager}->{output} = 'SUCCESS: Source code saved in file name ' . q{'} . $filename . q{'} . '.';
                 return;
             }
-            else {
-                $c->stash->{editor_file_manager}->{output} = 'ERROR: Unrecognized File Manager command ' . q{'} . $parameters->{FILEMANAGER_cmd} . q{'};
-                return;
-            }
-        }
-        else {
+            elsif ($parameters->{FILEMANAGER_cmd} eq 'open') {
+                print {*STDOUT} '<<< DEBUG >>>: in Code::editor_file_manager_input_ajax(), OPEN FILE COMMAND', "\n";
+
+
+
             # accept input file parameter (AKA open AKA read), return contents of file to editor
             my $input_file_lines = q{};
             (open my filehandleref $INPUT_FILEHANDLE, '<', ($document_root . $filename)) or do {
@@ -335,12 +343,38 @@ sub editor_file_manager_input_ajax : Chained( 'base' ) : PathPart( 'editor_file_
                 $c->stash->{editor_file_manager}->{output} = $OS_ERROR;
                 return;
             };
-            $c->stash->{editor_file_manager}->{output} = $input_file_lines;
+
+            # DEV NOTE, CORRELATION #cff03: stashed Perl values like $c->stash->{editor_file_manager}->{curr_file} 
+            # are accessed in HTML as static TT values like [%- editor_file_manager.curr_file %] but the HTML must be re-loaded each time to refresh new values;
+            # use CGI::Ajax functions for dynamic JS values without re-loading the HTML page
+
+            # our goal is to return both $input_file_lines and $filename from here in Perl to js_editor_file_content_update() in JS
+#            $c->stash->{editor_file_manager}->{output} = $input_file_lines;  # ORIGINAL: contains $input_file_lines only, not curr_file (AKA $filename)
+            $c->stash->{editor_file_manager}->{output} = $filename . "\n" . $input_file_lines;  # GOOD HACK: returns concatenated dynamic values, must separate in JS
+#            $c->stash->{editor_file_manager}->{output} = [$filename, $input_file_lines];  # BAD: returns stringified "ARRAY(0x0123456)"
+#            $c->stash->{editor_file_manager}->{output} = ($filename, $input_file_lines);  # BAD: only returns $input_file_lines w/ "useless use of private variable" warning
+#            $c->stash->{editor_file_manager}->{output} = ($input_file_lines, $filename);  # BAD: only returns $filename w/ "useless use of private variable" warning
+#            $c->stash->{editor_file_manager}->{curr_file} = $filename;  # BAD: static value
+#            print {*STDOUT} '<<< DEBUG >>>: in Code::editor_file_manager_input_ajax(), have $c->stash->{editor_file_manager} = ', Dumper($c->stash->{editor_file_manager}), "\n";
             return;
+#            return ($filename, $input_file_lines);  # BAD: has no effect?
+#            return 'HOWDY!HOWDY!HOWDY!';            # BAD: has no effect?
+
+
+
+            }
+
+            else {
+                $c->stash->{editor_file_manager}->{output} = 'ERROR: Unrecognized File Manager command ' . q{'} . $parameters->{FILEMANAGER_cmd} . q{'};
+                return;
+            }
+        }
+        else {
+            print {*STDOUT} '<<< DEBUG >>>: in Code::editor_file_manager_input_ajax(), NO COMMAND', "\n";
         }
     }
     
-    # NOT input or output file parameters(s), create Apache2::FileManager object, generate, return
+    # if the code reaches this point, we do NOT have input or output file parameters(s), create Apache2::FileManager object, generate, return
 
     # Apache2::FileManager: override $r with $request_wrapped_psgi, thereby wrapping $r
     my $request_wrapped_psgi;
@@ -356,7 +390,8 @@ sub editor_file_manager_input_ajax : Chained( 'base' ) : PathPart( 'editor_file_
     # replace with calls to editor_file_manager_input_ajax() for submitting the same FileManager form data via CGI::Ajax
     my $ajax_call_string_filemanager = q{editor_file_manager_input_ajax( ['FILEMANAGER_curr_file', 'FILEMANAGER_curr_dir', 'FILEMANAGER_cmd', 'FILEMANAGER_arg', 'FILEMANAGER_last_select_all'], [js_editor_file_manager_div_update] );};
     my $ajax_call_string_file_content = q{editor_file_manager_input_ajax( ['FILEMANAGER_curr_file', 'FILEMANAGER_curr_dir', 'FILEMANAGER_cmd', 'FILEMANAGER_arg', 'FILEMANAGER_last_select_all'], [js_editor_file_content_update] );};
-#    $ajax_call_string = q{alert('about to call editor_file_manager_input_ajax()...');} . "\n" . $ajax_call_string;
+#    $ajax_call_string_filemanager = q{alert('TMP DEBUG: about to call Perl editor_file_manager_input_ajax() and pass results to JS js_editor_file_manager_div_update()...');} . "\n" . $ajax_call_string_filemanager;
+#    $ajax_call_string_file_content = q{alert('TMP DEBUG: about to call Perl editor_file_manager_input_ajax() and pass results to JS js_editor_file_content_update()...');} . "\n" . $ajax_call_string_file_content;
     $handler_retval =~ s/f\.submit\(\);/$ajax_call_string_filemanager/gxms;
 
     # AJAX & Apache2::FileManager: intercept calls to window.document.FileManager which does not work inside W2UI layout, 
@@ -401,8 +436,10 @@ sub editor_file_manager_input_ajax : Chained( 'base' ) : PathPart( 'editor_file_
         <A HREF=# onclick="
             var f=window.document.forms.namedItem('FileManager');
             f.FILEMANAGER_curr_file.value='$path';
+            f.FILEMANAGER_cmd.value='open';
             $ajax_call_string_file_content
             f.FILEMANAGER_curr_file.value='';
+            f.FILEMANAGER_cmd.value='';
             return false;">
             <FONT COLOR=BLACK>$filename</FONT>
 EOL
@@ -480,6 +517,11 @@ EOL
     # subsequent calls from user clicking on links, yes parameters, do not include AJAX javascript from build_html()
     $c->stash->{editor_file_manager}->{output} = $handler_retval;
 
+    # DEV NOTE, CORRELATION #cff03: stashed Perl values like $c->stash->{editor_file_manager}->{curr_file} 
+    # are accessed in HTML as static TT values like [%- editor_file_manager.curr_file %] but the HTML must be re-loaded each time to refresh new values;
+    # use CGI::Ajax functions for dynamic JS values without re-loading the HTML page
+#    $c->stash->{editor_file_manager}->{curr_file} = 'COWBELL!';  # BAD: static TT value, need dynamic JS value
+
     # DEBUG OUTPUT
 #    open(my $fh, '>', '/tmp/handler_retval.out');
 #    print {$fh} $handler_retval;
@@ -539,6 +581,7 @@ our $VERSION = 0.001_000;
 print 'Hello, world!', "\n";
 EOF
     $c->stash->{ file_input } = { default => $learning_rperl_ch1_ex1 };
+    $c->stash->{editor_file_manager}->{curr_file} = 'default.pl';  # default file name, static TT data
 }
 
 =head2 view_repos
@@ -798,33 +841,33 @@ sub run_command_input_ajax : Chained( 'base' ) : PathPart( 'run_command_input_aj
 
     # MULTI-THREADED
 
-=DISABLE_PTY
-    # provide input to and/or receive output from command via PTY
-    my string $screen_reattach_command = 'screen -r ' . $screen_session;
-    print {*STDERR} '<<< DEBUG >>>: in Code::run_command_input_ajax() MULTI-THREADED, have $screen_reattach_command = ', $screen_reattach_command, "\n";
-    my $screen_pty = IO::Pty::Easy->new;
-    # reattach to screen session
-    $screen_pty->spawn($screen_reattach_command);
-    sleep 1;  # give time for output to accrue
-
-    my string $stdout_stderr_tmp = undef;
-
-#    my $written_characters;
-#    if ((defined $input) and ($input ne '')) { $written_characters = $screen_pty->write($input, 0); }  # replaced by $screen_stuff_command above
-#    if (not ((defined $written_characters) and ($written_characters == 0))) {
-        $stdout_stderr_tmp = $screen_pty->read(0);
+#=DISABLE_PTY
+#    # provide input to and/or receive output from command via PTY
+#    my string $screen_reattach_command = 'screen -r ' . $screen_session;
+#    print {*STDERR} '<<< DEBUG >>>: in Code::run_command_input_ajax() MULTI-THREADED, have $screen_reattach_command = ', $screen_reattach_command, "\n";
+#    my $screen_pty = IO::Pty::Easy->new;
+#    # reattach to screen session
+#    $screen_pty->spawn($screen_reattach_command);
+#    sleep 1;  # give time for output to accrue
+#
+#    my string $stdout_stderr_tmp = undef;
+#
+##    my $written_characters;
+##    if ((defined $input) and ($input ne '')) { $written_characters = $screen_pty->write($input, 0); }  # replaced by $screen_stuff_command above
+##    if (not ((defined $written_characters) and ($written_characters == 0))) {
+#        $stdout_stderr_tmp = $screen_pty->read(0);
+##    }
+##    if ((defined $stdout_stderr_tmp) and ($stdout_stderr_tmp eq '')) { last; }
+#
+#    if (defined $stdout_stderr_tmp) { 
+#        # NEED ANSWER: what in the world is this string of crazy control characters?
+#        my string $pty_control_string = ')0[?1049h[4l[?1h=[0m(B[1;57r[H[J[H[J[33B';
+#        $stdout_stderr_tmp =~ s/\Q$pty_control_string\E//gxms;
+#        $stdout_stderr .= $stdout_stderr_tmp;
 #    }
-#    if ((defined $stdout_stderr_tmp) and ($stdout_stderr_tmp eq '')) { last; }
-
-    if (defined $stdout_stderr_tmp) { 
-        # NEED ANSWER: what in the world is this string of crazy control characters?
-        my string $pty_control_string = ')0[?1049h[4l[?1h=[0m(B[1;57r[H[J[H[J[33B';
-        $stdout_stderr_tmp =~ s/\Q$pty_control_string\E//gxms;
-        $stdout_stderr .= $stdout_stderr_tmp;
-    }
-
-    $screen_pty->close;
-=cut
+#
+#    $screen_pty->close;
+#=cut
 
         # provide input to command via screen stuff
         my string $screen_stuff_command = 'screen -r ' . $screen_session . ' -p0 -X stuff "' . $input . '"';
@@ -892,15 +935,15 @@ sub run_command_input_ajax : Chained( 'base' ) : PathPart( 'run_command_input_aj
 #    $c->stash->{run_command_input_ajax}->{output} = $stdout_stderr;
     $c->stash->{run_command_input_ajax}->{output} = $stdout_stderr_keycoded;
 
-=DISABLE_DETACH_UNNEEDED
-    # MULTI-THREADED
-    # detach from screen session
-    my string $screen_detach_command = 'screen -S ' . $screen_session . ' -X detach';
-    print {*STDERR} '<<< DEBUG >>>: in Code::run_command_input_ajax() MULTI-THREADED, about to run $screen_detach_command = ', $screen_detach_command, "\n";
-    my string $screen_detach_command_retval = `$screen_detach_command 2>&1;`;
-    print {*STDERR} '<<< DEBUG >>>: in Code::run_command_input_ajax() MULTI-THREADED, have $CHILD_ERROR = ', $CHILD_ERROR, ', $screen_detach_command_retval = ', $screen_detach_command_retval, "\n";
-    if ($CHILD_ERROR) { $c->stash->{run_command_input_ajax}->{output} .= "\n" . 'ERROR: Failed to detach running `screen` session; ' . $screen_detach_command_retval; return; }
-=cut
+#=DISABLE_DETACH_UNNEEDED
+#    # MULTI-THREADED
+#    # detach from screen session
+#    my string $screen_detach_command = 'screen -S ' . $screen_session . ' -X detach';
+#    print {*STDERR} '<<< DEBUG >>>: in Code::run_command_input_ajax() MULTI-THREADED, about to run $screen_detach_command = ', $screen_detach_command, "\n";
+#    my string $screen_detach_command_retval = `$screen_detach_command 2>&1;`;
+#    print {*STDERR} '<<< DEBUG >>>: in Code::run_command_input_ajax() MULTI-THREADED, have $CHILD_ERROR = ', $CHILD_ERROR, ', $screen_detach_command_retval = ', $screen_detach_command_retval, "\n";
+#    if ($CHILD_ERROR) { $c->stash->{run_command_input_ajax}->{output} .= "\n" . 'ERROR: Failed to detach running `screen` session; ' . $screen_detach_command_retval; return; }
+#=cut
 }
 
 
@@ -922,27 +965,27 @@ sub run_command : Chained( 'base' ) : PathPart( 'run_command' ) {
     $c->stash->{run_command}->{stdout_stderr} = q{};
     $c->stash->{run_command}->{output_ajax} = q{};
 
-=DISABLE_COMMAND
-    # require command parameter
-    my $parameters = $request->parameters();
-    if (not ((exists $parameters->{command}) and (defined $parameters->{command}))) {
-        croak("\n" . q{ERROR ECORCPA00, RUN COMMAND, PARAMETERS: Missing HTML parameter 'command', should contain command to be run, croaking});
-    }
-
-    # accept command parameter
-    my string $command = $parameters->{command};
-    print {*STDOUT} '<<< DEBUG >>>: in Code::run_command(), have $command = ', $command, "\n";
-
-    # SECURITY: disallow multiple commands, only allow 1 RPerl command!
-    if ($command =~ m/[;|><\\]/) {
-        print {*STDOUT}  '<<< DEBUG >>>: SECURITY: in Code::run_command(), intercepted command with forbidden control character', "\n";
-        $c->stash->{run_command}->{stdout_stderr} = 'ERROR: Command with forbidden control character ; or | or < or > or \';
-        return;
-    }
-
-    # SECURITY: all commands must be RPerl commands!
-    $command = 'rperl ' . $command;
-=cut
+#=DISABLE_COMMAND
+#    # require command parameter
+#    my $parameters = $request->parameters();
+#    if (not ((exists $parameters->{command}) and (defined $parameters->{command}))) {
+#        croak("\n" . q{ERROR ECORCPA00, RUN COMMAND, PARAMETERS: Missing HTML parameter 'command', should contain command to be run, croaking});
+#    }
+#
+#    # accept command parameter
+#    my string $command = $parameters->{command};
+#    print {*STDOUT} '<<< DEBUG >>>: in Code::run_command(), have $command = ', $command, "\n";
+#
+#    # SECURITY: disallow multiple commands, only allow 1 RPerl command!
+#    if ($command =~ m/[;|><\\]/) {
+#        print {*STDOUT}  '<<< DEBUG >>>: SECURITY: in Code::run_command(), intercepted command with forbidden control character', "\n";
+#        $c->stash->{run_command}->{stdout_stderr} = 'ERROR: Command with forbidden control character ; or | or < or > or \';
+#        return;
+#    }
+#
+#    # SECURITY: all commands must be RPerl commands!
+#    $command = 'rperl ' . $command;
+#=cut
 
     # require filename parameter
     my $parameters = $request->parameters();
@@ -974,8 +1017,14 @@ sub run_command : Chained( 'base' ) : PathPart( 'run_command' ) {
     # DEV NOTE: when using open3(), must use `unbuffer -p` to avoid 4K libc buffer min limit, which requires erroneous newline input before unblocking output
 #    $command = q{su www-data -c "PATH=$PATH; set | grep TERM; unbuffer -p } . $command . q{"};
 #    $command = q{su www-data -c "PATH=$PATH; unbuffer -p } . $command . q{"};
+
+
     # DEV NOTE: must sleep to get output in correct order, then sleep again to write logfile
-    $command = q{su www-data -c "PATH=$PATH; } . $command . q{"; sleep 1; echo; echo __JOB_COMPLETED__; sleep 1; exit};
+    $command = q{su www-data -c "PATH=$PATH; } . $command . q{"; sleep 1; echo; echo __JOB_COMPLETED__; sleep 1; exit};  # ORIGINAL
+#    $command = q{su www-data -c "PATH=$PATH; RPERL_DEBUG=1; RPERL_VERBOSE=1; which rperl; rperl -v; } . $command . q{"; sleep 1; echo; echo __JOB_COMPLETED__; sleep 1; exit};
+#    $command = q{su www-data -c "PATH=$PATH; RPERL_DEBUG=1; RPERL_VERBOSE=1; which rperl; "; sleep 1; echo; echo __JOB_COMPLETED__; sleep 1; exit};
+
+
 #    $command = q{su www-data -c "PATH=$PATH; unbuffer -p } . $command . q{"; echo; read -p JOB_COMPLETED__PRESS_ENTER_TO_CLOSE; exit};
 
 # START HERE: add ssh to other compute_nodes, must use `ssh -t` to avoid screen 'Must be connected to a terminal.' error
