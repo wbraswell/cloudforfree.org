@@ -7,7 +7,7 @@ DIR=/home/wbraswell/public_html/cloudforfree.org-latest/backup
 FILE=wbraswell_$DATE-cloudforfree.org__no_user.sql
 rm $DIR/*no_user.sql.bz2
 mysqldump --user=$USER --password=$PASS --lock-tables --no-data $DB > $DIR/$FILE
-mysqldump --user=$USER --password=$PASS --lock-tables --no-create-info --ignore-table=$DB.user $DB >> $DIR/$FILE
+mysqldump --user=$USER --password=$PASS --lock-tables --no-create-info --ignore-table=$DB.user  --ignore-table=$DB.user_role --ignore-table=$DB.user_ip_address --ignore-table=$DB.user_access $DB >> $DIR/$FILE
 cd $DIR
 du -hs $FILE
 gzip $FILE
