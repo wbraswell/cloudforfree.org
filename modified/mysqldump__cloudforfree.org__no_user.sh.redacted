@@ -5,7 +5,7 @@ PASS='REDACTED'
 DB=cloudforfree_org
 DIR=/home/wbraswell/public_html/cloudforfree.org-latest/backup
 FILE=wbraswell_$DATE-cloudforfree.org__no_user.sql
-rm $DIR/*no_user.sql.bz2
+rm $DIR/*no_user.sql.gz
 # NEED UPDATE: only exclude sensitive columns instead of entire table for dumps
 mysqldump --user=$USER --password=$PASS --lock-tables --no-data $DB > $DIR/$FILE
 mysqldump --user=$USER --password=$PASS --lock-tables --no-create-info --ignore-table=$DB.user $DB >> $DIR/$FILE
