@@ -1018,14 +1018,16 @@ sub run_command : Chained( 'base' ) : PathPart( 'run_command' ) {
 #    $command = q{su www-data -c "PATH=$PATH; set | grep TERM; unbuffer -p } . $command . q{"};
 #    $command = q{su www-data -c "PATH=$PATH; unbuffer -p } . $command . q{"};
 
+    # NEED FIX, CORRELATION #cff04: Debian vs Docker; do NOT run `su www-data` command in Docker
+    if (defined $ShinyCMS::WWW_USER) {
+        # DEV NOTE: must sleep to get output in correct order, then sleep again to write logfile
+        $command = q{PATH=$PATH; } . $command . q{; sleep 1; echo; echo __JOB_COMPLETED__; sleep 1; exit};  # ORIGINAL
+#       $command = q{su } . $ShinyCMS::WWW_USER . q{ -c "PATH=$PATH; } . $command . q{"; sleep 1; echo; echo __JOB_COMPLETED__; sleep 1; exit};  # ORIGINAL, NOT FOR DOCKER
+#       $command = q{su www-data -c "PATH=$PATH; RPERL_DEBUG=1; RPERL_VERBOSE=1; which rperl; rperl -v; } . $command . q{"; sleep 1; echo; echo __JOB_COMPLETED__; sleep 1; exit};
+#       $command = q{su www-data -c "PATH=$PATH; RPERL_DEBUG=1; RPERL_VERBOSE=1; which rperl; "; sleep 1; echo; echo __JOB_COMPLETED__; sleep 1; exit};
 
-    # DEV NOTE: must sleep to get output in correct order, then sleep again to write logfile
-    $command = q{PATH=$PATH; } . $command . q{; sleep 1; echo; echo __JOB_COMPLETED__; sleep 1; exit};  # ORIGINAL
-#    $command = q{su www-data -c "PATH=$PATH; RPERL_DEBUG=1; RPERL_VERBOSE=1; which rperl; rperl -v; } . $command . q{"; sleep 1; echo; echo __JOB_COMPLETED__; sleep 1; exit};
-#    $command = q{su www-data -c "PATH=$PATH; RPERL_DEBUG=1; RPERL_VERBOSE=1; which rperl; "; sleep 1; echo; echo __JOB_COMPLETED__; sleep 1; exit};
-
-
-#    $command = q{su www-data -c "PATH=$PATH; unbuffer -p } . $command . q{"; echo; read -p JOB_COMPLETED__PRESS_ENTER_TO_CLOSE; exit};
+#       $command = q{su www-data -c "PATH=$PATH; unbuffer -p } . $command . q{"; echo; read -p JOB_COMPLETED__PRESS_ENTER_TO_CLOSE; exit};
+    }
 
 # START HERE: add ssh to other compute_nodes, must use `ssh -t` to avoid screen 'Must be connected to a terminal.' error
 # START HERE: add ssh to other compute_nodes, must use `ssh -t` to avoid screen 'Must be connected to a terminal.' error
