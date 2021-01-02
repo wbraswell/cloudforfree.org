@@ -7,7 +7,7 @@ package ShinyCMS::Controller::Auth0;
 use strict;
 use warnings;
 use RPerl::AfterSubclass;
-our $VERSION = 0.005_000;
+our $VERSION = 0.006_000;
 
 =head1 NAME
 
@@ -1055,8 +1055,8 @@ EOL
             if ($CHILD_ERROR) { $c->stash->{auth0_sign_in}->{output} = 'ERROR: Failed to copy Learning RPerl source code files; ' . $command_retval; return; }
 
             # NEED FIX, CORRELATION #cff04: Debian vs Docker; do NOT run chown & chmod commands in Docker
-            if (defined $ShinyCMS::WWW_USER_GROUP) {
-                $command = 'chown -R www-data.www-data ' . $shiny_user_files_dir . ' ' . $shiny_user_jobs_dir;
+            if ((defined $ShinyCMS::WWW_USER) and (defined $ShinyCMS::WWW_GROUP)) {
+                $command = 'chown -R ' . $ShinyCMS::WWW_USER . '.' . $ShinyCMS::WWW_GROUP . ' ' . $shiny_user_files_dir . ' ' . $shiny_user_jobs_dir;
                 print {*STDERR} '<<< DEBUG >>>: in Auth0::users_sign_in_auth0(), about to run $command = ', $command, "\n";
                 $command_retval = `$command 2>&1;`;
                 print {*STDERR} '<<< DEBUG >>>: in Auth0::users_sign_in_auth0(), have $CHILD_ERROR = ', $CHILD_ERROR, ', $command_retval = ', $command_retval, "\n";
