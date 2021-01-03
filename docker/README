@@ -1,0 +1,5 @@
+#Build the docker images
+./build_docker.sh
+
+#Launch the images
+docker-compose up

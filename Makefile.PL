@@ -1,13 +1,22 @@
 # IMPORTANT: if you delete this file your app will not work as expected.
 use inc::Module::Install;
 BEGIN {
-	eval "use Module::Install::Catalyst";
-	die "*** Please install Module::Install::Catalyst and run perl Makefile.PL again\n" if $@;
+  eval "use Module::Install::Catalyst";
+  die "*** Please install Module::Install::Catalyst and run perl Makefile.PL again\n" if $@;
 }
+
+use strict;
+use warnings;
+our $VERSION = 0.002_000;
 
 name 'ShinyCMS';
 all_from 'lib/ShinyCMS.pm';
 
+# WBRASWELL 20210102 2021.002: override "all_from" command above
+name 'CloudForFree';
+author 'Will Braswell <wbraswell@cpan.org>';
+
+# DEV NOTE 20210102 2021.002, CORRELATION #cff07: CPAN dependencies copied manually to cpanfile
 requires 'Catalyst::Runtime' => '5.80004';
 requires 'Catalyst::Plugin::ConfigLoader';
 requires 'Catalyst::Plugin::Static::Simple';
@@ -16,34 +25,34 @@ requires 'parent';
 requires 'Config::General';
 
 requires (
-	'Catalyst::Plugin::Authentication'           => '0',
-	'Catalyst::Plugin::Session'                  => '0',
-	'Catalyst::Plugin::Session::Store::DBIC'     => '0',
-	'Catalyst::Plugin::Session::State::Cookie'   => '0',
-	'Catalyst::Authentication::Realm::SimpleDB'  => '0',
-	'Catalyst::View::TT'                         => '0',
-	'Catalyst::View::Email'                      => '0',
-	'Catalyst::TraitFor::Request::BrowserDetect' => '0',
-	'CatalystX::RoleApplicator'                  => '0',
-	'DBIx::Class::EncodedColumn'                 => '0',
-	'DBIx::Class::Schema::Loader'                => '0',
-	'DBIx::Class::TimeStamp'                     => '0',
-	'Method::Signatures::Simple'                 => '0',
-	'MooseX::NonMoose'                           => '0',
-	'MooseX::MarkAsMethods'                      => '0',
-	'XML::Feed'                                  => '0',
-	'Captcha::reCAPTCHA'                         => '0',
-	'HTML::Restrict'                             => '0',
-	'Email::Sender'                              => '0.102360', # gets rid of -alias/-excludes warnings
-	'Email::Valid'                               => '0',
-	'Net::Domain::TLD'                           => '0',
-	'Text::CSV::Simple'                          => '0',
-	'File::Pid'                                  => '0',
-	'HTML::TreeBuilder'                          => '0',
+  'Catalyst::Plugin::Authentication'           => '0',
+  'Catalyst::Plugin::Session'                  => '0',
+  'Catalyst::Plugin::Session::Store::DBIC'     => '0',
+  'Catalyst::Plugin::Session::State::Cookie'   => '0',
+  'Catalyst::Authentication::Realm::SimpleDB'  => '0',
+  'Catalyst::View::TT'                         => '0',
+  'Catalyst::View::Email'                      => '0',
+  'Catalyst::TraitFor::Request::BrowserDetect' => '0',
+  'CatalystX::RoleApplicator'                  => '0',
+  'DBIx::Class::EncodedColumn'                 => '0',
+  'DBIx::Class::Schema::Loader'                => '0',
+  'DBIx::Class::TimeStamp'                     => '0',
+  'Method::Signatures::Simple'                 => '0',
+  'MooseX::NonMoose'                           => '0',
+  'MooseX::MarkAsMethods'                      => '0',
+  'XML::Feed'                                  => '0',
+  'Captcha::reCAPTCHA'                         => '0',
+  'HTML::Restrict'                             => '0',
+  'Email::Sender'                              => '0.102360', # gets rid of -alias/-excludes warnings
+  'Email::Valid'                               => '0',
+  'Net::Domain::TLD'                           => '0',
+  'Text::CSV::Simple'                          => '0',
+  'File::Pid'                                  => '0',
+  'HTML::TreeBuilder'                          => '0',
 
-    # WBRASWELL 20161226 2016.361
+    # WBRASWELL 20210102 2021.001
     # Auth0
-    'Plack::Middleware::DoormanAuth0'            => '0.10',
+    'Doorman'                                    => '0.10',  # for Plack::Middleware::DoormanAuth0
     'Lingua::EN::NameParse'                      => '1.36',
     # AJAX
     'CGI::Ajax'                                  => '0.707',
@@ -66,9 +75,9 @@ requires (
 );
 
 recommends (
-	'Template::Plugin::Markdown'                 => '0',
-	'FCGI'                                       => '0',
-	'FCGI::ProcManager'                          => '0',
+  'Template::Plugin::Markdown'                 => '0',
+  'FCGI'                                       => '0',
+  'FCGI::ProcManager'                          => '0',
 );
 
 catalyst;

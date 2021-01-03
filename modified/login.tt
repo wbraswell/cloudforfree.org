@@ -1,10 +1,10 @@
 [%- meta.wrapper = 'site-wrapper.tt';
-	meta.title   = 'Log In';
+  meta.title   = 'Log In';
 %]
 
 <h2>
-	[% meta.title %]
-	<br>Using GitHub Account<br>Via Auth0 Authentication
+  [% meta.title %]
+  <br>Using GitHub Account<br>Via Auth0 Authentication
 </h2>
 
 [%# DEV NOTE, CORRELATION #cff00: duplicate code, must also update in homepage.tt %]
@@ -14,7 +14,7 @@
   var lock = new Auth0Lock('JMwBFCjaelke73mE5HvLq7oTPOOQby9V', 'cloudforfree.auth0.com', {
     container: 'auth0_login_div',
     auth: {
-      redirectUrl: 'http://cloudforfree.org/users/sign_in/auth0',
+      redirectUrl: 'http://[%c.config.domain%]/users/sign_in/auth0',
       responseType: 'code',
       params: {
         scope: 'openid email' // Learn about scopes: https://auth0.com/docs/scopes

@@ -1,0 +1,21 @@
+version: "3.7" #3.7 is when init was added!
+services:
+  cloudff_app:
+    ports:
+      - "3000:3000"
+    image: cloudff_app
+    init: true
+    environment:
+      DBPASSWORD: cca43b7b5f364664b3ae4c2ab0e077c4
+      DOMAIN: localhost:3000
+    volumes:
+      - "../:/home/cff/public_html/cloudforfree.org"
+  cloudff_db:
+    ports:
+      - "3306:3306"
+    image: cloudff_db
+    environment:
+      MYSQL_ROOT_PASSWORD: 5f08f597ba64c94e8297a5b2f0d740af
+      MYSQL_USER: cloudff_user
+      MYSQL_PASSWORD: cca43b7b5f364664b3ae4c2ab0e077c4
+      MYSQL_DATABASE: cloudforfree_org

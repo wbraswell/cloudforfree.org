@@ -7,7 +7,7 @@ package ShinyCMS::Controller::Auth0;
 use strict;
 use warnings;
 use RPerl::AfterSubclass;
-our $VERSION = 0.005_000;
+our $VERSION = 0.006_000;
 
 =head1 NAME
 
@@ -1007,7 +1007,7 @@ EOL
             my string $shiny_profile_pic = q{};
             if ($doorman_picture ne q{}) {
                 $shiny_profile_pic = $shiny_username . '_profile_github.jpg';
-                my string $shiny_user_profile_pics_dir = $ShinyCMS::ROOT_DIR . 'root/static/cms-uploads/user-profile-pics/' . $shiny_username . '/';
+                my string $shiny_user_profile_pics_dir = $ShinyCMS::ROOT_DIR . '/root/static/cms-uploads/user-profile-pics/' . $shiny_username . '/';
 
                 $command = 'mkdir -p ' . $shiny_user_profile_pics_dir;
                 print {*STDERR} '<<< DEBUG >>>: in Auth0::users_sign_in_auth0(), about to run $command = ', $command, "\n";
@@ -1039,7 +1039,8 @@ EOL
             # create user files directory, give them their own copy of Learning RPerl exercises
             my string $shiny_user_files_dir = $ShinyCMS::ROOT_DIR . 'root/user_files/' . $shiny_username . '/';
             my string $shiny_user_jobs_dir = $ShinyCMS::ROOT_DIR . 'root/user_jobs/' . $shiny_username . '/';
-            my string $learning_rperl_dir = $ShinyCMS::GITHUB_REPOS_DIR . 'rperl-latest/lib/RPerl/Learning/';
+            #my string $learning_rperl_dir = $ShinyCMS::GITHUB_REPOS_DIR . 'rperl-latest/lib/RPerl/Learning/';
+            my string $learning_rperl_dir = $ShinyCMS::LEARNING_RPERL_DIR;
 
             $command = 'mkdir -p ' . $shiny_user_files_dir . ' ' . $shiny_user_jobs_dir;
             print {*STDERR} '<<< DEBUG >>>: in Auth0::users_sign_in_auth0(), about to run $command = ', $command, "\n";
@@ -1053,17 +1054,20 @@ EOL
             print {*STDERR} '<<< DEBUG >>>: in Auth0::users_sign_in_auth0(), have $CHILD_ERROR = ', $CHILD_ERROR, ', $command_retval = ', $command_retval, "\n";
             if ($CHILD_ERROR) { $c->stash->{auth0_sign_in}->{output} = 'ERROR: Failed to copy Learning RPerl source code files; ' . $command_retval; return; }
 
-            $command = 'chown -R www-data.www-data ' . $shiny_user_files_dir . ' ' . $shiny_user_jobs_dir;
-            print {*STDERR} '<<< DEBUG >>>: in Auth0::users_sign_in_auth0(), about to run $command = ', $command, "\n";
-            $command_retval = `$command 2>&1;`;
-            print {*STDERR} '<<< DEBUG >>>: in Auth0::users_sign_in_auth0(), have $CHILD_ERROR = ', $CHILD_ERROR, ', $command_retval = ', $command_retval, "\n";
-            if ($CHILD_ERROR) { $c->stash->{auth0_sign_in}->{output} = 'ERROR: Failed to set ownership of user directories; ' . $command_retval; return; }
+            # NEED FIX, CORRELATION #cff04: Debian vs Docker; do NOT run chown & chmod commands in Docker
+            if ((defined $ShinyCMS::WWW_USER) and (defined $ShinyCMS::WWW_GROUP)) {
+                $command = 'chown -R ' . $ShinyCMS::WWW_USER . '.' . $ShinyCMS::WWW_GROUP . ' ' . $shiny_user_files_dir . ' ' . $shiny_user_jobs_dir;
+                print {*STDERR} '<<< DEBUG >>>: in Auth0::users_sign_in_auth0(), about to run $command = ', $command, "\n";
+                $command_retval = `$command 2>&1;`;
+                print {*STDERR} '<<< DEBUG >>>: in Auth0::users_sign_in_auth0(), have $CHILD_ERROR = ', $CHILD_ERROR, ', $command_retval = ', $command_retval, "\n";
+                if ($CHILD_ERROR) { $c->stash->{auth0_sign_in}->{output} = 'ERROR: Failed to set ownership of user directories; ' . $command_retval; return; }
 
-            $command = 'chmod -R g+rwX ' . $shiny_user_files_dir . ' ' . $shiny_user_jobs_dir;
-            print {*STDERR} '<<< DEBUG >>>: in Auth0::users_sign_in_auth0(), about to run $command = ', $command, "\n";
-            $command_retval = `$command 2>&1;`;
-            print {*STDERR} '<<< DEBUG >>>: in Auth0::users_sign_in_auth0(), have $CHILD_ERROR = ', $CHILD_ERROR, ', $command_retval = ', $command_retval, "\n";
-            if ($CHILD_ERROR) { $c->stash->{auth0_sign_in}->{output} = 'ERROR: Failed to set permissions of user directories; ' . $command_retval; return; }
+                $command = 'chmod -R g+rwX ' . $shiny_user_files_dir . ' ' . $shiny_user_jobs_dir;
+                print {*STDERR} '<<< DEBUG >>>: in Auth0::users_sign_in_auth0(), about to run $command = ', $command, "\n";
+                $command_retval = `$command 2>&1;`;
+                print {*STDERR} '<<< DEBUG >>>: in Auth0::users_sign_in_auth0(), have $CHILD_ERROR = ', $CHILD_ERROR, ', $command_retval = ', $command_retval, "\n";
+                if ($CHILD_ERROR) { $c->stash->{auth0_sign_in}->{output} = 'ERROR: Failed to set permissions of user directories; ' . $command_retval; return; }
+            }
 
             print {*STDERR} '<<< DEBUG >>>: in Auth0::users_sign_in_auth0(), before DB create(), have $doorman_email = ', $doorman_email, "\n";
             print {*STDERR} '<<< DEBUG >>>: in Auth0::users_sign_in_auth0(), before DB create(), have $shiny_username = ', $shiny_username, "\n";
