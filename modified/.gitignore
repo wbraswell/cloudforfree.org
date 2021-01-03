@@ -1,5 +1,5 @@
 # [[[ EXCLUDE ALL AUTOMATICALLY-GENERATED FILES FROM GIT ]]]
-# v0.121_000
+# v0.121_100
 
 # [ Git ]
 # .gitignore is not auto-generated, do not exclude self
@@ -33,17 +33,17 @@
 # [ POD ]
 /pod2htmd.tmp
 
-# [ TEXT EDITOR FILES ]
+# [ Text Editors ]
 /*~
 /.vscode/
 
-# [ SHINYCMS ]
+# [ ShinyCMS ]
 # do publish development MySQL password for ease of use by developers;
 # this was originally NOT published when it contained the private production MySQL password,
 # and was replaced by shinycms.conf.redacted instead
 #shinycms.conf
 
-# [ CLOUDFORFREE ]
+# [ CloudForFree ]
 # NEED UPDATE, CORRELATION #cff06: Git Clone vs Docker Volume Mount; do not publish CFF user files which are created or modified from within Docker container
 /modified/cms-uploads/
 /modified/user_files/
