@@ -48,3 +48,5 @@ requires 'DBD::mysql'                                , '4.046';
 requires 'Template::Plugin::Markdown'                ;
 requires 'FCGI'                                      ;
 requires 'FCGI::ProcManager'                         ;
+requires 'Module::Install'                           ;
+requires 'Module::Install::Catalyst'                 ;
