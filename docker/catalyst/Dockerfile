@@ -32,10 +32,10 @@ RUN git clone https://github.com/wbraswell/apache2-filemanager.git apache2-filem
 COPY ./cpanfile .
 RUN cpanm --installdeps -n .
 
-RUN useradd -ms /bin/bash cff
+RUN useradd -ms /bin/bash cloudforfree_user
 
-RUN mkdir -p /home/cff/public_html
-WORKDIR /home/cff/public_html
+RUN mkdir -p /home/cloudforfree_user/public_html
+WORKDIR /home/cloudforfree_user/public_html
 
 # NEED UPDATE, CORRELATION #cff06: Git Clone vs Docker Volume Mount; disable Git in favor of direct Docker mount, for easy file editing outside Docker container
 # This image does not contain the actual application
@@ -50,7 +50,7 @@ WORKDIR /home/cff/public_html
   #&& cd cloudforfree.org \
   #&& perl Makefile.PL \
   #&& cpanm -v --notest --installdeps .
-#WORKDIR /home/cff/public_html/cloudforfree.org
+#WORKDIR /home/cloudforfree_user/public_html/cloudforfree.org
 #COPY ./shinycms.conf .
 
 COPY ./init.sh /

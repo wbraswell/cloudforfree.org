@@ -1,6 +1,6 @@
 #!/bin/bash
 
-BASEDIR=/home/cff/public_html/cloudforfree.org
+BASEDIR=/home/cloudforfree_user/public_html/cloudforfree.org
 
 cd $BASEDIR
 perl Makefile.PL

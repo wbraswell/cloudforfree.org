@@ -2,8 +2,8 @@
 
 cd docker;
 
-# Ensure the docker images are built
-./build_docker.sh
+# Ensure the docker images are built (no need, using dockerhub ones)
+#./build_docker.sh
 
 # Remove the existing containers if you pass --rm
 echo "\$1 = $1";
@@ -13,4 +13,3 @@ fi
 
 # Run the test environment on port 3000
 docker-compose up
-

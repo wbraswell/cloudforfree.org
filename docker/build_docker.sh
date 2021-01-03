@@ -1,4 +1,4 @@
 #!/bin/bash
 
-docker build -t cloudff_app ./app;
-docker build -t cloudff_db ./db;
+docker build -t wbraswell/cloudforfree_catalyst ./catalyst;
+docker build -t wbraswell/cloudforfree_mysql ./mysql;

@@ -1,19 +1,26 @@
-version: "3.7" #3.7 is when init was added!
+version: "3.7" # docker compose schema v3.7 is when init was added
 services:
-  cloudff_app:
+  cff_web:
+    depends_on:
+      - cff_db
     ports:
-      - "3000:3000"
-    image: cloudff_app
+      # Port 3000 is the default port for the catalyst dev server.
+      - "3000:3000" # Change the first 3000 if it conflicts locally.
+    image: wbraswell/cloudforfree_catalyst
     init: true
     environment:
       DBPASSWORD: cca43b7b5f364664b3ae4c2ab0e077c4
-      DOMAIN: localhost:3000
+      DOMAIN: localhost:3000 # Configure the domain in the shinycms.conf file
     volumes:
-      - "../:/home/cff/public_html/cloudforfree.org"
-  cloudff_db:
+      # Mount the root of the local git clone of the cloudforfree git repo inside the running docker container.
+      # This means you can edit the code in your local git clone and have the changes instantly reflected inside the
+      # running cloudforfree container.
+      - "../:/home/cloudforfree_user/public_html/cloudforfree.org"
+
+  cff_db:
     ports:
-      - "3306:3306"
-    image: cloudff_db
+      - "3306" # Without a host port specified, it binds to a random unused port on the host and forwards it to the internal mysql port number
+    image: wbraswell/cloudforfree_mysql
     environment:
       MYSQL_ROOT_PASSWORD: 5f08f597ba64c94e8297a5b2f0d740af
       MYSQL_USER: cloudff_user
