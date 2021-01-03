@@ -64,7 +64,7 @@
     <i>[%- run_command.pid %]</i>
     <br><br>
     
-    <b>Live Terminal AKA Interactive Shell:</b>
+    <b>Live App (Interactive Shell Terminal):</b>
     <pre id="run_command_output_div" style='background-color:#444444; color:#EEEEEE'>[%- run_command.stdout_stderr %]</pre>
     <br><br>
 

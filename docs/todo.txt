@@ -1,6 +1,56 @@
+enable https via certbot
+
 code, editor, F7 editor menu invisible when in F10 full window mode
 new user account registration problem, "no sender"
 new comment in forum problem, "no sender" as well?!?
 contact us e-mails not being delivered
 
 get shiny to work in mod_perl    https://rt.cpan.org/Ticket/Display.html?id=118899
+
+
+Phase 1: Create Docker Image
+
+
+Phase 2: Terminal Emulation
+- Full xterm Terminal Emulation For Command-Line Job Execution
+- Includes All VT100 & VT102 & VT220 Features
+- Resize Number Of Rows & Columns By Window Resize
+- Resize Font Size By User Configuration
+- Backspace, Tab, Other Special Command Characters
+- Arbitrary Placement Of Characters At Any Row & Column
+- Color Characters & Background
+- Curses & Other Menu Support
+- Full Window (F10) & Full Screen (F11)
+
+Phase 3: Graphical Output & Mouse Input
+- Full X-Windows Graphics Output Using Xpra HTML5 Client
+- Generate Output Using SDL From Perl & C
+- Mouse Left-Click, Right-Click, Drag, Scroll
+- Resize Number Of Available X & Y Pixels By Window Resize
+- Full Window (F10) & Full Screen (F11)
+
+Phase 4: GitHub Repositories Integration
+- Import & Setup User's GitHub Keys Via Linux User Account
+- List Of All GitHub Repos With User As Owner Or Collaborator
+- Admin Mode, Display All Repos
+- Allow User To Enter Any Other Readable GitHub Repo URL
+    ex. https://github.com/wbraswell/physicsperl
+- Buttons For Basic User Git Commands
+    clone    add    commit    push    pull    checkout    status
+- Do Not Duplicate Any GitHub Web Functionality
+
+Phase 5: Job Queue
+- Job Scheduler & Monitor Using OAR (1st Choice), Or HTCondor Or Slurm (2nd Choices)
+- Manage User's Jobs Via Linux User Account
+- List Of All Current Jobs With User As Owner
+- Admin Mode, Display All Jobs
+- FileManager For Selecting *.pl RPerl Programs To Run
+- Buttons For Basic Job Control Commands
+    start    restart
+    stop (SIGTERM)    force stop (SIGKILL)    pause (SIGSTOP)    continue (SIGCONT)
+    show/hide CLI (From Phase 1)    show/hide GUI (From Phase 2)
+- Display Resources: FLOPS, Cores, Memory, Storage; Total, Unused, Available To User
+
+Phase 6: GitLab & BitBucket Support
+- All Existing GitHub Repo Integration Features, Ported To GitLab
+- All Existing GitHub Repo Integration Features, Ported To BitBucket
