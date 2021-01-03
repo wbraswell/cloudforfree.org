@@ -19,7 +19,9 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update \
         libexpat1-dev \
         libxml2-dev \
         zlib1g-dev \
-        unzip
+        unzip \
+    && DEBIAN_FRONTEND=noninteractive apt-get clean \
+    && rm -r /var/lib/apt/*
 
 # NEED UPDATE, CORRELATION #cff05: replace GitHub code w/ Apache2::FileManager v0.3 from CPAN, as soon as it has been created
 WORKDIR /tmp
@@ -30,7 +32,7 @@ RUN git clone https://github.com/wbraswell/apache2-filemanager.git apache2-filem
     && make install
 
 COPY ./cpanfile .
-RUN cpanm --installdeps -n .
+RUN cpanm --installdeps -n . && rm -r /root/.cpanm
 
 RUN useradd -ms /bin/bash cloudforfree_user
 
