@@ -9,7 +9,7 @@ cd docker;
 # remove existing containers if you pass --rm
 if [ "$1" == '--rm' ]; then 
     docker-compose rm -f;
-else
+elif [ "$1" != '' ]; then 
     echo "Unrecognized command-line argument: " $1
     exit
 fi
